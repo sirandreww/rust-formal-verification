@@ -3,6 +3,8 @@ name = "rust-formal-verification"
 version = "0.1.0"
 edition = "2021"
 authors = ["Andrew Luka"]
+description = "A rust library that makes it easier to develop, prototype and test new algorithms for formal verification like IC3, PDR, AVY and others."
+license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
