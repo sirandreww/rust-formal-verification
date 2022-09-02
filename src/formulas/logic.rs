@@ -1,7 +1,0 @@
-
-
-mod form {
-    struct Formula {
-
-    }
-}

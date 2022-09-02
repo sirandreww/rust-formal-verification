@@ -1,9 +1,0 @@
-
-
-mod structures {
-    
-    struct FiniteStateTransitionSystem {
-        
-    }
-}
-
