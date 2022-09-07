@@ -10,7 +10,7 @@ use crate::formulas::Variable;
 // struct
 // ************************************************************************************************
 
-#[derive(Hash, PartialEq, Eq, Clone)]
+#[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct Literal {
     varialble : Variable,
     is_negated : bool

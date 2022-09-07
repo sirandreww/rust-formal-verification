@@ -19,10 +19,6 @@ pub struct CNF {
 // ************************************************************************************************
 
 impl CNF {
-    pub fn new(clauses : HashSet<Clause>) -> Self {
-        Self { clauses }
-    }
-
     pub fn add_clause(&mut self, new_clause : &Clause){
         self.clauses.insert((*new_clause).to_owned());
     }
@@ -34,7 +30,7 @@ impl CNF {
 
 impl Default for CNF {
     fn default() -> Self {
-        Self { clauses: HashSet::new() }
+        Self { clauses: (HashSet::new()) }
     }
 }
 
