@@ -4,34 +4,28 @@
 
 use std::fmt;
 use std::hash::Hash;
-use crate::formulas::Variable;
 
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
 #[derive(Hash, PartialEq, Eq, Clone)]
-pub struct Literal {
-    varialble : Variable,
-    is_negated : bool
+pub struct Variable {
+    varialble_number : u32,
 }
 
 // ************************************************************************************************
 // impl
 // ************************************************************************************************
 
-impl Literal {
-    pub fn new(varialble: Variable, is_negated : bool) -> Self {
-        Self { varialble, is_negated }
+impl Variable {
+    pub fn new(varialble_number: u32) -> Self {
+        Self { varialble_number }
     }
 }
 
-impl fmt::Display for Literal {
+impl fmt::Display for Variable {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.is_negated {
-            return write!(f, "!{}", self.varialble.to_string());
-        } else {
-            return write!(f, "{}", self.varialble.to_string());
-        }
+        return write!(f, "x{}", self.varialble_number);
     }
 }

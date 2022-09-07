@@ -1,14 +1,17 @@
-
+// ************************************************************************************************
+// use
+// ************************************************************************************************
 
 
 // ************************************************************************************************
-// rust submodule decleration, they get searched in their respective file  names
+// struct
 // ************************************************************************************************
 
-pub mod formulas;   // requires existance of 'formulas/mod.rs'
-pub mod solvers;    // requires existance of 'solvers/mod.rs'
-pub mod models;     // requires existance of 'models/mod.rs'
+pub trait SatSolver {
+    
+}
 
 // ************************************************************************************************
-// re-exports of structs in these modules to simplify paths for other imports
+// impl
 // ************************************************************************************************
+

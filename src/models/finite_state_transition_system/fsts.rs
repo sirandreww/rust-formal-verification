@@ -1,14 +1,24 @@
-
-
-
 // ************************************************************************************************
-// rust submodule decleration, they get searched in their respective file  names
+// use
 // ************************************************************************************************
 
-pub mod formulas;   // requires existance of 'formulas/mod.rs'
-pub mod solvers;    // requires existance of 'solvers/mod.rs'
-pub mod models;     // requires existance of 'models/mod.rs'
+use crate::formulas::CNF;
 
 // ************************************************************************************************
-// re-exports of structs in these modules to simplify paths for other imports
+// struct
 // ************************************************************************************************
+
+pub struct FSTS {
+    initial_states : CNF,
+    transition : CNF,
+    safety_property: CNF,
+}
+
+// ************************************************************************************************
+// impl
+// ************************************************************************************************
+
+impl FSTS {
+    
+}
+

@@ -26,6 +26,10 @@ impl CNF {
     pub fn add_clause(&mut self, new_clause : &Clause){
         self.clauses.insert((*new_clause).to_owned());
     }
+
+    pub fn get_number_of_clauses(&self) -> usize {
+        return self.clauses.len();
+    }
 }
 
 impl Default for CNF {
