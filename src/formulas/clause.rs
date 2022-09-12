@@ -44,6 +44,6 @@ impl fmt::Display for Clause {
             .iter()
             .map(|lit| lit.to_string())
             .collect::<Vec<String>>();
-        return write!(f, "({})", string_vec.join(" | "));
+        write!(f, "({})", string_vec.join(" | "))
     }
 }

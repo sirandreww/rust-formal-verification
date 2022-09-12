@@ -37,6 +37,6 @@ impl Variable {
 
 impl fmt::Display for Variable {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return write!(f, "x{}", self.variable_number);
+        write!(f, "x{}", self.variable_number)
     }
 }

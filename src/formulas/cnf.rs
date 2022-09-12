@@ -41,6 +41,6 @@ impl fmt::Display for CNF {
             .map(|lit| lit.to_string())
             .collect::<Vec<String>>();
         string_vec.sort();
-        return write!(f, "({})", string_vec.join(" & "));
+        write!(f, "({})", string_vec.join(" & "))
     }
 }

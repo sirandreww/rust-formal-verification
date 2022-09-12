@@ -37,9 +37,9 @@ impl Literal {
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if (self.literal_number % 2) == 0 {
-            return write!(f, "x{}", (self.get_number()));
+            write!(f, "x{}", (self.get_number()))
         } else {
-            return write!(f, "!x{}", (self.get_number()));
+            write!(f, "!x{}", (self.get_number()))
         }
     }
 }
