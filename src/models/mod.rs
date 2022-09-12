@@ -2,7 +2,7 @@
 // rust submodule decleration, they get searched in their respective file  names
 // ************************************************************************************************
 
-pub mod finite_state_transition_system;  
+pub mod finite_state_transition_system;
 // requires folder in this directory with the name 'finite_state_transition_system'
 
 // ************************************************************************************************
@@ -10,4 +10,3 @@ pub mod finite_state_transition_system;
 // ************************************************************************************************
 
 pub use finite_state_transition_system::FSTS;
-

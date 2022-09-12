@@ -2,8 +2,8 @@
 // use
 // ************************************************************************************************
 
-use std::fmt;
 use crate::formulas::Variable;
+use std::fmt;
 
 // ************************************************************************************************
 // struct
@@ -11,7 +11,7 @@ use crate::formulas::Variable;
 
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct Literal {
-    literal_number : i32,
+    literal_number: i32,
 }
 
 // ************************************************************************************************
@@ -19,8 +19,10 @@ pub struct Literal {
 // ************************************************************************************************
 
 impl Literal {
-    pub fn new(variable: Variable, is_negated : bool) -> Self {
-        Self { literal_number: variable.get_number() + variable.get_number() + (is_negated as i32) }
+    pub fn new(variable: Variable, is_negated: bool) -> Self {
+        Self {
+            literal_number: variable.get_number() + variable.get_number() + (is_negated as i32),
+        }
     }
 
     pub fn get_number(&self) -> i32 {

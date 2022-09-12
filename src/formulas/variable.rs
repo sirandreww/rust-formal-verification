@@ -10,7 +10,7 @@ use std::fmt;
 
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct Variable {
-    variable_number : i32,
+    variable_number: i32,
 }
 
 // ************************************************************************************************
@@ -19,7 +19,10 @@ pub struct Variable {
 
 impl Variable {
     pub fn new(variable_number: i32) -> Self {
-        assert!(variable_number > 0, "Variable number must be strictly positive.");
+        assert!(
+            variable_number > 0,
+            "Variable number must be strictly positive."
+        );
         Self { variable_number }
     }
 

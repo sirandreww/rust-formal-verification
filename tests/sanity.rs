@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use rust_formal_verification::formulas::Variable;
-    use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::Clause;
+    use rust_formal_verification::formulas::Literal;
+    use rust_formal_verification::formulas::Variable;
     use rust_formal_verification::formulas::CNF;
 
     #[test]
@@ -72,10 +72,13 @@ mod tests {
         cnf2.add_clause(&(c0.clone()));
         cnf2.add_clause(&(c0.clone()));
 
-        assert!(cnf0.to_string() == format!("((!{x}4 | {x}5) & ({x}1 | !{x}2 | {x}3) & ({x}1 | !{x}4 | {x}5 | !{x}6))"));
+        assert!(
+            cnf0.to_string()
+                == format!(
+                    "((!{x}4 | {x}5) & ({x}1 | !{x}2 | {x}3) & ({x}1 | !{x}4 | {x}5 | !{x}6))"
+                )
+        );
         assert!(cnf1.to_string() == format!("((!{x}4 | {x}5) & ({x}1 | !{x}2 | {x}3))"));
         assert!(cnf2.to_string() == format!("(({x}1 | !{x}2 | {x}3))"));
-        
     }
 }
-

@@ -12,7 +12,7 @@ use std::hash::Hash;
 
 #[derive(Eq, PartialEq, Clone, Hash, Default)]
 pub struct Clause {
-    literals : Vec<Literal>
+    literals: Vec<Literal>,
 }
 
 // ************************************************************************************************
@@ -20,12 +20,14 @@ pub struct Clause {
 // ************************************************************************************************
 
 impl Clause {
-    pub fn new(literals : &mut [Literal]) -> Self {
+    pub fn new(literals: &mut [Literal]) -> Self {
         literals.sort();
-        Self { literals : literals.to_vec() }
+        Self {
+            literals: literals.to_vec(),
+        }
     }
 
-    pub fn add_literal(&mut self, new_literal : &Literal) {
+    pub fn add_literal(&mut self, new_literal: &Literal) {
         self.literals.push((*new_literal).to_owned());
         self.literals.sort();
     }
@@ -37,10 +39,11 @@ impl Clause {
 
 impl fmt::Display for Clause {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let string_vec = self.literals
-        .iter()
-        .map(|lit| lit.to_string())
-        .collect::<Vec<String>>();
+        let string_vec = self
+            .literals
+            .iter()
+            .map(|lit| lit.to_string())
+            .collect::<Vec<String>>();
         return write!(f, "({})", string_vec.join(" | "));
     }
 }

@@ -12,7 +12,7 @@ use std::fmt;
 
 #[derive(Default)]
 pub struct CNF {
-    clauses : HashSet<Clause>
+    clauses: HashSet<Clause>,
 }
 
 // ************************************************************************************************
@@ -20,7 +20,7 @@ pub struct CNF {
 // ************************************************************************************************
 
 impl CNF {
-    pub fn add_clause(&mut self, new_clause : &Clause){
+    pub fn add_clause(&mut self, new_clause: &Clause) {
         self.clauses.insert((*new_clause).to_owned());
     }
 
@@ -35,10 +35,11 @@ impl CNF {
 
 impl fmt::Display for CNF {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut string_vec = self.clauses
-        .iter()
-        .map(|lit| lit.to_string())
-        .collect::<Vec<String>>();
+        let mut string_vec = self
+            .clauses
+            .iter()
+            .map(|lit| lit.to_string())
+            .collect::<Vec<String>>();
         string_vec.sort();
         return write!(f, "({})", string_vec.join(" & "));
     }
