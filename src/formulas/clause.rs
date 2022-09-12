@@ -4,7 +4,7 @@
 
 use crate::formulas::Literal;
 use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 
 // ************************************************************************************************
 // struct
