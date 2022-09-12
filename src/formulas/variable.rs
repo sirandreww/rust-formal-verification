@@ -9,6 +9,7 @@ use std::fmt;
 // ************************************************************************************************
 
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
+/// Variable representation
 pub struct Variable {
     variable_number: i32,
 }
@@ -18,8 +19,23 @@ pub struct Variable {
 // ************************************************************************************************
 
 impl Variable {
+    /// Returns a variable with the number given
+    ///
+    /// # Arguments
+    ///
+    /// * `variable_number` - An integer that holds the number of the variable
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // You can have rust code between fences inside the comments
+    /// // If you pass --test to `rustdoc`, it will even test it for you!
+    /// use rust_formal_verification::formulas::Variable;
+    /// let var1 = Variable::new(30);
+    /// println!("var1 number is {}", var1);
+    /// ```
     pub fn new(variable_number: i32) -> Self {
-        assert!(
+        debug_assert!(
             variable_number > 0,
             "Variable number must be strictly positive."
         );
