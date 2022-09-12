@@ -10,7 +10,7 @@ use std::hash::Hash;
 // struct
 // ************************************************************************************************
 
-#[derive(Eq, PartialEq, Clone, Hash)]
+#[derive(Eq, PartialEq, Clone, Hash, Default)]
 pub struct Clause {
     literals : Vec<Literal>
 }
@@ -28,16 +28,6 @@ impl Clause {
     pub fn add_literal(&mut self, new_literal : &Literal) {
         self.literals.push((*new_literal).to_owned());
         self.literals.sort();
-    }
-}
-
-// ************************************************************************************************
-// default constructor
-// ************************************************************************************************
-
-impl Default for Clause {
-    fn default() -> Self {
-        Self { literals: Vec::new() }
     }
 }
 

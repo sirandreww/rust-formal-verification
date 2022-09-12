@@ -4,5 +4,6 @@ A rust library that makes it easier to develop, prototype and test new algorithm
 
 # Publishing a new version
 
-To publish a new version of the library, simply run :
-1. 
+To publish a new version of the library :
+1. run `cargo check`
+2. run `cargo clippy` (you may run `cargo clippy --fix` to fix changes quickly)

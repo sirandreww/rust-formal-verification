@@ -20,11 +20,11 @@ pub struct Variable {
 impl Variable {
     pub fn new(variable_number: i32) -> Self {
         assert!(variable_number > 0, "Variable number must be strictly positive.");
-        Self { variable_number: variable_number }
+        Self { variable_number }
     }
 
     pub fn get_number(&self) -> i32 {
-        return self.variable_number;
+        self.variable_number
     }
 }
 
