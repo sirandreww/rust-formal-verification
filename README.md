@@ -7,4 +7,5 @@ A rust library that makes it easier to develop, prototype and test new algorithm
 To publish a new version of the library :
 1. run `cargo fmt --check` (you may run `cargo fmt` to fix changes quickly)
 2. run `cargo clippy` (you may run `cargo clippy --fix` to fix changes quickly)
-3. run `cargo test`
+3. run `cargo test` (This also tests doc comments)
+4. run `cargo publish`
