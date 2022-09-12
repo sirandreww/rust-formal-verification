@@ -72,9 +72,8 @@ mod tests {
         cnf2.add_clause(&(c0.clone()));
         cnf2.add_clause(&(c0.clone()));
 
-        println!("cnf1 = {}", cnf1);
-        assert!(cnf0.to_string() == format!("(({x}1 | !{x}4 | {x}5 | !{x}6) & ({x}1 | !{x}2 | {x}3) & (!{x}4 | {x}5))"));
-        assert!(cnf1.to_string() == format!("(({x}1 | !{x}2 | {x}3) & (!{x}4 | {x}5))"));
+        assert!(cnf0.to_string() == format!("((!{x}4 | {x}5) & ({x}1 | !{x}2 | {x}3) & ({x}1 | !{x}4 | {x}5 | !{x}6))"));
+        assert!(cnf1.to_string() == format!("((!{x}4 | {x}5) & ({x}1 | !{x}2 | {x}3))"));
         assert!(cnf2.to_string() == format!("(({x}1 | !{x}2 | {x}3))"));
         
     }

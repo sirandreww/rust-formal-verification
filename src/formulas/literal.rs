@@ -3,7 +3,6 @@
 // ************************************************************************************************
 
 use std::fmt;
-use std::hash::Hash;
 use crate::formulas::Variable;
 
 // ************************************************************************************************
@@ -12,8 +11,7 @@ use crate::formulas::Variable;
 
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct Literal {
-    varialble : Variable,
-    is_negated : bool
+    literal_number : i32,
 }
 
 // ************************************************************************************************
@@ -21,17 +19,25 @@ pub struct Literal {
 // ************************************************************************************************
 
 impl Literal {
-    pub fn new(varialble: Variable, is_negated : bool) -> Self {
-        Self { varialble, is_negated }
+    pub fn new(variable: Variable, is_negated : bool) -> Self {
+        Self { literal_number: variable.get_number() + variable.get_number() + (is_negated as i32) }
+    }
+
+    pub fn get_number(&self) -> i32 {
+        return self.literal_number >> 1;
     }
 }
 
+// ************************************************************************************************
+// printing
+// ************************************************************************************************
+
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.is_negated {
-            return write!(f, "!{}", self.varialble.to_string());
+        if (self.literal_number % 2) == 0 {
+            return write!(f, "x{}", (self.get_number()).to_string());
         } else {
-            return write!(f, "{}", self.varialble.to_string());
+            return write!(f, "!x{}", (self.get_number()).to_string());
         }
     }
 }

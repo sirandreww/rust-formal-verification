@@ -3,7 +3,6 @@
 // ************************************************************************************************
 
 use std::fmt;
-use std::hash::Hash;
 
 // ************************************************************************************************
 // struct
@@ -11,7 +10,7 @@ use std::hash::Hash;
 
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct Variable {
-    variable_number : u32,
+    variable_number : i32,
 }
 
 // ************************************************************************************************
@@ -19,11 +18,19 @@ pub struct Variable {
 // ************************************************************************************************
 
 impl Variable {
-    pub fn new(variable_number: u32) -> Self {
+    pub fn new(variable_number: i32) -> Self {
         assert!(variable_number > 0, "Variable number must be strictly positive.");
         Self { variable_number: variable_number }
     }
+
+    pub fn get_number(&self) -> i32 {
+        return self.variable_number;
+    }
 }
+
+// ************************************************************************************************
+// printing
+// ************************************************************************************************
 
 impl fmt::Display for Variable {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

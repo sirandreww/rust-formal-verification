@@ -28,18 +28,28 @@ impl CNF {
     }
 }
 
+// ************************************************************************************************
+// default constructor
+// ************************************************************************************************
+
 impl Default for CNF {
     fn default() -> Self {
         Self { clauses: (HashSet::new()) }
     }
 }
 
+
+// ************************************************************************************************
+// printing
+// ************************************************************************************************
+
 impl fmt::Display for CNF {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let string_vec = self.clauses
+        let mut string_vec = self.clauses
         .iter()
         .map(|lit| lit.to_string())
         .collect::<Vec<String>>();
+        string_vec.sort();
         return write!(f, "({})", string_vec.join(" & "));
     }
 }

@@ -3,17 +3,16 @@
 // ************************************************************************************************
 
 use crate::formulas::Literal;
-use std::{fmt, collections::HashSet};
+use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::collections::BinaryHeap;
 
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Eq, PartialEq, Clone, Hash)]
 pub struct Clause {
-    literals : HashSet<Literal>
+    literals : Vec<Literal>
 }
 
 // ************************************************************************************************
@@ -21,36 +20,34 @@ pub struct Clause {
 // ************************************************************************************************
 
 impl Clause {
-    pub fn new(literals : HashSet<Literal>) -> Self {
-        Self { literals }
+    pub fn new(literals : &mut [Literal]) -> Self {
+        literals.sort();
+        Self { literals : literals.to_vec() }
     }
 
     pub fn add_literal(&mut self, new_literal : &Literal) {
-        self.literals.insert((*new_literal).to_owned());
+        self.literals.push((*new_literal).to_owned());
+        self.literals.sort();
     }
 }
+
+// ************************************************************************************************
+// default constructor
+// ************************************************************************************************
 
 impl Default for Clause {
     fn default() -> Self {
-        Self { literals: HashSet::new() }
+        Self { literals: Vec::new() }
     }
 }
 
-impl Hash for Clause {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let mut vec_sorted = self.literals.iter().collect::<Vec<_>>();
-        vec_sorted.sort();
-        for lit in vec_sorted {
-            lit.hash(state);
-        }
-    }
-}
+// ************************************************************************************************
+// printing
+// ************************************************************************************************
 
 impl fmt::Display for Clause {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut vec_sorted = self.literals.iter().collect::<Vec<_>>();
-        vec_sorted.sort();
-        let string_vec = vec_sorted
+        let string_vec = self.literals
         .iter()
         .map(|lit| lit.to_string())
         .collect::<Vec<String>>();
