@@ -36,7 +36,6 @@ impl CNF {
     }
 
     pub fn get_new_variable(&mut self) -> Variable {
-        
         Variable::new(self.max_variable_number + 1)
     }
 
