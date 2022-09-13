@@ -34,12 +34,11 @@ impl Literal {
     }
 
     pub fn to_dimacs_literal(&self) -> String {
-        let dimacs_number;
-        if self.is_negated() {
-            dimacs_number = -self.get_number();
+        let dimacs_number = if self.is_negated() {
+            -self.get_number()
         } else {
-            dimacs_number = self.get_number();
-        }
+            self.get_number()
+        };
         dimacs_number.to_string()
     }
 }
