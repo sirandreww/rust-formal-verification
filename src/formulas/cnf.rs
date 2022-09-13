@@ -36,7 +36,8 @@ impl CNF {
     }
 
     pub fn get_new_variable(&mut self) -> Variable {
-        Variable::new(self.max_variable_number + 1)
+        self.max_variable_number += 1;
+        Variable::new(self.max_variable_number)
     }
 
     pub fn get_highest_variable_number(&self) -> i32 {
