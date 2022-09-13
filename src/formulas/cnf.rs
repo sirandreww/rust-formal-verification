@@ -12,6 +12,7 @@ use std::fmt;
 // struct
 // ************************************************************************************************
 
+#[derive(Default)]
 pub struct CNF {
     clauses: HashSet<Clause>,
     max_variable_number: i32,
@@ -35,8 +36,8 @@ impl CNF {
     }
 
     pub fn get_new_variable(&mut self) -> Variable {
-        let var = Variable::new(self.max_variable_number + 1);
-        var
+        
+        Variable::new(self.max_variable_number + 1)
     }
 
     pub fn get_highest_variable_number(&self) -> i32 {
@@ -48,14 +49,14 @@ impl CNF {
 // default constructor
 // ************************************************************************************************
 
-impl Default for CNF {
-    fn default() -> Self {
-        Self {
-            clauses: Default::default(),
-            max_variable_number: 0,
-        }
-    }
-}
+// impl Default for CNF {
+//     fn default() -> Self {
+//         Self {
+//             clauses: Default::default(),
+//             max_variable_number: 0,
+//         }
+//     }
+// }
 
 // ************************************************************************************************
 // printing
