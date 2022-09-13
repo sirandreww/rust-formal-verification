@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::formulas::Variable;
-use std::fmt;
+use std::{fmt, ops::Not};
 
 // ************************************************************************************************
 // struct
@@ -28,6 +28,34 @@ impl Literal {
     pub fn get_number(&self) -> i32 {
         self.literal_number >> 1
     }
+
+    pub fn is_negated(&self) -> bool {
+        (self.literal_number % 2) == 1
+    }
+
+    pub fn to_dimacs_literal(&self) -> String {
+        let dimacs_number;
+        if self.is_negated() {
+            dimacs_number = -self.get_number();
+        } else {
+            dimacs_number = self.get_number();
+        }
+        dimacs_number.to_string()
+    }
+}
+
+// ************************************************************************************************
+// negation
+// ************************************************************************************************
+
+impl Not for Literal {
+    type Output = Self;
+
+    fn not(self) -> Self::Output {
+        Self::Output {
+            literal_number: self.literal_number | 1,
+        }
+    }
 }
 
 // ************************************************************************************************
@@ -36,10 +64,10 @@ impl Literal {
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if (self.literal_number % 2) == 0 {
-            write!(f, "x{}", (self.get_number()))
+        if self.is_negated() {
+            write!(f, "!x{}", self.get_number())
         } else {
-            write!(f, "!x{}", (self.get_number()))
+            write!(f, "x{}", self.get_number())
         }
     }
 }

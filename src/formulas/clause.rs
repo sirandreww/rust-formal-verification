@@ -48,6 +48,16 @@ impl Clause {
     pub fn get_highest_variable_number(&self) -> i32 {
         self.max_variable_number
     }
+
+    pub fn to_dimacs_line(&self) -> String {
+        let string_vec = self
+            .literals
+            .iter()
+            .map(|one_literal| one_literal.to_dimacs_literal())
+            .collect::<Vec<String>>();
+        let line_without_zero = string_vec.join(" ");
+        format!("{line_without_zero} 0")
+    }
 }
 
 // ************************************************************************************************
