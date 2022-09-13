@@ -3,6 +3,8 @@
 // ************************************************************************************************
 
 use crate::formulas::Clause;
+use crate::formulas::Variable;
+use std::cmp::max;
 use std::collections::HashSet;
 use std::fmt;
 
@@ -10,9 +12,9 @@ use std::fmt;
 // struct
 // ************************************************************************************************
 
-#[derive(Default)]
 pub struct CNF {
     clauses: HashSet<Clause>,
+    max_variable_number: i32,
 }
 
 // ************************************************************************************************
@@ -21,11 +23,37 @@ pub struct CNF {
 
 impl CNF {
     pub fn add_clause(&mut self, new_clause: &Clause) {
+        self.max_variable_number = max(
+            self.max_variable_number,
+            new_clause.get_highest_variable_number(),
+        );
         self.clauses.insert((*new_clause).to_owned());
     }
 
     pub fn get_number_of_clauses(&self) -> usize {
         self.clauses.len()
+    }
+
+    pub fn get_new_variable(&mut self) -> Variable {
+        let var = Variable::new(self.max_variable_number + 1);
+        var
+    }
+
+    pub fn get_highest_variable_number(&self) -> i32 {
+        self.max_variable_number
+    }
+}
+
+// ************************************************************************************************
+// default constructor
+// ************************************************************************************************
+
+impl Default for CNF {
+    fn default() -> Self {
+        Self {
+            clauses: Default::default(),
+            max_variable_number: 0,
+        }
     }
 }
 

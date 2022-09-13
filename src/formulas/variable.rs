@@ -23,7 +23,7 @@ impl Variable {
     ///
     /// # Arguments
     ///
-    /// * `variable_number` - An integer that holds the number of the variable
+    /// * `variable_number` - An integer that holds the number of the variable, must be strictly positive.
     ///
     /// # Examples
     ///

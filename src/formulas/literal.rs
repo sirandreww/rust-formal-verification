@@ -9,7 +9,7 @@ use std::fmt;
 // struct
 // ************************************************************************************************
 
-#[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
+#[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord, Copy)]
 pub struct Literal {
     literal_number: i32,
 }
