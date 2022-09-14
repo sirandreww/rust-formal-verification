@@ -3,7 +3,6 @@
 // ************************************************************************************************
 
 use crate::formulas::Clause;
-use crate::formulas::Variable;
 use std::cmp::max;
 use std::collections::HashSet;
 use std::fmt;
@@ -35,11 +34,6 @@ impl CNF {
         self.clauses.len()
     }
 
-    pub fn get_new_variable(&mut self) -> Variable {
-        self.max_variable_number += 1;
-        Variable::new(self.max_variable_number)
-    }
-
     pub fn get_highest_variable_number(&self) -> i32 {
         self.max_variable_number
     }
@@ -56,23 +50,27 @@ impl CNF {
     /// use rust_formal_verification::formulas::CNF;
     /// use rust_formal_verification::formulas::Clause;
     /// use rust_formal_verification::formulas::Literal;
+    /// use rust_formal_verification::formulas::Variable;
     ///
     /// let mut cnf = CNF::default();
     ///
-    /// let l1 = Literal::new(cnf.get_new_variable(), false);
-    /// let l2 = Literal::new(cnf.get_new_variable(), false);
-    /// let l3 = Literal::new(cnf.get_new_variable(), false);
+    /// let l1 = Literal::new(Variable::new(1), false);
+    /// let l2 = Literal::new(Variable::new(2), false);
+    /// let l3 = Literal::new(Variable::new(3), false);
     ///
     /// cnf.add_clause(&Clause::new(vec![l1, l2, l3]));
     /// cnf.add_clause(&Clause::new(vec![!l1, l2, l3]));
     /// cnf.add_clause(&Clause::new(vec![l1, !l2, l3]));
     /// cnf.add_clause(&Clause::new(vec![l1, l2, !l3]));
     ///
-    /// let dmacs_string = cnf.to_dimacs();
-    /// let mut dmacs_vector = dmacs_string.split("\n").collect::<Vec<&str>>();
-    /// dmacs_vector.sort();
-    /// dmacs_vector.reverse();
-    /// assert_eq!("p cnf 3 4\n1 2 3 0\n1 2 -3 0\n1 -2 3 0\n-1 2 3 0", dmacs_vector.join("\n"));
+    /// let dimacs_string = cnf.to_dimacs();
+    ///
+    /// // These 3 steps are there because to_dimacs() may return the lines in any order
+    /// let mut dimacs_vector = dimacs_string.split("\n").collect::<Vec<&str>>();
+    /// dimacs_vector.sort();
+    /// dimacs_vector.reverse();
+    ///
+    /// assert_eq!("p cnf 3 4\n1 2 3 0\n1 2 -3 0\n1 -2 3 0\n-1 2 3 0", dimacs_vector.join("\n"));
     /// ```
     pub fn to_dimacs(&self) -> String {
         let string_vec = self
