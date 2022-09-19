@@ -118,6 +118,48 @@ impl CNF {
         self.clauses.len()
     }
 
+    /// Function that returns true if the number of clauses that are currently in the CNF is 0.
+    ///
+    /// # Arguments
+    ///
+    /// * `self` - an immutable reference to self.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rust_formal_verification::formulas::CNF;
+    /// use rust_formal_verification::formulas::Clause;
+    /// use rust_formal_verification::formulas::Literal;
+    /// use rust_formal_verification::formulas::Variable;
+    ///
+    /// let v1 = Variable::new(1);
+    /// let v2 = Variable::new(2);
+    /// let v3 = Variable::new(3);
+    ///
+    /// let l1 = Literal::new(v1, false);
+    /// let l2 = Literal::new(v2, false);
+    /// let l3 = Literal::new(v3, false);
+    ///
+    /// let c1 = Clause::new(vec![l1, l2, l3]);
+    /// let c2 = Clause::new(vec![!l1, l2, l3]);
+    /// let c3 = Clause::new(vec![l1, !l2, l3]);
+    /// let c4 = Clause::new(vec![l1, l2, !l3]);
+    ///
+    /// let mut cnf1 = CNF::default();
+    /// assert_eq!(cnf1.is_empty(), true);
+    /// cnf1.add_clause(&c1);
+    /// assert_eq!(cnf1.is_empty(), false);
+    /// cnf1.add_clause(&c2);
+    /// assert_eq!(cnf1.is_empty(), false);
+    /// cnf1.add_clause(&c3);
+    /// assert_eq!(cnf1.is_empty(), false);
+    /// cnf1.add_clause(&c4);
+    /// assert_eq!(cnf1.is_empty(), false);
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.clauses.is_empty()
+    }
+
     pub fn get_highest_variable_number(&self) -> i32 {
         self.max_variable_number
     }
