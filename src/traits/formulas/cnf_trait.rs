@@ -1,12 +1,21 @@
 // ************************************************************************************************
-// rust submodule declaration, they get searched in their respective file  names
+// use
 // ************************************************************************************************
 
-pub mod formulas; // requires existence of 'formulas/mod.rs'
-pub mod models; // requires existence of 'models/mod.rs'
-pub mod solvers; // requires existence of 'solvers/mod.rs'
-pub mod traits; // requires existence of 'traits/mod.rs'
+use crate::traits::formulas::{ClauseTrait, LiteralTrait, VariableTrait};
+use num_traits::int::PrimInt;
 
 // ************************************************************************************************
-// re-exports of structs in these modules to simplify paths for other imports
+// CNFTrait
 // ************************************************************************************************
+
+pub trait CNFTrait<
+    IntType: PrimInt,
+    Variable: VariableTrait<IntType>,
+    Literal: LiteralTrait<IntType, Variable>,
+    Clause: ClauseTrait<IntType, Variable, Literal>,
+>
+{
+    fn add_clause(&mut self, new_clause: &Clause);
+    fn to_dimacs(&self) -> String;
+}

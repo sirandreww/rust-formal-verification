@@ -1,12 +1,16 @@
 // ************************************************************************************************
-// rust submodule declaration, they get searched in their respective file  names
+// use
 // ************************************************************************************************
 
-pub mod formulas; // requires existence of 'formulas/mod.rs'
-pub mod models; // requires existence of 'models/mod.rs'
-pub mod solvers; // requires existence of 'solvers/mod.rs'
-pub mod traits; // requires existence of 'traits/mod.rs'
+use crate::traits::formulas::VariableTrait;
+use num_traits::int::PrimInt;
 
 // ************************************************************************************************
-// re-exports of structs in these modules to simplify paths for other imports
+// LiteralTrait
 // ************************************************************************************************
+
+pub trait LiteralTrait<IntType: PrimInt, Variable: VariableTrait<IntType>> {
+    fn new(variable: Variable, is_negated: bool) -> Self;
+    fn get_number(&self) -> IntType;
+    fn is_negated(&self) -> bool;
+}

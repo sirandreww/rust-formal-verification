@@ -1,5 +1,5 @@
 // ************************************************************************************************
-// rust submodule decleration, they get searched in their respective file  names
+// rust submodule declaration, they get searched in their respective file  names
 // ************************************************************************************************
 
 pub mod minisat;

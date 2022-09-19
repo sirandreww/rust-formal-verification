@@ -1,12 +1,15 @@
 // ************************************************************************************************
-// rust submodule declaration, they get searched in their respective file  names
+// use
 // ************************************************************************************************
 
-pub mod formulas; // requires existence of 'formulas/mod.rs'
-pub mod models; // requires existence of 'models/mod.rs'
-pub mod solvers; // requires existence of 'solvers/mod.rs'
-pub mod traits; // requires existence of 'traits/mod.rs'
+use num_traits::int::PrimInt;
+use std::fmt;
 
 // ************************************************************************************************
-// re-exports of structs in these modules to simplify paths for other imports
+// VariableTrait
 // ************************************************************************************************
+
+pub trait VariableTrait<IntType: PrimInt>: fmt::Display {
+    fn new(variable_number: IntType) -> Self;
+    fn get_number(&self) -> IntType;
+}

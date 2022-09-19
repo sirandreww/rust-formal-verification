@@ -28,11 +28,9 @@ impl Variable {
     /// # Examples
     ///
     /// ```
-    /// // You can have rust code between fences inside the comments
-    /// // If you pass --test to `rustdoc`, it will even test it for you!
     /// use rust_formal_verification::formulas::Variable;
     /// let var1 = Variable::new(30);
-    /// println!("var1 number is {}", var1);
+    /// println!("var1 is {}", var1);
     /// ```
     pub fn new(variable_number: i32) -> Self {
         debug_assert!(
