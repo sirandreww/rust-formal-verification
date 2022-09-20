@@ -19,7 +19,7 @@ pub struct Literal {
 // ************************************************************************************************
 
 impl Literal {
-    pub fn new(variable: Variable, is_negated: bool) -> Self {
+    pub fn new(variable: &Variable, is_negated: bool) -> Self {
         Self {
             literal_number: variable.get_number() + variable.get_number() + (is_negated as i32),
         }
@@ -34,12 +34,12 @@ impl Literal {
     }
 
     pub fn to_dimacs_literal(&self) -> String {
-        let dimacs_number = if self.is_negated() {
-            -self.get_number()
+        let num_as_string = self.get_number().to_string();
+        if self.is_negated() {
+            format!("-{}", (num_as_string))
         } else {
-            self.get_number()
-        };
-        dimacs_number.to_string()
+            num_as_string
+        }
     }
 }
 

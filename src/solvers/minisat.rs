@@ -2,7 +2,8 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::CNF;
+// use crate::formulas::CNF;
+// use crate::solvers::SatResponse;
 
 // ************************************************************************************************
 // struct
@@ -16,7 +17,7 @@ pub struct MinisatSolver {}
 // ************************************************************************************************
 
 impl MinisatSolver {
-    fn solve_cnf(cnf: CNF) {
+    // fn solve_cnf(cnf_to_solve: CNF) -> SatResponse {
 
-    }
+    // }
 }

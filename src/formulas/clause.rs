@@ -22,20 +22,20 @@ pub struct Clause {
 // ************************************************************************************************
 
 impl Clause {
-    pub fn new(mut literals: Vec<Literal>) -> Self {
-        literals.sort();
-        let max_variable_number = literals.iter().map(|lit| lit.get_number()).max();
-        match max_variable_number {
-            // input not empty
-            Some(x) => Self {
-                literals: literals.to_vec(),
-                max_variable_number: x,
-            },
-            // input empty
-            None => Self {
-                literals: literals.to_vec(),
+    pub fn new(literals: &[Literal]) -> Self {
+        if literals.is_empty() {
+            return Self {
+                literals: vec![],
                 max_variable_number: 0,
-            },
+            };
+        } else {
+            let mut sorted_lits = literals.to_owned();
+            sorted_lits.sort();
+            let biggest_lit = sorted_lits[sorted_lits.len() - 1];
+            return Self {
+                literals: sorted_lits,
+                max_variable_number: biggest_lit.get_number(),
+            };
         }
     }
 

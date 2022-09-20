@@ -23,12 +23,12 @@ mod tests {
         assert_eq!(v5.to_string(), format!("{x}5"));
         assert_eq!(v6.to_string(), format!("{x}6"));
 
-        let l1 = Literal::new(v1, false);
-        let l2 = Literal::new(v2, true);
-        let l3 = Literal::new(v3, false);
-        let l4 = Literal::new(v4, true);
-        let l5 = Literal::new(v5, false);
-        let l6 = Literal::new(v6, true);
+        let l1 = Literal::new(&v1, false);
+        let l2 = Literal::new(&v2, true);
+        let l3 = Literal::new(&v3, false);
+        let l4 = Literal::new(&v4, true);
+        let l5 = Literal::new(&v5, false);
+        let l6 = Literal::new(&v6, true);
 
         assert_eq!(l1.to_string(), format!("{x}1"));
         assert_eq!(l2.to_string(), format!("!{x}2"));
@@ -37,7 +37,7 @@ mod tests {
         assert_eq!(l5.to_string(), format!("{x}5"));
         assert_eq!(l6.to_string(), format!("!{x}6"));
 
-        let mut c0 = Clause::new(vec![]);
+        let mut c0 = Clause::new(&vec![]);
         assert_eq!(c0.get_highest_variable_number(), 0);
         c0.add_literal(&l1);
         assert_eq!(c0.get_highest_variable_number(), 1);
@@ -46,7 +46,7 @@ mod tests {
         c0.add_literal(&l3);
         assert_eq!(c0.get_highest_variable_number(), 3);
 
-        let mut c00 = Clause::new(vec![]);
+        let mut c00 = Clause::new(&vec![]);
         assert_eq!(c00.get_highest_variable_number(), 0);
         c00.add_literal(&l2);
         assert_eq!(c00.get_highest_variable_number(), 2);
@@ -55,17 +55,17 @@ mod tests {
         c00.add_literal(&l3);
         assert_eq!(c00.get_highest_variable_number(), 3);
 
-        let c000 = Clause::new(vec![l2, l3, l1]);
+        let c000 = Clause::new(&vec![l2, l3, l1]);
         assert_eq!(c000.get_highest_variable_number(), 3);
 
-        let mut c1 = Clause::new(vec![]);
+        let mut c1 = Clause::new(&vec![]);
         assert_eq!(c1.get_highest_variable_number(), 0);
         c1.add_literal(&l4);
         assert_eq!(c1.get_highest_variable_number(), 4);
         c1.add_literal(&l5);
         assert_eq!(c1.get_highest_variable_number(), 5);
 
-        let mut c2 = Clause::new(vec![]);
+        let mut c2 = Clause::new(&vec![]);
         assert_eq!(c2.get_highest_variable_number(), 0);
         c2.add_literal(&l1);
         assert_eq!(c2.get_highest_variable_number(), 1);

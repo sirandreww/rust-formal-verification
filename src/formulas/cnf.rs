@@ -42,14 +42,14 @@ impl CNF {
     /// let v2 = Variable::new(2);
     /// let v3 = Variable::new(3);
     ///
-    /// let l1 = Literal::new(v1, false);
-    /// let l2 = Literal::new(v2, false);
-    /// let l3 = Literal::new(v3, false);
+    /// let l1 = Literal::new(&v1, false);
+    /// let l2 = Literal::new(&v2, false);
+    /// let l3 = Literal::new(&v3, false);
     ///
-    /// let c1 = Clause::new(vec![l1, l2, l3]);
-    /// let c2 = Clause::new(vec![!l1, l2, l3]);
-    /// let c3 = Clause::new(vec![l1, !l2, l3]);
-    /// let c4 = Clause::new(vec![l1, l2, !l3]);
+    /// let c1 = Clause::new(&vec![l1, l2, l3]);
+    /// let c2 = Clause::new(&vec![!l1, l2, l3]);
+    /// let c3 = Clause::new(&vec![l1, !l2, l3]);
+    /// let c4 = Clause::new(&vec![l1, l2, !l3]);
     ///
     /// let mut cnf1 = CNF::default();
     ///
@@ -94,14 +94,14 @@ impl CNF {
     /// let v2 = Variable::new(2);
     /// let v3 = Variable::new(3);
     ///
-    /// let l1 = Literal::new(v1, false);
-    /// let l2 = Literal::new(v2, false);
-    /// let l3 = Literal::new(v3, false);
+    /// let l1 = Literal::new(&v1, false);
+    /// let l2 = Literal::new(&v2, false);
+    /// let l3 = Literal::new(&v3, false);
     ///
-    /// let c1 = Clause::new(vec![l1, l2, l3]);
-    /// let c2 = Clause::new(vec![!l1, l2, l3]);
-    /// let c3 = Clause::new(vec![l1, !l2, l3]);
-    /// let c4 = Clause::new(vec![l1, l2, !l3]);
+    /// let c1 = Clause::new(&vec![l1, l2, l3]);
+    /// let c2 = Clause::new(&vec![!l1, l2, l3]);
+    /// let c3 = Clause::new(&vec![l1, !l2, l3]);
+    /// let c4 = Clause::new(&vec![l1, l2, !l3]);
     ///
     /// let mut cnf1 = CNF::default();
     /// assert_eq!(cnf1.len(), 0);
@@ -136,14 +136,14 @@ impl CNF {
     /// let v2 = Variable::new(2);
     /// let v3 = Variable::new(3);
     ///
-    /// let l1 = Literal::new(v1, false);
-    /// let l2 = Literal::new(v2, false);
-    /// let l3 = Literal::new(v3, false);
+    /// let l1 = Literal::new(&v1, false);
+    /// let l2 = Literal::new(&v2, false);
+    /// let l3 = Literal::new(&v3, false);
     ///
-    /// let c1 = Clause::new(vec![l1, l2, l3]);
-    /// let c2 = Clause::new(vec![!l1, l2, l3]);
-    /// let c3 = Clause::new(vec![l1, !l2, l3]);
-    /// let c4 = Clause::new(vec![l1, l2, !l3]);
+    /// let c1 = Clause::new(&vec![l1, l2, l3]);
+    /// let c2 = Clause::new(&vec![!l1, l2, l3]);
+    /// let c3 = Clause::new(&vec![l1, !l2, l3]);
+    /// let c4 = Clause::new(&vec![l1, l2, !l3]);
     ///
     /// let mut cnf1 = CNF::default();
     /// assert_eq!(cnf1.is_empty(), true);
@@ -180,14 +180,14 @@ impl CNF {
     ///
     /// let mut cnf = CNF::default();
     ///
-    /// let l1 = Literal::new(Variable::new(1), false);
-    /// let l2 = Literal::new(Variable::new(2), false);
-    /// let l3 = Literal::new(Variable::new(3), false);
+    /// let l1 = Literal::new(&Variable::new(1), false);
+    /// let l2 = Literal::new(&Variable::new(2), false);
+    /// let l3 = Literal::new(&Variable::new(3), false);
     ///
-    /// cnf.add_clause(&Clause::new(vec![l1, l2, l3]));
-    /// cnf.add_clause(&Clause::new(vec![!l1, l2, l3]));
-    /// cnf.add_clause(&Clause::new(vec![l1, !l2, l3]));
-    /// cnf.add_clause(&Clause::new(vec![l1, l2, !l3]));
+    /// cnf.add_clause(&Clause::new(&vec![l1, l2, l3]));
+    /// cnf.add_clause(&Clause::new(&vec![!l1, l2, l3]));
+    /// cnf.add_clause(&Clause::new(&vec![l1, !l2, l3]));
+    /// cnf.add_clause(&Clause::new(&vec![l1, l2, !l3]));
     ///
     /// let dimacs_string = cnf.to_dimacs();
     ///
