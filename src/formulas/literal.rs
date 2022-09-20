@@ -33,12 +33,12 @@ impl Literal {
         (self.literal_number % 2) == 1
     }
 
-    pub fn to_dimacs_literal(&self) -> String {
-        let num_as_string = self.get_number().to_string();
+    pub fn to_dimacs_number(&self) -> i32 {
+        let lit_num = self.get_number();
         if self.is_negated() {
-            format!("-{}", (num_as_string))
+            -lit_num
         } else {
-            num_as_string
+            lit_num
         }
     }
 }

@@ -160,8 +160,8 @@ impl CNF {
         self.clauses.is_empty()
     }
 
-    pub fn get_unused_variable_number(&self) -> i32 {
-        self.max_variable_number + 1
+    pub fn get_greatest_variable_number(&self) -> i32 {
+        self.max_variable_number
     }
 
     /// Returns a String representing the CNF formula in dimacs format.
@@ -207,6 +207,13 @@ impl CNF {
         let dimacs_first_line = format!("p cnf {} {}", self.max_variable_number, self.len());
         let string_without_first_line = string_vec.join("\n");
         format!("{dimacs_first_line}\n{string_without_first_line}")
+    }
+
+    pub fn to_vector_of_vectors(&self) -> Vec<Vec<i32>> {
+        self.clauses
+            .iter()
+            .map(|one_clause| one_clause.to_vector_of_numbers())
+            .collect::<Vec<Vec<i32>>>()
     }
 }
 

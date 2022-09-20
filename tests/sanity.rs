@@ -4,6 +4,8 @@ mod tests {
     use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::Variable;
     use rust_formal_verification::formulas::CNF;
+    use rust_formal_verification::solvers::sat::SplrSolver;
+    use rust_formal_verification::solvers::sat::SatResponse;
 
     #[test]
     fn making_formulas_and_turning_them_into_strings() {
@@ -37,7 +39,7 @@ mod tests {
         assert_eq!(l5.to_string(), format!("{x}5"));
         assert_eq!(l6.to_string(), format!("!{x}6"));
 
-        let mut c0 = Clause::new(&[]);
+        let mut c0 = Clause::new(&vec![]);
         assert_eq!(c0.get_highest_variable_number(), 0);
         c0.add_literal(&l1);
         assert_eq!(c0.get_highest_variable_number(), 1);
@@ -46,7 +48,7 @@ mod tests {
         c0.add_literal(&l3);
         assert_eq!(c0.get_highest_variable_number(), 3);
 
-        let mut c00 = Clause::new(&[]);
+        let mut c00 = Clause::new(&vec![]);
         assert_eq!(c00.get_highest_variable_number(), 0);
         c00.add_literal(&l2);
         assert_eq!(c00.get_highest_variable_number(), 2);
@@ -55,17 +57,17 @@ mod tests {
         c00.add_literal(&l3);
         assert_eq!(c00.get_highest_variable_number(), 3);
 
-        let c000 = Clause::new(&[l2, l3, l1]);
+        let c000 = Clause::new(&vec![l2, l3, l1]);
         assert_eq!(c000.get_highest_variable_number(), 3);
 
-        let mut c1 = Clause::new(&[]);
+        let mut c1 = Clause::new(&vec![]);
         assert_eq!(c1.get_highest_variable_number(), 0);
         c1.add_literal(&l4);
         assert_eq!(c1.get_highest_variable_number(), 4);
         c1.add_literal(&l5);
         assert_eq!(c1.get_highest_variable_number(), 5);
 
-        let mut c2 = Clause::new(&[]);
+        let mut c2 = Clause::new(&vec![]);
         assert_eq!(c2.get_highest_variable_number(), 0);
         c2.add_literal(&l1);
         assert_eq!(c2.get_highest_variable_number(), 1);
@@ -83,31 +85,31 @@ mod tests {
         assert_eq!(c2.to_string(), format!("({x}1 | !{x}4 | {x}5 | !{x}6)"));
 
         let mut cnf0 = CNF::default();
-        assert_eq!(cnf0.get_unused_variable_number(), 1);
+        assert_eq!(cnf0.get_greatest_variable_number(), 0);
         cnf0.add_clause(&(c0.clone()));
-        assert_eq!(cnf0.get_unused_variable_number(), 4);
+        assert_eq!(cnf0.get_greatest_variable_number(), 3);
         cnf0.add_clause(&(c1.clone()));
-        assert_eq!(cnf0.get_unused_variable_number(), 6);
+        assert_eq!(cnf0.get_greatest_variable_number(), 5);
         cnf0.add_clause(&(c2.clone()));
-        assert_eq!(cnf0.get_unused_variable_number(), 7);
+        assert_eq!(cnf0.get_greatest_variable_number(), 6);
 
         let mut cnf1 = CNF::default();
-        assert_eq!(cnf1.get_unused_variable_number(), 1);
+        assert_eq!(cnf1.get_greatest_variable_number(), 0);
         cnf1.add_clause(&(c0.clone()));
-        assert_eq!(cnf1.get_unused_variable_number(), 4);
+        assert_eq!(cnf1.get_greatest_variable_number(), 3);
         cnf1.add_clause(&(c1.clone()));
-        assert_eq!(cnf1.get_unused_variable_number(), 6);
+        assert_eq!(cnf1.get_greatest_variable_number(), 5);
         cnf1.add_clause(&(c1.clone()));
-        assert_eq!(cnf1.get_unused_variable_number(), 6);
+        assert_eq!(cnf1.get_greatest_variable_number(), 5);
 
         let mut cnf2 = CNF::default();
-        assert_eq!(cnf2.get_unused_variable_number(), 1);
+        assert_eq!(cnf2.get_greatest_variable_number(), 0);
         cnf2.add_clause(&(c0.clone()));
-        assert_eq!(cnf2.get_unused_variable_number(), 4);
+        assert_eq!(cnf2.get_greatest_variable_number(), 3);
         cnf2.add_clause(&(c00.clone()));
-        assert_eq!(cnf2.get_unused_variable_number(), 4);
+        assert_eq!(cnf2.get_greatest_variable_number(), 3);
         cnf2.add_clause(&(c000.clone()));
-        assert_eq!(cnf2.get_unused_variable_number(), 4);
+        assert_eq!(cnf2.get_greatest_variable_number(), 3);
 
         assert_eq!(
             cnf0.to_string(),
@@ -121,5 +123,23 @@ mod tests {
     }
 
     #[test]
-    fn making_formulas_and_sat_solving_them() {}
+    fn making_formulas_and_sat_solving_them() {
+        let mut cnf = CNF::default();
+
+        let l1 = Literal::new(&Variable::new(1), false);
+        let l2 = Literal::new(&Variable::new(2), false);
+        let l3 = Literal::new(&Variable::new(3), false);
+
+        cnf.add_clause(&Clause::new(&vec![l1, l2, l3]));
+        cnf.add_clause(&Clause::new(&vec![!l1, l2, l3]));
+        cnf.add_clause(&Clause::new(&vec![l1, !l2, l3]));
+        cnf.add_clause(&Clause::new(&vec![l1, l2, !l3]));
+
+        let solver = SplrSolver::default();
+        let response = solver.solve_cnf(&cnf);
+        match response {
+            SatResponse::Sat{assignment} => println!("sat, assignment = {:?}", assignment),
+            SatResponse::UnSat => println!("sat"),
+        };
+    }
 }

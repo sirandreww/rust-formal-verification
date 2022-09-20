@@ -49,14 +49,21 @@ impl Clause {
         self.max_variable_number
     }
 
+    pub fn to_vector_of_numbers(&self) -> Vec<i32> {
+        self.literals
+            .iter()
+            .map(|one_literal| one_literal.to_dimacs_number())
+            .collect::<Vec<i32>>()
+    }
+
     pub fn to_dimacs_line(&self) -> String {
-        let string_vec = self
+        let mut string_vec = self
             .literals
             .iter()
-            .map(|one_literal| one_literal.to_dimacs_literal())
+            .map(|one_literal| one_literal.to_dimacs_number().to_string())
             .collect::<Vec<String>>();
-        let line_without_zero = string_vec.join(" ");
-        format!("{line_without_zero} 0")
+        string_vec.push("0".to_string());
+        string_vec.join(" ")
     }
 }
 
