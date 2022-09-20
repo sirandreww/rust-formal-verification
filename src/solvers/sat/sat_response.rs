@@ -12,7 +12,7 @@
 
 pub enum SatResponse {
     // An `enum` may either be `unit-like`,
-    Sat { assignment: Vec<i32>},
+    Sat { assignment: Vec<i32> },
     UnSat,
 }
 

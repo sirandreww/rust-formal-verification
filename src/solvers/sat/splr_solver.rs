@@ -2,7 +2,7 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::{CNF};
+use crate::formulas::CNF;
 use crate::solvers::sat::SatResponse;
 use splr;
 

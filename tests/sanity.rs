@@ -4,8 +4,8 @@ mod tests {
     use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::Variable;
     use rust_formal_verification::formulas::CNF;
-    use rust_formal_verification::solvers::sat::SplrSolver;
     use rust_formal_verification::solvers::sat::SatResponse;
+    use rust_formal_verification::solvers::sat::SplrSolver;
 
     #[test]
     fn making_formulas_and_turning_them_into_strings() {
@@ -138,7 +138,7 @@ mod tests {
         let solver = SplrSolver::default();
         let response = solver.solve_cnf(&cnf);
         match response {
-            SatResponse::Sat{assignment} => println!("sat, assignment = {:?}", assignment),
+            SatResponse::Sat { assignment } => println!("sat, assignment = {:?}", assignment),
             SatResponse::UnSat => println!("sat"),
         };
     }
