@@ -160,8 +160,8 @@ impl CNF {
         self.clauses.is_empty()
     }
 
-    pub fn get_highest_variable_number(&self) -> i32 {
-        self.max_variable_number
+    pub fn get_unused_variable_number(&self) -> i32 {
+        self.max_variable_number + 1
     }
 
     /// Returns a String representing the CNF formula in dimacs format.

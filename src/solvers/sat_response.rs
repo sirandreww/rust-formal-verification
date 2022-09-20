@@ -10,10 +10,10 @@
 // struct
 // ************************************************************************************************
 
-#[derive(Default)]
-pub struct SatResponse {
-    // is_sat: bool,
-    // assignment: Vec<bool>,
+pub enum SatResponse {
+    // An `enum` may either be `unit-like`,
+    Sat{},
+    UnSat{},
 }
 
 // ************************************************************************************************
