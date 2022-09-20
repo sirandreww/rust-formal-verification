@@ -24,18 +24,18 @@ pub struct Clause {
 impl Clause {
     pub fn new(literals: &[Literal]) -> Self {
         if literals.is_empty() {
-            return Self {
+            Self {
                 literals: vec![],
                 max_variable_number: 0,
-            };
+            }
         } else {
             let mut sorted_lits = literals.to_owned();
             sorted_lits.sort();
             let biggest_lit = sorted_lits[sorted_lits.len() - 1];
-            return Self {
+            Self {
                 literals: sorted_lits,
                 max_variable_number: biggest_lit.get_number(),
-            };
+            }
         }
     }
 
