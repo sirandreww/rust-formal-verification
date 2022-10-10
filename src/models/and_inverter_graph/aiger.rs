@@ -101,7 +101,7 @@ impl AndInverterGraph {
         let mut result: Vec<Vec<u8>> = Vec::new();
         let mut current_line: Vec<u8> = Vec::new();
         for byte in vec_of_bytes {
-            if byte == &('\n' as u8) {
+            if byte == &b'\n' {
                 result.push(current_line);
                 current_line = Vec::new();
             } else {
@@ -111,7 +111,7 @@ impl AndInverterGraph {
         result
     }
 
-    fn check_first_line_of_aig_and_load_it(&mut self, vector_of_lines_as_vectors: &Vec<Vec<u8>>) {
+    fn check_first_line_of_aig_and_load_it(&mut self, vector_of_lines_as_vectors: &[Vec<u8>]) {
         let first_line_as_str = std::str::from_utf8(&vector_of_lines_as_vectors[0]).unwrap();
         let params: Vec<&str> = first_line_as_str.split(' ').collect();
 
@@ -206,7 +206,7 @@ impl AndInverterGraph {
 
     pub fn from_aig_path(file_path: &str) -> AndInverterGraph {
         let file_as_vec_of_bytes =
-            fs::read(file_path).expect(format!("Unable to read the file {file_path}").as_str());
+            fs::read(file_path).unwrap_or_else(|_| panic!("Unable to read the file {file_path}"));
         Self::from_vector_of_bytes(&file_as_vec_of_bytes)
     }
 }
