@@ -9,7 +9,7 @@ mod tests {
 
     #[test]
     fn try_some_aig() {
-        read_aig("/home/andrew/Desktop/formal_verification/hwmcc20benchmarks/hwmcc20/aig/2020/mann/rast-p00.aig");
+        // read_aig("/home/andrew/Desktop/formal_verification/hwmcc20benchmarks/hwmcc20/aig/2020/mann/rast-p00.aig");
         for aig_file_result in WalkDir::new("tests/hwmcc20_aig") {
             let aig_file = aig_file_result.unwrap();
             if aig_file.path().is_file() {
