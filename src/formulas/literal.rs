@@ -52,7 +52,7 @@ impl Not for Literal {
 
     fn not(self) -> Self::Output {
         Self::Output {
-            literal_number: self.literal_number | 1,
+            literal_number: self.literal_number ^ 1,
         }
     }
 }

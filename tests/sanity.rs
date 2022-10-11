@@ -124,6 +124,22 @@ mod tests {
     }
 
     #[test]
+    fn double_negation() {
+        let x = "x";
+
+        let v1 = Variable::new(1);
+        assert_eq!(v1.to_string(), format!("{x}1"));
+        let l1 = Literal::new(&v1, false);
+        assert_eq!(l1.to_string(), format!("{x}1"));
+
+        let l1_not = !l1;
+        assert_eq!(l1_not.to_string(), format!("!{x}1"));
+
+        let l1_not_not = !l1_not;
+        assert_eq!(l1_not_not.to_string(), format!("{x}1"));
+    }
+
+    #[test]
     fn making_formulas_and_sat_solving_them() {
         let mut cnf = CNF::default();
 
