@@ -9,17 +9,16 @@ use std::fs;
 // ************************************************************************************************
 
 // This implementation is in accordance to https://github.com/arminbiere/aiger/blob/master/FORMAT
-#[derive(Default)]
 pub struct AndInverterGraph {
     maximum_variable_index: u32,
     number_of_inputs: u32,
     number_of_latches: u32,
     number_of_outputs: u32,
     number_of_and_gates: u32,
-    number_of_bad_outputs: u32,
-    number_of_constraint_outputs: u32,
-    number_of_justice_outputs: u32,
-    number_of_fairness_outputs: u32,
+    number_of_bad_state_constraints: u32,
+    number_of_invariant_constraints: u32,
+    number_of_justice_constraints: u32,
+    number_of_fairness_constraints: u32,
 }
 
 // ************************************************************************************************
@@ -27,12 +26,13 @@ pub struct AndInverterGraph {
 // ************************************************************************************************
 
 impl AndInverterGraph {
+
     // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
 
     fn split_vector_of_bytes_to_vector_of_vector_of_bytes_using_newlines(
-        vec_of_bytes: &Vec<u8>,
+        vec_of_bytes: &[u8],
     ) -> Vec<Vec<u8>> {
         let mut result: Vec<Vec<u8>> = Vec::new();
         let mut current_line: Vec<u8> = Vec::new();
@@ -69,31 +69,31 @@ impl AndInverterGraph {
         let number_of_and_gates = params[5].parse::<u32>().unwrap();
 
         // these fields do not always exist
-        let number_of_bad_outputs = if params.len() > 6 {
+        let number_of_bad_state_constraints = if params.len() > 6 {
             params[6].parse::<u32>().unwrap()
         } else {
             0
         };
-        let number_of_constraint_outputs = if params.len() > 7 {
+        let number_of_invariant_constraints = if params.len() > 7 {
             params[7].parse::<u32>().unwrap()
         } else {
             0
         };
-        let number_of_justice_outputs = if params.len() > 8 {
+        let number_of_justice_constraints = if params.len() > 8 {
             params[8].parse::<u32>().unwrap()
         } else {
             0
         };
-        let number_of_fairness_outputs = if params.len() > 9 {
+        let number_of_fairness_constraints = if params.len() > 9 {
             params[9].parse::<u32>().unwrap()
         } else {
             0
         };
         let number_of_outputs = number_of_outputs
-            + number_of_bad_outputs
-            + number_of_constraint_outputs
-            + number_of_justice_outputs
-            + number_of_fairness_outputs;
+            + number_of_bad_state_constraints
+            + number_of_invariant_constraints
+            + number_of_justice_constraints
+            + number_of_fairness_constraints;
 
         assert!(
             params.len() < 10,
@@ -105,16 +105,16 @@ impl AndInverterGraph {
             "The number of variables does not add up."
         );
         assert_eq!(
-            number_of_justice_outputs, 0,
+            number_of_justice_constraints, 0,
             "Reading AIGER files with liveness properties is currently not supported."
         );
         assert_eq!(
-            number_of_fairness_outputs, 0,
+            number_of_fairness_constraints, 0,
             "Reading AIGER files with liveness properties is currently not supported."
         );
 
-        if number_of_constraint_outputs > 0 {
-            eprintln!("Warning: The last {number_of_constraint_outputs} outputs are interpreted as constraints.");
+        if number_of_invariant_constraints > 0 {
+            eprintln!("Warning: The last {number_of_invariant_constraints} outputs are interpreted as invariant constraints.");
         }
 
         self.maximum_variable_index = maximum_variable_index;
@@ -122,30 +122,51 @@ impl AndInverterGraph {
         self.number_of_latches = number_of_latches;
         self.number_of_outputs = number_of_outputs;
         self.number_of_and_gates = number_of_and_gates;
-        self.number_of_bad_outputs = number_of_bad_outputs;
-        self.number_of_constraint_outputs = number_of_constraint_outputs;
-        self.number_of_justice_outputs = number_of_justice_outputs;
-        self.number_of_fairness_outputs = number_of_fairness_outputs;
+
+        self.number_of_bad_state_constraints = number_of_bad_state_constraints;
+        self.number_of_invariant_constraints = number_of_invariant_constraints;
+        self.number_of_justice_constraints = number_of_justice_constraints;
+        self.number_of_fairness_constraints = number_of_fairness_constraints;
     }
 
-    // fn load_aig_data(&mut self, vector_of_lines_as_vectors: &[Vec<u8>]) {}
-
-    // ************************************************************************************************
-    // api functions
-    // ************************************************************************************************
-
-    pub fn from_vector_of_bytes(vec_of_bytes: &Vec<u8>) -> AndInverterGraph {
-        let lines =
-            Self::split_vector_of_bytes_to_vector_of_vector_of_bytes_using_newlines(vec_of_bytes);
-        let mut aig = AndInverterGraph::default();
+    fn from_vector_of_bytes(vec_of_bytes: &Vec<u8>) -> AndInverterGraph {
+        let lines = Self::split_vector_of_bytes_to_vector_of_vector_of_bytes_using_newlines(
+            vec_of_bytes
+        );
+        let mut aig = AndInverterGraph::new();
         aig.check_first_line_of_aig_and_load_it(&lines);
         // aig.load_aig_data(&lines);
         aig
     }
 
+    /// Function is private to not allow accidental creation of some random AIG.
+    fn new() -> Self {
+        Self { 
+            /// the first 5 fields must be initialized later, set them to max to notice if there is a bug
+            maximum_variable_index: u32::MAX, 
+            number_of_inputs: u32::MAX, 
+            number_of_latches: u32::MAX,
+            number_of_outputs: u32::MAX, 
+            number_of_and_gates: u32::MAX,
+
+            /// the next 4 may exist or not, their default value is 0
+            number_of_bad_state_constraints: 0,
+            number_of_invariant_constraints: 0, 
+            number_of_justice_constraints: 0, 
+            number_of_fairness_constraints: 0 
+        }
+    }
+
+    // fn load_aig_data(&mut self, vector_of_lines_as_vectors: &[Vec<u8>]) {}
+
+    // ********************************************************************************************
+    // aig api functions
+    // ********************************************************************************************
+
     pub fn from_aig_path(file_path: &str) -> AndInverterGraph {
         let file_as_vec_of_bytes =
-            fs::read(file_path).unwrap_or_else(|_| panic!("Unable to read the file {file_path}"));
+            fs::read(file_path).unwrap_or_else(|_| panic!("Unable to read the '.aig' file {file_path}"));
         Self::from_vector_of_bytes(&file_as_vec_of_bytes)
     }
+
 }
