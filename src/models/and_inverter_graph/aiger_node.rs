@@ -1,13 +1,17 @@
 // ************************************************************************************************
-// rust submodule declaration, they get searched in their respective file  names
+// use
 // ************************************************************************************************
 
-pub mod aiger;
-// requires folder in this directory with the name 'aiger'
-mod aiger_node;
-
 // ************************************************************************************************
-// re-exports of structs in these modules to simplify paths for other imports
+// struct
 // ************************************************************************************************
 
-pub use aiger::AndInverterGraph;
+// This implementation is in accordance to https://github.com/arminbiere/aiger/blob/master/FORMAT
+#[derive(Default)]
+pub struct AigerNode {}
+
+// ************************************************************************************************
+// impl
+// ************************************************************************************************
+
+impl AigerNode {}

@@ -7,16 +7,26 @@ mod tests {
         let _aig = AndInverterGraph::from_aig_path(file_path);
     }
 
-    #[test]
-    fn try_some_aig() {
-        // read_aig("/home/andrew/Desktop/formal_verification/hwmcc20benchmarks/hwmcc20/aig/2020/mann/rast-p00.aig");
+    fn get_paths_to_all_aig_files() -> Vec<String> {
+        let mut result = Vec::default();
         for aig_file_result in WalkDir::new("tests/hwmcc20_aig") {
             let aig_file = aig_file_result.unwrap();
             if aig_file.path().is_file() {
                 let file_path = aig_file.path().display().to_string();
-                println!("file_path = {}", file_path);
-                read_aig(file_path.as_str());
+                result.push(file_path);
             }
+        }
+        result.sort();
+        result.reverse();
+        result
+    }
+
+    #[test]
+    fn try_some_aig() {
+        let aig_file_paths = get_paths_to_all_aig_files();
+        for aig_file_path in aig_file_paths {
+            println!("file_path = {}", aig_file_path);
+            read_aig(aig_file_path.as_str());
         }
     }
 }
