@@ -447,7 +447,7 @@ impl AndInverterGraph {
         for constraint_literal in &self.constraints {
             result.push(constraint_literal.to_string());
         }
-        for and_index in &self.latches{
+        for and_index in &self.ands{
             let node = &self.nodes[and_index.to_owned()];
             let lhs = node.get_literal();
             let rhs0 = node.get_and_rhs0();

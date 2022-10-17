@@ -6,8 +6,8 @@ mod tests {
     // ********************************************************************************************
 
     use rust_formal_verification::models::AndInverterGraph;
+    use std::{fs};
     use walkdir::WalkDir;
-    use std::process::Command;
 
     // ********************************************************************************************
     // helper functions
@@ -15,8 +15,19 @@ mod tests {
 
     fn read_aig(file_path: &str) {
         let aig = AndInverterGraph::from_aig_path(file_path);
-        let got_aag = aig.get_aag_string();
-        let true_aag = 
+        let aag_received = aig.get_aag_string();
+
+        let mut file_path_parsed = file_path.split("/").collect::<Vec<&str>>();
+        let file_name = file_path_parsed[file_path_parsed.len() -1].replace(".aig", ".aag");
+        let len = file_path_parsed.len();
+
+        file_path_parsed[1] = "hwmcc20_aag";
+        file_path_parsed[len -1] = file_name.as_str();
+
+        let aag_path = file_path_parsed.join("/");
+        let true_aag = fs::read_to_string(aag_path).unwrap();
+
+        assert!(true_aag.contains(&aag_received));
     }
 
     fn get_paths_to_all_aig_files() -> Vec<String> {
