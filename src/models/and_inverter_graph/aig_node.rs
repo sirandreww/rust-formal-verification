@@ -7,35 +7,34 @@
 // ************************************************************************************************
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub(crate) enum AIGNodeType {
+pub enum AIGNodeType {
     ConstantZero,
-    PrimaryInput, 
-    PrimaryOutput,
-    BoxInput,       
-    BoxOutput,         
-    Net,       
-    Node,       
-    Latch,    
+    Input,
+    Latch,
+    And,
 }
 
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
-pub(crate) struct AIGNode {
+pub struct AIGNode {
     node_type: AIGNodeType,
 
     // as literal [0..2*maxvar+1]
-    literal_number: u32,
+    lit: usize,
 
     // used only for latches
-    next: u32,
-    reset: u32,
+    next: usize,
+    reset: usize,
+
+    // used only for Ands
+    rhs0: usize, /* as literal [0..2*maxvar+1] */
+    rhs1: usize, /* as literal [0..2*maxvar+1] */
 
     // used only for justice
-    // size: u32,
-    // lits: Vec<u32>,
-
+    size: usize,
+    lits: Vec<usize>,
     // name: String,
 }
 
@@ -44,33 +43,42 @@ pub(crate) struct AIGNode {
 // ************************************************************************************************
 
 impl AIGNode {
-    pub(crate) fn new(node_type: AIGNodeType, literal_number: u32) -> Self {
-        if node_type == AIGNodeType::ConstantZero {
-            assert!(literal_number == 0);
-        }
+    pub fn new(lit: usize, node_type: AIGNodeType) -> Self {
         Self {
+            lit: lit,
+            next: usize::MAX,
+            reset: usize::MAX,
+            size: usize::MAX,
+            rhs0: usize::MAX,
+            rhs1: usize::MAX,
+            lits: Vec::new(),
+            // name: "".to_string(),
             node_type: node_type,
-            literal_number: literal_number,
-            next: u32::MAX,
-            reset: u32::MAX,
-            // size: u32::MAX,
-            // lits: Vec::new(),
-            // name: String::from(""),
         }
     }
 
-    pub(crate) fn set_next_for_latch(&mut self, next: u32) {
+    pub fn set_next_for_latch(&mut self, next: usize) {
         assert_eq!(self.node_type, AIGNodeType::Latch);
         self.next = next;
     }
 
-    pub(crate) fn set_reset_for_latch(&mut self, rest: u32) {
+    pub fn set_reset_for_latch(&mut self, reset: usize) {
         assert_eq!(self.node_type, AIGNodeType::Latch);
-        assert!(rest == 0 || rest == 1 || rest == self.literal_number);
-        self.reset = rest;
+        assert!(reset == 0 || reset == 1 || reset == self.lit);
+        self.reset = reset;
     }
 
-    pub(crate) fn get_type(&self) -> AIGNodeType {
+    pub fn set_rhs0_for_and(&mut self, rhs0: usize) {
+        assert_eq!(self.node_type, AIGNodeType::And);
+        self.rhs0 = rhs0;
+    }
+
+    pub fn set_rhs1_for_and(&mut self, rhs1: usize) {
+        assert_eq!(self.node_type, AIGNodeType::And);
+        self.rhs1 = rhs1;
+    }
+
+    pub fn get_type(&self) -> AIGNodeType {
         self.node_type
     }
 }

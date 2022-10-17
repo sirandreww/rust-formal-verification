@@ -2,8 +2,7 @@
 // use
 // ************************************************************************************************
 
-use crate::models::and_inverter_graph::aig_node::AIGNode;
-use crate::models::and_inverter_graph::aig_node::AIGNodeType;
+use crate::models::and_inverter_graph::aig_node::{AIGNode, AIGNodeType};
 use std::fs;
 
 // ************************************************************************************************
@@ -11,33 +10,26 @@ use std::fs;
 // ************************************************************************************************
 
 pub struct AndInverterGraph {
-    maximum_variable_index:             u32,
-    number_of_inputs:                   u32,
-    number_of_latches:                  u32,
-    number_of_outputs:                  u32,
-    number_of_and_gates:                u32,
-    number_of_bad_state_constraints:    u32,
-    number_of_invariant_constraints:    u32,
-    number_of_justice_constraints:      u32,
-    number_of_fairness_constraints:     u32,
+    maximum_variable_index: usize,
+    number_of_inputs: usize,
+    number_of_latches: usize,
+    number_of_outputs: usize,
+    number_of_and_gates: usize,
+    number_of_bad_state_constraints: usize,
+    number_of_invariant_constraints: usize,
+    number_of_justice_constraints: usize,
+    number_of_fairness_constraints: usize,
 
-    aig_nodes: Vec<AIGNode>,
+    nodes: Vec<AIGNode>, /* [0..maxvar] */
 
-    // indexes_of_input_nodes:             Vec<u32>,
-    // indexes_of_latch_nodes:             Vec<u32>,
-    // indexes_of_and_node:                Vec<u32>,
-    // indexes_of_output_literals:         Vec<u32>,
-    // indexes_of_bad_literals:            Vec<u32>,
-    // indexes_of_constraints_literals:    Vec<u32>,
-    // indexes_of_justice_literals:        Vec<u32>,
-    // indexes_of_fairness_literals:       Vec<u32>,
-    vPis: Vec<usize>,          // the array of primary inputs
-    vPos: Vec<usize>,          // the array of primary outputs
-    vCis: Vec<usize>,          // the array of combinational inputs  (PIs, latches)
-    vCos: Vec<usize>,          // the array of combinational outputs (POs, asserts, latches)
-    vPios: Vec<usize>,         // the array of PIOs
-    vBoxes: Vec<usize>,        // the array of boxes
-
+    inputs: Vec<usize>,      /* [0..num_inputs] */
+    latches: Vec<usize>,     /* [0..num_latches] */
+    outputs: Vec<usize>,     /* [0..num_outputs] */
+    ands: Vec<usize>,        /* [0..num_ands] */
+    bad: Vec<usize>,         /* [0..num_bad] */
+    constraints: Vec<usize>, /* [0..num_constraints] */
+    justice: Vec<usize>,     /* [0..num_justice] */
+    fairness: Vec<usize>,    /* [0..num_fairness] */
 }
 
 // ************************************************************************************************
@@ -60,34 +52,41 @@ impl AndInverterGraph {
                 current_line.push(byte.to_owned());
             }
         }
+        if current_line.len() > 0 {
+            result.push(current_line);
+        }
         result
     }
 
     /// Function is private to not allow accidental creation of some random AIG.
     fn new() -> Self {
         Self {
-            /// the first 5 fields must be initialized later, set them to max to notice if there is a bug
-            maximum_variable_index: u32::MAX,
-            number_of_inputs: u32::MAX,
-            number_of_latches: u32::MAX,
-            number_of_outputs: u32::MAX,
-            number_of_and_gates: u32::MAX,
-
-            /// the next 4 may exist or not, their default value is 0
-            number_of_bad_state_constraints: 0,
-            number_of_invariant_constraints: 0,
-            number_of_justice_constraints: 0,
-            number_of_fairness_constraints: 0,
+            /// these fields must be changed later, set them to max to notice if there is a bug
+            maximum_variable_index: usize::MAX,
+            number_of_inputs: usize::MAX,
+            number_of_latches: usize::MAX,
+            number_of_outputs: usize::MAX,
+            number_of_and_gates: usize::MAX,
+            number_of_bad_state_constraints: usize::MAX,
+            number_of_invariant_constraints: usize::MAX,
+            number_of_justice_constraints: usize::MAX,
+            number_of_fairness_constraints: usize::MAX,
 
             /// the following vectors have default lengths.
-            aig_nodes: Vec::new(),
-            vPis: Vec::new(),
-            vPos: Vec::new(),
-            vCis: Vec::new(),
-            vCos: Vec::new(),
-            vPios: Vec::new(),
-            vBoxes: Vec::new(),
+            nodes: Vec::new(),
+            inputs: Vec::new(),
+            latches: Vec::new(),
+            outputs: Vec::new(),
+            ands: Vec::new(),
+            bad: Vec::new(),
+            constraints: Vec::new(),
+            justice: Vec::new(),
+            fairness: Vec::new(),
         }
+    }
+
+    fn convert_string_to_number(str1: &str) -> usize {
+        str1.parse::<usize>().unwrap()
     }
 
     fn check_first_line_of_aig_and_load_it(&mut self, lines: &[Vec<u8>]) {
@@ -105,212 +104,157 @@ impl AndInverterGraph {
         );
 
         // first 5 fields always exist
-        let maximum_variable_index = params[1].parse::<u32>().unwrap();
-        let number_of_inputs = params[2].parse::<u32>().unwrap();
-        let number_of_latches = params[3].parse::<u32>().unwrap();
-        let number_of_outputs = params[4].parse::<u32>().unwrap();
-        let number_of_and_gates = params[5].parse::<u32>().unwrap();
+        self.maximum_variable_index = Self::convert_string_to_number(params[1]);
+        self.number_of_inputs = Self::convert_string_to_number(params[2]);
+        self.number_of_latches = Self::convert_string_to_number(params[3]);
+        self.number_of_outputs = Self::convert_string_to_number(params[4]);
+        self.number_of_and_gates = Self::convert_string_to_number(params[5]);
 
         // these fields do not always exist
-        let number_of_bad_state_constraints = if params.len() > 6 {
-            params[6].parse::<u32>().unwrap()
+        self.number_of_bad_state_constraints = if params.len() > 6 {
+            Self::convert_string_to_number(params[6])
         } else {
             0
         };
-        let number_of_invariant_constraints = if params.len() > 7 {
-            params[7].parse::<u32>().unwrap()
+        self.number_of_invariant_constraints = if params.len() > 7 {
+            Self::convert_string_to_number(params[7])
         } else {
             0
         };
-        let number_of_justice_constraints = if params.len() > 8 {
-            params[8].parse::<u32>().unwrap()
+        self.number_of_justice_constraints = if params.len() > 8 {
+            Self::convert_string_to_number(params[8])
         } else {
             0
         };
-        let number_of_fairness_constraints = if params.len() > 9 {
-            params[9].parse::<u32>().unwrap()
+        self.number_of_fairness_constraints = if params.len() > 9 {
+            Self::convert_string_to_number(params[9])
         } else {
             0
         };
-        let number_of_outputs = number_of_outputs
-            + number_of_bad_state_constraints
-            + number_of_invariant_constraints
-            + number_of_justice_constraints
-            + number_of_fairness_constraints;
 
         assert!(
             params.len() < 10,
             "The parameter line (first line in aig file) has too many arguments."
         );
         assert_eq!(
-            maximum_variable_index,
-            number_of_inputs + number_of_latches + number_of_and_gates,
+            self.maximum_variable_index,
+            self.number_of_inputs + self.number_of_latches + self.number_of_and_gates,
             "The number of variables does not add up."
         );
-        assert_eq!(
-            number_of_justice_constraints, 0,
-            "Reading AIGER files with liveness properties is currently not supported."
-        );
-        assert_eq!(
-            number_of_fairness_constraints, 0,
-            "Reading AIGER files with liveness properties is currently not supported."
-        );
+    }
 
-        if number_of_invariant_constraints > 0 {
-            eprintln!("Warning: The last {number_of_invariant_constraints} outputs are interpreted as invariant constraints.");
-        }
+    fn allocate_vectors(&mut self) {
+        self.nodes = Vec::with_capacity(self.maximum_variable_index + 1);
+        self.nodes.push(AIGNode::new(0, AIGNodeType::ConstantZero));
 
-        self.maximum_variable_index = maximum_variable_index;
-        self.number_of_inputs = number_of_inputs;
-        self.number_of_latches = number_of_latches;
-        self.number_of_outputs = number_of_outputs;
-        self.number_of_and_gates = number_of_and_gates;
-
-        self.number_of_bad_state_constraints = number_of_bad_state_constraints;
-        self.number_of_invariant_constraints = number_of_invariant_constraints;
-        self.number_of_justice_constraints = number_of_justice_constraints;
-        self.number_of_fairness_constraints = number_of_fairness_constraints;
+        self.inputs = Vec::with_capacity(self.number_of_inputs);
+        self.latches = Vec::with_capacity(self.number_of_latches);
+        self.outputs = Vec::with_capacity(self.number_of_outputs);
+        self.ands = Vec::with_capacity(self.number_of_and_gates);
+        self.bad = Vec::with_capacity(self.number_of_bad_state_constraints);
+        self.constraints = Vec::with_capacity(self.number_of_invariant_constraints);
+        self.justice = Vec::with_capacity(self.number_of_justice_constraints);
+        self.fairness = Vec::with_capacity(self.number_of_fairness_constraints);
     }
 
     /// notice that this function does not need to read from the file since in AIG
-    /// the input literals are known (2, 4, .., number_of_inputs)
+    /// the input literals are known (2, 4, .., 2 * number_of_inputs)
     fn create_input_nodes_of_aig(&mut self) {
-        assert!(self.aig_nodes.len() == 0);
-        self.aig_nodes.push(AIGNode::new(AIGNodeType::ConstantZero, 0));
+        // assert!(self.aig_nodes.len() == 0);
         for i in 0..(self.number_of_inputs) {
             let lit = 2 * (i + 1);
-            let input_node = AIGNode::new(AIGNodeType::PrimaryInput, lit);
-            
-            // self.indexes_of_input_nodes.push(self.aig_nodes.len() as u32);
-            let index = self.aig_nodes.len();
-            self.aig_nodes.push(input_node);
-            
-            self.vPis.push(index);
-            self.vCis.push(index);
+            self.inputs.push(self.nodes.len());
+            self.nodes.push(AIGNode::new(lit, AIGNodeType::Input));
         }
-        assert!(self.aig_nodes.len() as u32 == (self.number_of_inputs + 1));
     }
 
-    fn check_literal_number(&self, literal_number: u32){
+    // fn create_output_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
+    //     assert!(self.aig_nodes.len() == ((self.inputs + 1) as usize));
+    //     for i in 0..self.outputs {
+    //         // let line_number_of_output = i + 1 + self.number_of_latches;
+    //         // let line_as_vector_of_chars = &lines[line_number_of_output as usize];
+    //         // let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
+    //         // let output = // line_as_string.parse::<u32>().unwrap();
+    //         let output_node = AigerSymbol::new(AIGNodeType::PrimaryOutput, u32::MAX);
+    //         self.aig_nodes.push(output_node);
+    //         self.vPos.push(self.aig_nodes.len() - 1);
+    //         self.vCos.push(self.aig_nodes.len() - 1);
+    //         // self.output_literals.push(output);
+    //     }
+    //     assert!(self.aig_nodes.len() == ((self.inputs + self.outputs + 1) as usize));
+    // }
+
+    fn check_node_input(&self, literal_number: usize, line_num: usize) {
         let var_number = literal_number >> 1;
-        // assert!(2 <= literal_number, "'.aig' file contains literal {literal_number} which is reserved for constants.");
-        assert!(var_number <= self.maximum_variable_index, "'.aig' file contains literal {literal_number} which is higher than maximum variable index.");
-    }
-
-    fn create_output_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
-        for i in 0..self.number_of_outputs {
-            let line_number_of_output = i + 1 + self.number_of_latches;
-            let line_as_vector_of_chars = &lines[line_number_of_output as usize];
-            let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
-            let output = line_as_string.parse::<u32>().unwrap();
-            self.check_literal_number(output);
-            
-            // self.output_literals.push(output);
-        }
+        // assert!(2 <= literal_number, "Line {line_num}: '.aig' file contains literal {literal_number} which is reserved for constants.");
+        assert!(var_number <= self.maximum_variable_index, "Line {line_num}: '.aig' file contains literal {literal_number} which is higher than maximum variable index.");
     }
 
     fn create_latch_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
-        assert!(self.aig_nodes.len() as u32 == (self.number_of_inputs + 1));
         for i in 0..self.number_of_latches {
             // latch literal is known because this is the binary AIGER format.
             let lit = 2 * (i + self.number_of_inputs + 1);
+            self.latches.push(self.nodes.len());
+            self.nodes.push(AIGNode::new(lit, AIGNodeType::Latch));
 
-            let line_number_of_latch = i + 1;
-            let line_as_vector_of_chars = &lines[line_number_of_latch as usize];
+            let line_number_of_latch: usize = i + 1;
+            let line_as_vector_of_chars = &lines[line_number_of_latch];
             let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
 
-            let mut latch_node = AIGNode::new(AIGNodeType::Latch, lit);
+            let parsed_line: Vec<&str> = line_as_string.split(' ').collect();
+            assert!(
+                parsed_line.len() == 1 || parsed_line.len() == 2,
+                "Line {line_number_of_latch}: Wrong number of arguments."
+            );
 
-            if line_as_string.contains(' ') {
+            let next_lit = Self::convert_string_to_number(parsed_line[0]);
+            self.check_node_input(next_lit, line_number_of_latch);
+            self.nodes.last_mut().unwrap().set_next_for_latch(next_lit);
+
+            if parsed_line.len() == 2 {
                 // latch has a reset literal
-                let parsed_line: Vec<&str> = line_as_string.split(' ').collect();
-                assert!(parsed_line.len() == 2, "The latch line '{line_as_string}' does not fit the expected format.");
-
-                let next_lit = parsed_line[0].parse::<u32>().unwrap();
-                self.check_literal_number(next_lit);
-                let reset = parsed_line[1].parse::<u32>().unwrap();
+                let reset = Self::convert_string_to_number(parsed_line[1]);
                 assert!(reset == 0 || reset == 1 || reset == lit);
-
-                latch_node.set_next_for_latch(next_lit);
-                latch_node.set_reset_for_latch(reset);
-                
-            } else {
-                // latch doesn't have a reset literal
-                let next_lit = line_as_string.parse::<u32>().unwrap();
-                self.check_literal_number(next_lit);
-                
-                latch_node.set_next_for_latch(next_lit);
+                self.nodes.last_mut().unwrap().set_reset_for_latch(reset);
             }
-
-            // self.indexes_of_latch_nodes.push(self.aig_nodes.len() as u32);
-            // self.aig_nodes.push(latch_node);
-            let index = self.aig_nodes.len();
-            self.aig_nodes.push(latch_node);
-            
-            self.vPis.push(index);
-            self.vCis.push(index);
         }
-        assert!(self.aig_nodes.len() as u32 == (self.number_of_inputs + self.number_of_latches) + 1);
+        // assert!(self.aig_nodes.len() as u32 == (self.inputs + self.latches) + 1);
     }
-
-    
-
-    fn create_bad_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
-        for i in 0..self.number_of_bad_state_constraints {
-            let line_number_of_output = i + 1 + self.number_of_latches + self.number_of_outputs;
-            let line_as_vector_of_chars = &lines[line_number_of_output as usize];
-            let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
-            let bad_literal = line_as_string.parse::<u32>().unwrap();
-            self.check_literal_number(bad_literal);
-            // self.bad_literals.push(bad_literal);
-        }
-    }
-
-
 
     fn check_aig(&self) {
+        assert_eq!(self.nodes[0].get_type(), AIGNodeType::ConstantZero);
+        // inputs
+        assert_eq!(self.number_of_inputs, self.inputs.len());
+        for input_index in &self.inputs{
+            let i = input_index.to_owned();
+            assert_eq!(self.nodes[i].get_type(), AIGNodeType::Input);
+        }
+        // latches
+        assert_eq!(self.number_of_latches, self.latches.len());
+        for latch_index in &self.latches{
+            let i = latch_index.to_owned();
+            assert_eq!(self.nodes[i].get_type(), AIGNodeType::Latch);
+        }
+    }
 
-        assert_eq!(self.number_of_inputs + self.number_of_latches + self.number_of_and_gates, self.maximum_variable_index);
-        assert!((self.aig_nodes.len() as u32) == (self.maximum_variable_index + 1));
-
-        // assert_eq!(self.input_nodes.len() as u32, self.number_of_inputs);
-        // for node in self.input_nodes.iter() {
-        //     assert!(node.get_type() == AIGNodeType::Input);
+    fn create_bad_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
+        // for i in 0..self.number_of_bad_state_constraints {
+        //     let line_number_of_output = i + 1 + self.number_of_latches + self.number_of_outputs;
+        //     // let line_as_vector_of_chars = &lines[line_number_of_output as usize];
+        //     // let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
+        //     let bad_literal = Self::convert // line_as_string.parse::<u32>().unwrap();
+        //     self.check_literal_number(bad_literal);
+        //     // self.bad_literals.push(bad_literal);
         // }
-
-        // assert_eq!(self.latch_nodes.len() as u32, self.number_of_latches);
-        // for node in self.latch_nodes.iter() {
-        //     assert!(node.get_type() == AIGNodeType::Latch);
-        // }
-        
-        // // assert_eq!(self.and_node.len() as u32, self.number_of_and_gates);
-
-
-        // assert_eq!(self.output_literals.len() as u32, self.number_of_outputs);
-        // assert_eq!(
-        //     self.bad_literals.len() as u32,
-        //     self.number_of_bad_state_constraints
-        // );
-        // assert_eq!(
-        //     self.constraints_nodes.len() as u32,
-        //     self.number_of_invariant_constraints
-        // );
-        // assert_eq!(
-        //     self.justice_nodes.len() as u32,
-        //     self.number_of_justice_constraints
-        // );
-        // assert_eq!(
-        //     self.fairness_nodes.len() as u32,
-        //     self.number_of_fairness_constraints
-        // ); 
     }
 
     fn from_vector_of_bytes(vec_of_bytes: &Vec<u8>) -> AndInverterGraph {
         let lines = Self::split_vector_by_newline(vec_of_bytes);
         let mut aig = AndInverterGraph::new();
         aig.check_first_line_of_aig_and_load_it(&lines);
+        aig.allocate_vectors();
         aig.create_input_nodes_of_aig();
-        aig.create_output_nodes_of_aig(&lines);
+        // aig.create_output_nodes_of_aig(&lines);
         aig.create_latch_nodes_of_aig(&lines);
         aig.create_bad_nodes_of_aig(&lines);
         aig.check_aig();
