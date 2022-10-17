@@ -331,14 +331,13 @@ impl AndInverterGraph {
             let (delta, new_read_index) = self.read_delta(bytes, read_index);
             read_index = new_read_index;
             assert!(delta <= rhs0, "Invalid delta.");
-            let rhs1 :usize= rhs0 - delta;
+            let rhs1: usize = rhs0 - delta;
 
             let mut node = AIGNode::new(lhs, AIGNodeType::And);
             node.set_rhs0_of_and(rhs0);
             node.set_rhs1_of_and(rhs1);
             self.ands.push(self.nodes.len());
             self.nodes.push(node);
-
 
             // let inv_const_literal = Self::convert_string_to_number(line_as_string);
             // self.check_literal(inv_const_literal, line_number_from_1);
@@ -411,7 +410,7 @@ impl AndInverterGraph {
 
     pub fn get_aag_string(&self) -> String {
         let mut result: Vec<String> = Vec::new();
-        let mut first_line = vec![String::from("aag"), ];
+        let mut first_line = vec![String::from("aag")];
         first_line.push(self.maximum_variable_index.to_string());
         first_line.push(self.number_of_inputs.to_string());
         first_line.push(self.number_of_latches.to_string());
@@ -447,7 +446,7 @@ impl AndInverterGraph {
         for constraint_literal in &self.constraints {
             result.push(constraint_literal.to_string());
         }
-        for and_index in &self.ands{
+        for and_index in &self.ands {
             let node = &self.nodes[and_index.to_owned()];
             let lhs = node.get_literal();
             let rhs0 = node.get_and_rhs0();

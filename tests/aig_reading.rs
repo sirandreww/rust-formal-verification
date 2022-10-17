@@ -6,7 +6,7 @@ mod tests {
     // ********************************************************************************************
 
     use rust_formal_verification::models::AndInverterGraph;
-    use std::{fs};
+    use std::fs;
     use walkdir::WalkDir;
 
     // ********************************************************************************************
@@ -18,11 +18,11 @@ mod tests {
         let aag_received = aig.get_aag_string();
 
         let mut file_path_parsed = file_path.split("/").collect::<Vec<&str>>();
-        let file_name = file_path_parsed[file_path_parsed.len() -1].replace(".aig", ".aag");
+        let file_name = file_path_parsed[file_path_parsed.len() - 1].replace(".aig", ".aag");
         let len = file_path_parsed.len();
 
         file_path_parsed[1] = "hwmcc20_aag";
-        file_path_parsed[len -1] = file_name.as_str();
+        file_path_parsed[len - 1] = file_name.as_str();
 
         let aag_path = file_path_parsed.join("/");
         let true_aag = fs::read_to_string(aag_path).unwrap();
