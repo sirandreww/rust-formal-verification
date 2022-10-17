@@ -36,10 +36,9 @@ mod tests {
 
     #[test]
     fn read_all_aig_files_from_hwmcc20() {
-        // read_aig("/home/andrew/Desktop/formal_verification/hwmcc20benchmarks/hwmcc20/aig/2020/mann/rast-p00.aig");
         let aig_file_paths = get_paths_to_all_aig_files();
         for aig_file_path in aig_file_paths {
-            println!("file_path = {}", aig_file_path);
+            // println!("file_path = {}", aig_file_path);
             read_aig(aig_file_path.as_str());
         }
     }

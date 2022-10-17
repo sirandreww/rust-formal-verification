@@ -22,15 +22,17 @@ pub struct AndInverterGraph {
 
     nodes: Vec<AIGNode>, /* [0..maxvar] */
 
+    // these contain indexes that are in nodes that have these nodes.
     inputs: Vec<usize>,      /* [0..num_inputs] */
     latches: Vec<usize>,     /* [0..num_latches] */
     ands: Vec<usize>,        /* [0..num_ands] */
 
+    // these contain literals.
     outputs: Vec<usize>,     /* [0..num_outputs] */
     bad: Vec<usize>,         /* [0..num_bad] */
     constraints: Vec<usize>, /* [0..num_constraints] */
-    justice: Vec<usize>,     /* [0..num_justice] */
-    fairness: Vec<usize>,    /* [0..num_fairness] */
+    // justice: Vec<usize>,     /* [0..num_justice] */
+    // fairness: Vec<usize>,    /* [0..num_fairness] */
 }
 
 // ************************************************************************************************
@@ -81,8 +83,8 @@ impl AndInverterGraph {
             ands: Vec::new(),
             bad: Vec::new(),
             constraints: Vec::new(),
-            justice: Vec::new(),
-            fairness: Vec::new(),
+            // justice: Vec::new(),
+            // fairness: Vec::new(),
         }
     }
 
@@ -144,6 +146,7 @@ impl AndInverterGraph {
         );
         assert_eq!(self.number_of_fairness_constraints, 0, "Fairness is currently unsupported.");
         assert_eq!(self.number_of_justice_constraints, 0, "Justice is currently unsupported.");
+        // assert_eq!(self.number_of_outputs, 0, "Output is currently unsupported.");
     }
 
     fn allocate_vectors(&mut self) {
@@ -156,8 +159,8 @@ impl AndInverterGraph {
         self.ands = Vec::with_capacity(self.number_of_and_gates);
         self.bad = Vec::with_capacity(self.number_of_bad_state_constraints);
         self.constraints = Vec::with_capacity(self.number_of_invariant_constraints);
-        self.justice = Vec::with_capacity(self.number_of_justice_constraints);
-        self.fairness = Vec::with_capacity(self.number_of_fairness_constraints);
+        // self.justice = Vec::with_capacity(self.number_of_justice_constraints);
+        // self.fairness = Vec::with_capacity(self.number_of_fairness_constraints);
     }
 
     /// notice that this function does not need to read from the file since in AIG
@@ -184,18 +187,19 @@ impl AndInverterGraph {
             self.latches.push(self.nodes.len());
             self.nodes.push(AIGNode::new(lit, AIGNodeType::Latch));
 
-            let line_number_of_latch: usize = i + 1;
-            let line_as_vector_of_chars = &lines[line_number_of_latch];
+            let line_number_from_0: usize = i + 1;
+            let line_number_from_1: usize = line_number_from_0 + 1;
+            let line_as_vector_of_chars = &lines[line_number_from_0];
             let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
 
             let parsed_line: Vec<&str> = line_as_string.split(' ').collect();
             assert!(
                 parsed_line.len() == 1 || parsed_line.len() == 2,
-                "Line {line_number_of_latch}: Wrong number of arguments."
+                "Line {line_number_from_1}: Wrong number of arguments."
             );
 
             let next_lit = Self::convert_string_to_number(parsed_line[0]);
-            self.check_literal(next_lit, line_number_of_latch);
+            self.check_literal(next_lit, line_number_from_1);
             self.nodes.last_mut().unwrap().set_input_of_latch(next_lit);
 
             if parsed_line.len() == 2 {
@@ -203,20 +207,59 @@ impl AndInverterGraph {
                 let reset = Self::convert_string_to_number(parsed_line[1]);
                 assert!(reset == 0 || reset == 1 || reset == lit);
                 self.nodes.last_mut().unwrap().set_reset_of_latch(reset);
+            } else {
+                // latch does not have a reset literal (defaults to 0)
+                // https://epub.jku.at/obvulioa/content/titleinfo/5973560/full.pdf
+                self.nodes.last_mut().unwrap().set_reset_of_latch(0);
             }
         }
     }
 
     fn create_output_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
         for i in 0..self.number_of_outputs {
-            let line_number_of_output: usize = i + 1 + self.number_of_latches;
-            let line_as_vector_of_chars = &lines[line_number_of_output];
+
+            let line_number_from_0: usize = i + 1 + self.number_of_latches;
+            let line_number_from_1: usize = line_number_from_0 + 1;
+            
+            let line_as_vector_of_chars = &lines[line_number_from_0];
             let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
 
             let output_literal = Self::convert_string_to_number(line_as_string);
-            self.check_literal(output_literal, line_number_of_output);
-            assert!(self.outputs.contains(&output_literal) == false, "Line {line_number_of_output}: Output is repeated twice.");
+            self.check_literal(output_literal, line_number_from_1);
+            assert!(self.outputs.contains(&output_literal) == false, "Line {line_number_from_1}: Output is repeated twice.");
             self.outputs.push(output_literal);
+        }
+    }
+
+    fn create_bad_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
+        // println!("Bad:");
+        for i in 0..self.number_of_bad_state_constraints {
+            let line_number_from_0: usize = i + 1 + self.number_of_latches + self.number_of_outputs;
+            let line_number_from_1: usize = line_number_from_0 + 1;
+
+            let line_as_vector_of_chars = &lines[line_number_from_0];
+            let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
+
+            let bad_literal = Self::convert_string_to_number(line_as_string);
+            // println!("{bad_literal}");
+            self.check_literal(bad_literal, line_number_from_1);
+            assert!(self.bad.contains(&bad_literal) == false, "Line {line_number_from_1}: Bad is repeated twice.");
+            self.bad.push(bad_literal);
+        }
+    }
+
+    fn create_invariant_constraint_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
+        for i in 0..self.number_of_invariant_constraints {            
+            let line_number_from_0: usize = i + 1 + self.number_of_latches + self.number_of_outputs + self.number_of_bad_state_constraints;
+            let line_number_from_1: usize = line_number_from_0 + 1;
+            
+            let line_as_vector_of_chars = &lines[line_number_from_0];
+            let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
+
+            let inv_const_literal = Self::convert_string_to_number(line_as_string);
+            self.check_literal(inv_const_literal, line_number_from_1);
+            // assert!(self.constraints.contains(&inv_const_literal) == false, "Line {line_number_from_1}: Constraint is repeated twice.");
+            self.constraints.push(inv_const_literal);
         }
     }
 
@@ -235,17 +278,8 @@ impl AndInverterGraph {
             assert_eq!(self.nodes[i].get_type(), AIGNodeType::Latch);
         }
         assert_eq!(self.number_of_outputs, self.outputs.len());
-    }
-
-    fn create_bad_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
-        // for i in 0..self.number_of_bad_state_constraints {
-        //     let line_number_of_output = i + 1 + self.number_of_latches + self.number_of_outputs;
-        //     // let line_as_vector_of_chars = &lines[line_number_of_output as usize];
-        //     // let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
-        //     let bad_literal = Self::convert // line_as_string.parse::<u32>().unwrap();
-        //     self.check_literal_number(bad_literal);
-        //     // self.bad_literals.push(bad_literal);
-        // }
+        assert_eq!(self.number_of_bad_state_constraints, self.bad.len());
+        assert_eq!(self.number_of_invariant_constraints, self.constraints.len());
     }
 
     fn from_vector_of_bytes(vec_of_bytes: &Vec<u8>) -> AndInverterGraph {
@@ -256,12 +290,11 @@ impl AndInverterGraph {
         aig.create_input_nodes_of_aig();
         aig.create_latch_nodes_of_aig(&lines);
         aig.create_output_nodes_of_aig(&lines);
-        // aig.create_bad_nodes_of_aig(&lines);
+        aig.create_bad_nodes_of_aig(&lines);
+        aig.create_invariant_constraint_nodes_of_aig(&lines);
         aig.check_aig();
         aig
     }
-
-    // fn load_aig_data(&mut self, vector_of_lines_as_vectors: &[Vec<u8>]) {}
 
     // ********************************************************************************************
     // aig api functions
