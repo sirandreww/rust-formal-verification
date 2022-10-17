@@ -45,13 +45,13 @@ impl AIGNode {
     pub fn new(lit: usize, node_type: AIGNodeType) -> Self {
         assert!(lit % 2 == 0, "Literal node should be even.");
         Self {
-            lit: lit,
+            lit,
             latch_input: usize::MAX,
             latch_reset: usize::MAX,
 
             and_input0: usize::MAX,
             and_input1: usize::MAX,
-            node_type: node_type,
+            node_type,
         }
     }
 

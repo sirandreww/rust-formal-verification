@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::models::and_inverter_graph::aig_node::{AIGNode, AIGNodeType};
-use std::{fs, result};
+use std::{fs};
 
 // ************************************************************************************************
 // struct
@@ -55,7 +55,7 @@ impl AndInverterGraph {
                 current_line.push(byte.to_owned());
             }
         }
-        if current_line.len() > 0 {
+        if !current_line.is_empty() {
             result.push(current_line);
         }
         result
@@ -232,7 +232,7 @@ impl AndInverterGraph {
             let output_literal = Self::convert_string_to_number(line_as_string);
             self.check_literal(output_literal, line_number_from_1);
             assert!(
-                self.outputs.contains(&output_literal) == false,
+                !self.outputs.contains(&output_literal),
                 "Line {line_number_from_1}: Output is repeated twice."
             );
             self.outputs.push(output_literal);
@@ -252,7 +252,7 @@ impl AndInverterGraph {
             // println!("{bad_literal}");
             self.check_literal(bad_literal, line_number_from_1);
             assert!(
-                self.bad.contains(&bad_literal) == false,
+                !self.bad.contains(&bad_literal),
                 "Line {line_number_from_1}: Bad is repeated twice."
             );
             self.bad.push(bad_literal);
@@ -279,7 +279,7 @@ impl AndInverterGraph {
     }
 
     fn get_max_literal_of_input_or_latch(&self) -> usize {
-        return 2 * (self.number_of_inputs + self.number_of_latches);
+        2 * (self.number_of_inputs + self.number_of_latches)
     }
 
     fn read_delta(&self, bytes: &[u8], mut read_index: usize) -> (usize, usize) {
@@ -289,7 +289,7 @@ impl AndInverterGraph {
         let mut delta: usize = 0;
         let mut ch: usize = bytes[read_index].into();
 
-        while ((ch & 0x80) != 0) {
+        while (ch & 0x80) != 0 {
             assert_ne!(i, 5, "Invalid code");
 
             delta |= (ch & 0x7f) << (7 * i);
@@ -321,7 +321,7 @@ impl AndInverterGraph {
             read_index += 1;
         }
 
-        for i in 0..self.number_of_and_gates {
+        for _i in 0..self.number_of_and_gates {
             lhs += 2;
             let (delta, new_read_index) = self.read_delta(bytes, read_index);
             read_index = new_read_index;
@@ -370,7 +370,7 @@ impl AndInverterGraph {
         assert_eq!(self.number_of_invariant_constraints, self.constraints.len());
     }
 
-    fn from_vector_of_bytes(vec_of_bytes: &Vec<u8>) -> AndInverterGraph {
+    fn from_vector_of_bytes(vec_of_bytes: &[u8]) -> AndInverterGraph {
         let lines = Self::split_vector_by_newline(vec_of_bytes);
         let mut aig = AndInverterGraph::new();
         aig.check_first_line_of_aig_and_load_it(&lines);
@@ -380,7 +380,7 @@ impl AndInverterGraph {
         aig.create_output_nodes_of_aig(&lines);
         aig.create_bad_nodes_of_aig(&lines);
         aig.create_invariant_constraint_nodes_of_aig(&lines);
-        aig.create_and_nodes_of_aig(&vec_of_bytes);
+        aig.create_and_nodes_of_aig(vec_of_bytes);
         aig.check_aig();
         aig
     }
@@ -454,6 +454,6 @@ impl AndInverterGraph {
             result.push(format!("{lhs} {rhs0} {rhs1}"));
         }
 
-        return result.join("\n");
+        result.join("\n")
     }
 }
