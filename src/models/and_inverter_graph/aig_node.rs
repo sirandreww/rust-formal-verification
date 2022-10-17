@@ -25,16 +25,16 @@ pub struct AIGNode {
     lit: usize,
 
     // used only for latches
-    next: usize,
-    reset: usize,
+    latch_input: usize,
+    latch_reset: usize,
 
     // used only for Ands
-    rhs0: usize, /* as literal [0..2*maxvar+1] */
-    rhs1: usize, /* as literal [0..2*maxvar+1] */
+    and_input0: usize, /* as literal [0..2*maxvar+1] */
+    and_input1: usize, /* as literal [0..2*maxvar+1] */
 
     // used only for justice
-    size: usize,
-    lits: Vec<usize>,
+    // justice_size: usize,
+    // justice_lits: Vec<usize>,
     // name: String,
 }
 
@@ -44,38 +44,37 @@ pub struct AIGNode {
 
 impl AIGNode {
     pub fn new(lit: usize, node_type: AIGNodeType) -> Self {
+        assert!(lit % 2 == 0, "Literal node should be even.");
         Self {
             lit: lit,
-            next: usize::MAX,
-            reset: usize::MAX,
-            size: usize::MAX,
-            rhs0: usize::MAX,
-            rhs1: usize::MAX,
-            lits: Vec::new(),
-            // name: "".to_string(),
+            latch_input: usize::MAX,
+            latch_reset: usize::MAX,
+            
+            and_input0: usize::MAX,
+            and_input1: usize::MAX,
             node_type: node_type,
         }
     }
 
-    pub fn set_next_for_latch(&mut self, next: usize) {
+    pub fn set_input_of_latch(&mut self, input: usize) {
         assert_eq!(self.node_type, AIGNodeType::Latch);
-        self.next = next;
+        self.latch_input = input;
     }
 
-    pub fn set_reset_for_latch(&mut self, reset: usize) {
+    pub fn set_reset_of_latch(&mut self, reset: usize) {
         assert_eq!(self.node_type, AIGNodeType::Latch);
         assert!(reset == 0 || reset == 1 || reset == self.lit);
-        self.reset = reset;
+        self.latch_reset = reset;
     }
 
-    pub fn set_rhs0_for_and(&mut self, rhs0: usize) {
+    pub fn set_rhs0_of_and(&mut self, rhs0: usize) {
         assert_eq!(self.node_type, AIGNodeType::And);
-        self.rhs0 = rhs0;
+        self.and_input0 = rhs0;
     }
 
-    pub fn set_rhs1_for_and(&mut self, rhs1: usize) {
+    pub fn set_rhs1_of_and(&mut self, rhs1: usize) {
         assert_eq!(self.node_type, AIGNodeType::And);
-        self.rhs1 = rhs1;
+        self.and_input1 = rhs1;
     }
 
     pub fn get_type(&self) -> AIGNodeType {

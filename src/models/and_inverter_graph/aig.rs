@@ -24,8 +24,9 @@ pub struct AndInverterGraph {
 
     inputs: Vec<usize>,      /* [0..num_inputs] */
     latches: Vec<usize>,     /* [0..num_latches] */
-    outputs: Vec<usize>,     /* [0..num_outputs] */
     ands: Vec<usize>,        /* [0..num_ands] */
+
+    outputs: Vec<usize>,     /* [0..num_outputs] */
     bad: Vec<usize>,         /* [0..num_bad] */
     constraints: Vec<usize>, /* [0..num_constraints] */
     justice: Vec<usize>,     /* [0..num_justice] */
@@ -141,6 +142,8 @@ impl AndInverterGraph {
             self.number_of_inputs + self.number_of_latches + self.number_of_and_gates,
             "The number of variables does not add up."
         );
+        assert_eq!(self.number_of_fairness_constraints, 0, "Fairness is currently unsupported.");
+        assert_eq!(self.number_of_justice_constraints, 0, "Justice is currently unsupported.");
     }
 
     fn allocate_vectors(&mut self) {
@@ -168,23 +171,7 @@ impl AndInverterGraph {
         }
     }
 
-    // fn create_output_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
-    //     assert!(self.aig_nodes.len() == ((self.inputs + 1) as usize));
-    //     for i in 0..self.outputs {
-    //         // let line_number_of_output = i + 1 + self.number_of_latches;
-    //         // let line_as_vector_of_chars = &lines[line_number_of_output as usize];
-    //         // let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
-    //         // let output = // line_as_string.parse::<u32>().unwrap();
-    //         let output_node = AigerSymbol::new(AIGNodeType::PrimaryOutput, u32::MAX);
-    //         self.aig_nodes.push(output_node);
-    //         self.vPos.push(self.aig_nodes.len() - 1);
-    //         self.vCos.push(self.aig_nodes.len() - 1);
-    //         // self.output_literals.push(output);
-    //     }
-    //     assert!(self.aig_nodes.len() == ((self.inputs + self.outputs + 1) as usize));
-    // }
-
-    fn check_node_input(&self, literal_number: usize, line_num: usize) {
+    fn check_literal(&self, literal_number: usize, line_num: usize) {
         let var_number = literal_number >> 1;
         // assert!(2 <= literal_number, "Line {line_num}: '.aig' file contains literal {literal_number} which is reserved for constants.");
         assert!(var_number <= self.maximum_variable_index, "Line {line_num}: '.aig' file contains literal {literal_number} which is higher than maximum variable index.");
@@ -208,17 +195,29 @@ impl AndInverterGraph {
             );
 
             let next_lit = Self::convert_string_to_number(parsed_line[0]);
-            self.check_node_input(next_lit, line_number_of_latch);
-            self.nodes.last_mut().unwrap().set_next_for_latch(next_lit);
+            self.check_literal(next_lit, line_number_of_latch);
+            self.nodes.last_mut().unwrap().set_input_of_latch(next_lit);
 
             if parsed_line.len() == 2 {
                 // latch has a reset literal
                 let reset = Self::convert_string_to_number(parsed_line[1]);
                 assert!(reset == 0 || reset == 1 || reset == lit);
-                self.nodes.last_mut().unwrap().set_reset_for_latch(reset);
+                self.nodes.last_mut().unwrap().set_reset_of_latch(reset);
             }
         }
-        // assert!(self.aig_nodes.len() as u32 == (self.inputs + self.latches) + 1);
+    }
+
+    fn create_output_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
+        for i in 0..self.number_of_outputs {
+            let line_number_of_output: usize = i + 1 + self.number_of_latches;
+            let line_as_vector_of_chars = &lines[line_number_of_output];
+            let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
+
+            let output_literal = Self::convert_string_to_number(line_as_string);
+            self.check_literal(output_literal, line_number_of_output);
+            assert!(self.outputs.contains(&output_literal) == false, "Line {line_number_of_output}: Output is repeated twice.");
+            self.outputs.push(output_literal);
+        }
     }
 
     fn check_aig(&self) {
@@ -235,6 +234,7 @@ impl AndInverterGraph {
             let i = latch_index.to_owned();
             assert_eq!(self.nodes[i].get_type(), AIGNodeType::Latch);
         }
+        assert_eq!(self.number_of_outputs, self.outputs.len());
     }
 
     fn create_bad_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
@@ -254,9 +254,9 @@ impl AndInverterGraph {
         aig.check_first_line_of_aig_and_load_it(&lines);
         aig.allocate_vectors();
         aig.create_input_nodes_of_aig();
-        // aig.create_output_nodes_of_aig(&lines);
         aig.create_latch_nodes_of_aig(&lines);
-        aig.create_bad_nodes_of_aig(&lines);
+        aig.create_output_nodes_of_aig(&lines);
+        // aig.create_bad_nodes_of_aig(&lines);
         aig.check_aig();
         aig
     }
