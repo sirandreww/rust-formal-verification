@@ -31,11 +31,10 @@ pub struct AIGNode {
     // used only for Ands
     and_input0: usize, /* as literal [0..2*maxvar+1] */
     and_input1: usize, /* as literal [0..2*maxvar+1] */
-
-    // used only for justice
-    // justice_size: usize,
-    // justice_lits: Vec<usize>,
-    // name: String,
+                       // used only for justice
+                       // justice_size: usize,
+                       // justice_lits: Vec<usize>,
+                       // name: String,
 }
 
 // ************************************************************************************************
@@ -49,7 +48,7 @@ impl AIGNode {
             lit: lit,
             latch_input: usize::MAX,
             latch_reset: usize::MAX,
-            
+
             and_input0: usize::MAX,
             and_input1: usize::MAX,
             node_type: node_type,
@@ -79,5 +78,29 @@ impl AIGNode {
 
     pub fn get_type(&self) -> AIGNodeType {
         self.node_type
+    }
+
+    pub fn get_literal(&self) -> usize {
+        self.lit
+    }
+
+    pub fn get_latch_input(&self) -> usize {
+        assert_eq!(self.node_type, AIGNodeType::Latch);
+        self.latch_input
+    }
+
+    pub fn get_latch_reset(&self) -> usize {
+        assert_eq!(self.node_type, AIGNodeType::Latch);
+        self.latch_reset
+    }
+
+    pub fn get_and_rhs0(&self) -> usize {
+        assert_eq!(self.node_type, AIGNodeType::And);
+        self.and_input0
+    }
+
+    pub fn get_and_rhs1(&self) -> usize {
+        assert_eq!(self.node_type, AIGNodeType::And);
+        self.and_input1
     }
 }

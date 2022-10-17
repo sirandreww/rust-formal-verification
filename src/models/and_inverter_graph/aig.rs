@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::models::and_inverter_graph::aig_node::{AIGNode, AIGNodeType};
-use std::fs;
+use std::{fs, result};
 
 // ************************************************************************************************
 // struct
@@ -23,16 +23,16 @@ pub struct AndInverterGraph {
     nodes: Vec<AIGNode>, /* [0..maxvar] */
 
     // these contain indexes that are in nodes that have these nodes.
-    inputs: Vec<usize>,      /* [0..num_inputs] */
-    latches: Vec<usize>,     /* [0..num_latches] */
-    ands: Vec<usize>,        /* [0..num_ands] */
+    inputs: Vec<usize>,  /* [0..num_inputs] */
+    latches: Vec<usize>, /* [0..num_latches] */
+    ands: Vec<usize>,    /* [0..num_ands] */
 
     // these contain literals.
-    outputs: Vec<usize>,     /* [0..num_outputs] */
-    bad: Vec<usize>,         /* [0..num_bad] */
+    outputs: Vec<usize>, /* [0..num_outputs] */
+    bad: Vec<usize>,     /* [0..num_bad] */
     constraints: Vec<usize>, /* [0..num_constraints] */
-    // justice: Vec<usize>,     /* [0..num_justice] */
-    // fairness: Vec<usize>,    /* [0..num_fairness] */
+                         // justice: Vec<usize>,     /* [0..num_justice] */
+                         // fairness: Vec<usize>,    /* [0..num_fairness] */
 }
 
 // ************************************************************************************************
@@ -144,8 +144,14 @@ impl AndInverterGraph {
             self.number_of_inputs + self.number_of_latches + self.number_of_and_gates,
             "The number of variables does not add up."
         );
-        assert_eq!(self.number_of_fairness_constraints, 0, "Fairness is currently unsupported.");
-        assert_eq!(self.number_of_justice_constraints, 0, "Justice is currently unsupported.");
+        assert_eq!(
+            self.number_of_fairness_constraints, 0,
+            "Fairness is currently unsupported."
+        );
+        assert_eq!(
+            self.number_of_justice_constraints, 0,
+            "Justice is currently unsupported."
+        );
         // assert_eq!(self.number_of_outputs, 0, "Output is currently unsupported.");
     }
 
@@ -217,16 +223,18 @@ impl AndInverterGraph {
 
     fn create_output_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
         for i in 0..self.number_of_outputs {
-
             let line_number_from_0: usize = i + 1 + self.number_of_latches;
             let line_number_from_1: usize = line_number_from_0 + 1;
-            
+
             let line_as_vector_of_chars = &lines[line_number_from_0];
             let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
 
             let output_literal = Self::convert_string_to_number(line_as_string);
             self.check_literal(output_literal, line_number_from_1);
-            assert!(self.outputs.contains(&output_literal) == false, "Line {line_number_from_1}: Output is repeated twice.");
+            assert!(
+                self.outputs.contains(&output_literal) == false,
+                "Line {line_number_from_1}: Output is repeated twice."
+            );
             self.outputs.push(output_literal);
         }
     }
@@ -243,16 +251,23 @@ impl AndInverterGraph {
             let bad_literal = Self::convert_string_to_number(line_as_string);
             // println!("{bad_literal}");
             self.check_literal(bad_literal, line_number_from_1);
-            assert!(self.bad.contains(&bad_literal) == false, "Line {line_number_from_1}: Bad is repeated twice.");
+            assert!(
+                self.bad.contains(&bad_literal) == false,
+                "Line {line_number_from_1}: Bad is repeated twice."
+            );
             self.bad.push(bad_literal);
         }
     }
 
     fn create_invariant_constraint_nodes_of_aig(&mut self, lines: &[Vec<u8>]) {
-        for i in 0..self.number_of_invariant_constraints {            
-            let line_number_from_0: usize = i + 1 + self.number_of_latches + self.number_of_outputs + self.number_of_bad_state_constraints;
+        for i in 0..self.number_of_invariant_constraints {
+            let line_number_from_0: usize = i
+                + 1
+                + self.number_of_latches
+                + self.number_of_outputs
+                + self.number_of_bad_state_constraints;
             let line_number_from_1: usize = line_number_from_0 + 1;
-            
+
             let line_as_vector_of_chars = &lines[line_number_from_0];
             let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
 
@@ -263,19 +278,93 @@ impl AndInverterGraph {
         }
     }
 
+    fn get_max_literal_of_input_or_latch(&self) -> usize {
+        return 2 * (self.number_of_inputs + self.number_of_latches);
+    }
+
+    fn read_delta(&self, bytes: &[u8], mut read_index: usize) -> (usize, usize) {
+        assert!(read_index < bytes.len(), "Unexpected end of file");
+
+        let mut i: usize = 0;
+        let mut delta: usize = 0;
+        let mut ch: usize = bytes[read_index].into();
+
+        while ((ch & 0x80) != 0) {
+            assert_ne!(i, 5, "Invalid code");
+
+            delta |= (ch & 0x7f) << (7 * i);
+            i += 1;
+            read_index += 1;
+            ch = bytes[read_index].into();
+
+            assert!(read_index < bytes.len(), "Unexpected end of file");
+        }
+        assert!(i != 5 || ch < 8);
+        delta |= ch << (7 * i);
+        (delta, (read_index + 1))
+    }
+
+    fn create_and_nodes_of_aig(&mut self, bytes: &[u8]) {
+        let mut lhs = self.get_max_literal_of_input_or_latch();
+
+        let mut read_index: usize = 0;
+        let amount_of_lines_to_skip: usize = 1
+            + self.number_of_latches
+            + self.number_of_outputs
+            + self.number_of_bad_state_constraints
+            + self.number_of_invariant_constraints;
+        let mut new_lines_seen = 0;
+        while new_lines_seen < amount_of_lines_to_skip {
+            if bytes[read_index] == b'\n' {
+                new_lines_seen += 1;
+            }
+            read_index += 1;
+        }
+
+        for i in 0..self.number_of_and_gates {
+            lhs += 2;
+            let (delta, new_read_index) = self.read_delta(bytes, read_index);
+            read_index = new_read_index;
+            assert!(delta <= lhs, "Invalid delta.");
+            let rhs0: usize = lhs - delta;
+
+            let (delta, new_read_index) = self.read_delta(bytes, read_index);
+            read_index = new_read_index;
+            assert!(delta <= rhs0, "Invalid delta.");
+            let rhs1 :usize= rhs0 - delta;
+
+            let mut node = AIGNode::new(lhs, AIGNodeType::And);
+            node.set_rhs0_of_and(rhs0);
+            node.set_rhs1_of_and(rhs1);
+            self.ands.push(self.nodes.len());
+            self.nodes.push(node);
+
+
+            // let inv_const_literal = Self::convert_string_to_number(line_as_string);
+            // self.check_literal(inv_const_literal, line_number_from_1);
+            // assert!(self.constraints.contains(&inv_const_literal) == false, "Line {line_number_from_1}: Constraint is repeated twice.");
+        }
+    }
+
     fn check_aig(&self) {
         assert_eq!(self.nodes[0].get_type(), AIGNodeType::ConstantZero);
         // inputs
         assert_eq!(self.number_of_inputs, self.inputs.len());
-        for input_index in &self.inputs{
+        for input_index in &self.inputs {
             let i = input_index.to_owned();
             assert_eq!(self.nodes[i].get_type(), AIGNodeType::Input);
         }
         // latches
         assert_eq!(self.number_of_latches, self.latches.len());
-        for latch_index in &self.latches{
+        for latch_index in &self.latches {
             let i = latch_index.to_owned();
             assert_eq!(self.nodes[i].get_type(), AIGNodeType::Latch);
+        }
+        // ands
+        assert_eq!(self.number_of_and_gates, self.ands.len());
+        for and_index in &self.ands {
+            let i = and_index.to_owned();
+            assert_eq!(self.nodes[i].get_type(), AIGNodeType::And);
         }
         assert_eq!(self.number_of_outputs, self.outputs.len());
         assert_eq!(self.number_of_bad_state_constraints, self.bad.len());
@@ -292,6 +381,7 @@ impl AndInverterGraph {
         aig.create_output_nodes_of_aig(&lines);
         aig.create_bad_nodes_of_aig(&lines);
         aig.create_invariant_constraint_nodes_of_aig(&lines);
+        aig.create_and_nodes_of_aig(&vec_of_bytes);
         aig.check_aig();
         aig
     }
@@ -317,5 +407,54 @@ impl AndInverterGraph {
         let file_as_vec_of_bytes = fs::read(file_path)
             .unwrap_or_else(|_| panic!("Unable to read the '.aig' file {file_path}"));
         Self::from_vector_of_bytes(&file_as_vec_of_bytes)
+    }
+
+    pub fn get_aag_string(&self) -> String {
+        let mut result: Vec<String> = Vec::new();
+        let mut first_line = vec![String::from("aag"), ];
+        first_line.push(self.maximum_variable_index.to_string());
+        first_line.push(self.number_of_inputs.to_string());
+        first_line.push(self.number_of_latches.to_string());
+        first_line.push(self.number_of_outputs.to_string());
+        first_line.push(self.number_of_and_gates.to_string());
+        assert!(self.number_of_justice_constraints + self.number_of_fairness_constraints == 0);
+        if self.number_of_bad_state_constraints + self.number_of_invariant_constraints > 0 {
+            first_line.push(self.number_of_bad_state_constraints.to_string());
+        }
+        if self.number_of_invariant_constraints > 0 {
+            first_line.push(self.number_of_invariant_constraints.to_string());
+        }
+        result.push(first_line.join(" "));
+        for input_index in &self.inputs {
+            result.push(self.nodes[input_index.to_owned()].get_literal().to_string());
+        }
+        for latch_index in &self.latches {
+            let mut line = Vec::new();
+            let node = &self.nodes[latch_index.to_owned()];
+            line.push(node.get_literal().to_string());
+            line.push(node.get_latch_input().to_string());
+            if node.get_latch_reset() != 0 {
+                line.push(node.get_latch_reset().to_string());
+            }
+            result.push(line.join(" "));
+        }
+        for output_literal in &self.outputs {
+            result.push(output_literal.to_string());
+        }
+        for bad_literal in &self.bad {
+            result.push(bad_literal.to_string());
+        }
+        for constraint_literal in &self.constraints {
+            result.push(constraint_literal.to_string());
+        }
+        for and_index in &self.latches{
+            let node = &self.nodes[and_index.to_owned()];
+            let lhs = node.get_literal();
+            let rhs0 = node.get_and_rhs0();
+            let rhs1 = node.get_and_rhs1();
+            result.push(format!("{lhs} {rhs0} {rhs1}"));
+        }
+
+        return result.join("\n");
     }
 }
