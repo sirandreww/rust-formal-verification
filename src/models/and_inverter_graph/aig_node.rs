@@ -6,7 +6,7 @@
 // enum
 // ************************************************************************************************
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum AIGNodeType {
     ConstantZero,
     Input,
