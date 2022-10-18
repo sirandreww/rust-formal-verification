@@ -155,8 +155,8 @@ mod tests {
         let solver = SplrSolver::default();
         let response = solver.solve_cnf(&cnf);
         match response {
-            SatResponse::Sat { assignment } => println!("sat, assignment = {:?}", assignment),
-            SatResponse::UnSat => println!("sat"),
+            SatResponse::Sat { assignment: _ } => assert!(true),
+            SatResponse::UnSat => assert!(false),
         };
     }
 }
