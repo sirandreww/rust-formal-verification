@@ -23,16 +23,14 @@ pub struct AndInverterGraph {
     nodes: Vec<AIGNode>, /* [0..maxvar] */
 
     // these contain indexes that are in nodes that have these nodes.
-    inputs: Vec<usize>,  /* [0..num_inputs] */
-    latches: Vec<usize>, /* [0..num_latches] */
-    ands: Vec<usize>,    /* [0..num_ands] */
+    inputs: Vec<usize>,
+    latches: Vec<usize>,
+    ands: Vec<usize>,
 
     // these contain literals.
-    outputs: Vec<usize>, /* [0..num_outputs] */
-    bad: Vec<usize>,     /* [0..num_bad] */
-    constraints: Vec<usize>, /* [0..num_constraints] */
-                         // justice: Vec<usize>,     /* [0..num_justice] */
-                         // fairness: Vec<usize>,    /* [0..num_fairness] */
+    outputs: Vec<usize>,
+    bad: Vec<usize>,
+    constraints: Vec<usize>,
 }
 
 // ************************************************************************************************
@@ -61,7 +59,7 @@ impl AndInverterGraph {
         result
     }
 
-    /// Function is private to not allow accidental creation of some random AIG.
+    // Function is private to not allow accidental creation of some random AIG.
     fn new() -> Self {
         Self {
             /// these fields must be changed later, set them to max to notice if there is a bug
@@ -152,7 +150,6 @@ impl AndInverterGraph {
             self.number_of_justice_constraints, 0,
             "Justice is currently unsupported."
         );
-        // assert_eq!(self.number_of_outputs, 0, "Output is currently unsupported.");
     }
 
     fn allocate_vectors(&mut self) {
@@ -201,7 +198,7 @@ impl AndInverterGraph {
             let parsed_line: Vec<&str> = line_as_string.split(' ').collect();
             assert!(
                 parsed_line.len() == 1 || parsed_line.len() == 2,
-                "Line {line_number_from_1}: Wrong number of arguments."
+                "Line {line_number_from_1}: Wrong number of arguments for latch line."
             );
 
             let next_lit = Self::convert_string_to_number(parsed_line[0]);
@@ -211,7 +208,10 @@ impl AndInverterGraph {
             if parsed_line.len() == 2 {
                 // latch has a reset literal
                 let reset = Self::convert_string_to_number(parsed_line[1]);
-                assert!(reset == 0 || reset == 1 || reset == lit);
+                assert!(
+                    (reset == 0 || reset == 1 || reset == lit),
+                    "Line {line_number_from_1}: Latch reset may be 0, 1, or equal to literal designated for latch."
+                );
                 self.nodes.last_mut().unwrap().set_reset_of_latch(reset);
             } else {
                 // latch does not have a reset literal (defaults to 0)
@@ -231,10 +231,6 @@ impl AndInverterGraph {
 
             let output_literal = Self::convert_string_to_number(line_as_string);
             self.check_literal(output_literal, line_number_from_1);
-            assert!(
-                !self.outputs.contains(&output_literal),
-                "Line {line_number_from_1}: Output is repeated twice."
-            );
             self.outputs.push(output_literal);
         }
     }
@@ -251,10 +247,6 @@ impl AndInverterGraph {
             let bad_literal = Self::convert_string_to_number(line_as_string);
             // println!("{bad_literal}");
             self.check_literal(bad_literal, line_number_from_1);
-            assert!(
-                !self.bad.contains(&bad_literal),
-                "Line {line_number_from_1}: Bad is repeated twice."
-            );
             self.bad.push(bad_literal);
         }
     }
@@ -273,7 +265,6 @@ impl AndInverterGraph {
 
             let inv_const_literal = Self::convert_string_to_number(line_as_string);
             self.check_literal(inv_const_literal, line_number_from_1);
-            // assert!(self.constraints.contains(&inv_const_literal) == false, "Line {line_number_from_1}: Constraint is repeated twice.");
             self.constraints.push(inv_const_literal);
         }
     }
@@ -333,6 +324,13 @@ impl AndInverterGraph {
             assert!(delta <= rhs0, "Invalid delta.");
             let rhs1: usize = rhs0 - delta;
 
+            // the assert is from https://github.com/arminbiere/aiger/blob/master/FORMAT
+            // line 456 as of writing this.
+            assert!(
+                lhs > rhs0 && rhs0 >= rhs1,
+                "Error (lhs > rhs0 >= rhs1) does not hold for and gate {lhs}"
+            );
+
             let mut node = AIGNode::new(lhs, AIGNodeType::And);
             node.set_rhs0_of_and(rhs0);
             node.set_rhs1_of_and(rhs1);
@@ -390,7 +388,7 @@ impl AndInverterGraph {
     // ********************************************************************************************
 
     /// Function that takes path to '.aig' file and creates a corresponding AndInverterGraph object.
-    /// The '.aig' file is in accordance to https://github.com/arminbiere/aiger/blob/master/FORMAT
+    /// The '.aig' file is in accordance to http://fmv.jku.at/aiger/
     ///
     /// # Arguments
     ///
@@ -408,6 +406,20 @@ impl AndInverterGraph {
         Self::from_vector_of_bytes(&file_as_vec_of_bytes)
     }
 
+    /// Function that converts an AndInverterGraph into '.aag' format as described in:
+    /// The '.aag' file is in accordance to http://fmv.jku.at/aiger/
+    ///
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired for conversion.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/hwmcc20_aig/2020/mann/stack-p2.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// aig.get_aag_string();
+    /// ```
     pub fn get_aag_string(&self) -> String {
         let mut result: Vec<String> = Vec::new();
         let mut first_line = vec![String::from("aag")];
