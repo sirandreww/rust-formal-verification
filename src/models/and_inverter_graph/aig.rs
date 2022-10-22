@@ -330,24 +330,10 @@ impl AndInverterGraph {
             node.set_rhs1_of_and(rhs1);
             self.ands.push(self.nodes.len());
             self.nodes.push(node);
-
-            // let inv_const_literal = Self::convert_string_to_number(line_as_string);
-            // self.check_literal(inv_const_literal, line_number_from_1);
-            // assert!(self.constraints.contains(&inv_const_literal) == false, "Line {line_number_from_1}: Constraint is repeated twice.");
         }
 
         read_index
     }
-
-    // fn get_line_of_start_of_symbol_segment(&self, lines: &[Vec<u8>], position_of_end_of_and_segment: usize) -> usize {
-    //     let mut current_line = 0;
-    //     let mut current_position = 0;
-    //     while current_position < position_of_end_of_and_segment {
-    //         current_position += lines[current_line].len() + 1;
-    //         current_line += 1;
-    //     }
-    //     current_line
-    // }
 
     fn add_symbol_to_node(&mut self, symbol_type: &str, symbol_number: usize, symbol: &str) {
         if symbol_type == "i" {
