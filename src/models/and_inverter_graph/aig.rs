@@ -273,6 +273,23 @@ impl AndInverterGraph {
         2 * (self.number_of_inputs + self.number_of_latches)
     }
 
+    fn get_position_of_start_of_and_segment(&self, bytes: &[u8]) -> usize{
+        let mut read_index: usize = 0;
+        let amount_of_lines_to_skip: usize = 1
+            + self.number_of_latches
+            + self.number_of_outputs
+            + self.number_of_bad_state_constraints
+            + self.number_of_invariant_constraints;
+        let mut new_lines_seen = 0;
+        while new_lines_seen < amount_of_lines_to_skip {
+            if bytes[read_index] == b'\n' {
+                new_lines_seen += 1;
+            }
+            read_index += 1;
+        }
+        read_index
+    }
+
     fn read_delta(&self, bytes: &[u8], mut read_index: usize) -> (usize, usize) {
         assert!(read_index < bytes.len(), "Unexpected end of file");
 
@@ -295,22 +312,10 @@ impl AndInverterGraph {
         (delta, (read_index + 1))
     }
 
-    fn create_and_nodes_of_aig(&mut self, bytes: &[u8]) {
+    fn create_and_nodes_of_aig(&mut self, bytes: &[u8]) -> usize {
         let mut lhs = self.get_max_literal_of_input_or_latch();
 
-        let mut read_index: usize = 0;
-        let amount_of_lines_to_skip: usize = 1
-            + self.number_of_latches
-            + self.number_of_outputs
-            + self.number_of_bad_state_constraints
-            + self.number_of_invariant_constraints;
-        let mut new_lines_seen = 0;
-        while new_lines_seen < amount_of_lines_to_skip {
-            if bytes[read_index] == b'\n' {
-                new_lines_seen += 1;
-            }
-            read_index += 1;
-        }
+        let mut read_index = self.get_position_of_start_of_and_segment(bytes);
 
         for _i in 0..self.number_of_and_gates {
             lhs += 2;
@@ -340,6 +345,75 @@ impl AndInverterGraph {
             // let inv_const_literal = Self::convert_string_to_number(line_as_string);
             // self.check_literal(inv_const_literal, line_number_from_1);
             // assert!(self.constraints.contains(&inv_const_literal) == false, "Line {line_number_from_1}: Constraint is repeated twice.");
+        }
+
+        read_index
+    }
+
+    // fn get_line_of_start_of_symbol_segment(&self, lines: &[Vec<u8>], position_of_end_of_and_segment: usize) -> usize {
+    //     let mut current_line = 0;
+    //     let mut current_position = 0;
+    //     while current_position < position_of_end_of_and_segment {
+    //         current_position += lines[current_line].len() + 1;
+    //         current_line += 1;
+    //     }
+    //     current_line
+    // }
+
+    fn add_symbol_to_node(&mut self, symbol_type: &str, symbol_number: usize, symbol: &str){
+        if symbol_type == "i" {
+            let node_index = self.inputs[symbol_number];
+            self.nodes[node_index].set_input_symbol(symbol);
+        } else if symbol_type == "l" {
+            let node_index = self.latches[symbol_number];
+            self.nodes[node_index].set_latch_symbol(symbol);
+        } else if symbol_type == "o" {
+            let node_index = self.outputs[symbol_number] >> 1;
+            self.nodes[node_index].set_output_symbol(symbol);
+        } else if symbol_type == "b" {
+            let node_index = self.bad[symbol_number] >> 1;
+            self.nodes[node_index].set_bad_symbol(symbol);
+        } else if symbol_type == "c" {
+            let node_index = self.constraints[symbol_number] >> 1;
+            self.nodes[node_index].set_constraint_symbol(symbol);
+        } else {
+            assert!(false);
+        }
+    }
+
+    fn read_symbols_and_comments(&mut self, bytes: &[u8], position_of_end_of_and_segment_plus_one: usize) {
+        // position_of_end_of_and_segment_plus_one == position where symbol table might begin
+        let lines: &[Vec<u8>] = &Self::split_vector_by_newline(&bytes[position_of_end_of_and_segment_plus_one..]);
+        for line_as_vector_of_chars in lines.into_iter() {
+            let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
+
+            if line_as_string == "c" {
+                // comment segment started, we can stop reading
+                break;
+            } else {
+                let parsed_line: Vec<&str> = line_as_string.split(' ').collect();
+                assert!(
+                    parsed_line.len() == 2,
+                    "Line '{line_as_string}': Wrong number of arguments for symbol line."
+                );
+                let mut symbol_and_variable_split: Vec<&str> =  parsed_line[0].split("").collect();
+                // "i0" gets split into vec!["" , "i", "0", ""], let's drop start and end.
+                symbol_and_variable_split = symbol_and_variable_split[1..(symbol_and_variable_split.len()-1)].to_vec();
+                assert!(
+                    symbol_and_variable_split.len() > 1,
+                    "Line '{line_as_string}': Symbol line should start with [ilobc]<pos>."
+                );
+                
+                let symbol_type = symbol_and_variable_split[0];
+                assert!(
+                    ["i", "l", "o", "b", "c"].contains(&symbol_type),
+                    "Line '{line_as_string}': Symbol line should start with [ilobc]<pos>."
+                );
+                let var_as_vector_of_strings = symbol_and_variable_split[1..].to_vec();
+                let symbol_number_as_string = var_as_vector_of_strings.join("");
+                let symbol_number = Self::convert_string_to_number(&symbol_number_as_string);
+                self.add_symbol_to_node(symbol_type, symbol_number, parsed_line[1])
+            }
         }
     }
 
@@ -378,7 +452,8 @@ impl AndInverterGraph {
         aig.create_output_nodes_of_aig(&lines);
         aig.create_bad_nodes_of_aig(&lines);
         aig.create_invariant_constraint_nodes_of_aig(&lines);
-        aig.create_and_nodes_of_aig(vec_of_bytes);
+        let position_of_end_of_and_segment_plus_one = aig.create_and_nodes_of_aig(vec_of_bytes);
+        aig.read_symbols_and_comments(vec_of_bytes, position_of_end_of_and_segment_plus_one);
         aig.check_aig();
         aig
     }
@@ -422,6 +497,7 @@ impl AndInverterGraph {
     /// ```
     pub fn get_aag_string(&self) -> String {
         let mut result: Vec<String> = Vec::new();
+        let mut symbol_table: Vec<String> = Vec::new();
         let mut first_line = vec![String::from("aag")];
         first_line.push(self.maximum_variable_index.to_string());
         first_line.push(self.number_of_inputs.to_string());
@@ -436,10 +512,15 @@ impl AndInverterGraph {
             first_line.push(self.number_of_invariant_constraints.to_string());
         }
         result.push(first_line.join(" "));
-        for input_index in &self.inputs {
-            result.push(self.nodes[input_index.to_owned()].get_literal().to_string());
+        for (index, input_index) in self.inputs.iter().enumerate() {
+            let node = &self.nodes[input_index.to_owned()];
+            result.push(node.get_literal().to_string());
+            let symbol = node.get_input_symbol();
+            if symbol != ""{
+                symbol_table.push(format!("i{index} {symbol}"));
+            }
         }
-        for latch_index in &self.latches {
+        for (index, latch_index) in self.latches.iter().enumerate() {
             let mut line = Vec::new();
             let node = &self.nodes[latch_index.to_owned()];
             line.push(node.get_literal().to_string());
@@ -448,15 +529,37 @@ impl AndInverterGraph {
                 line.push(node.get_latch_reset().to_string());
             }
             result.push(line.join(" "));
+            let symbol = node.get_latch_symbol();
+            if symbol != "" {
+                symbol_table.push(format!("l{index} {symbol}"));
+            }
         }
-        for output_literal in &self.outputs {
+        for (index, output_literal) in self.outputs.iter().enumerate() {
             result.push(output_literal.to_string());
+
+            let node = &self.nodes[(output_literal >> 1).to_owned()];
+            let symbol = node.get_output_symbol();
+            if symbol != "" {
+                symbol_table.push(format!("o{index} {symbol}"));
+            }
         }
-        for bad_literal in &self.bad {
+        for (index, bad_literal) in self.bad.iter().enumerate() {
             result.push(bad_literal.to_string());
+
+            let node = &self.nodes[(bad_literal >> 1).to_owned()];
+            let symbol = node.get_bad_symbol();
+            if symbol != "" {
+                symbol_table.push(format!("b{index} {symbol}"));
+            }
         }
-        for constraint_literal in &self.constraints {
+        for (index, constraint_literal) in self.constraints.iter().enumerate() {
             result.push(constraint_literal.to_string());
+
+            let node = &self.nodes[(constraint_literal >> 1).to_owned()];
+            let symbol = node.get_constraint_symbol();
+            if symbol != "" {
+                symbol_table.push(format!("c{index} {symbol}"));
+            }
         }
         for and_index in &self.ands {
             let node = &self.nodes[and_index.to_owned()];
@@ -465,7 +568,9 @@ impl AndInverterGraph {
             let rhs1 = node.get_and_rhs1();
             result.push(format!("{lhs} {rhs0} {rhs1}"));
         }
-
-        result.join("\n")
+        result.append(&mut symbol_table);
+        let mut final_res = result.join("\n");
+        final_res.push('\n');
+        final_res
     }
 }

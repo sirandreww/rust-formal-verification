@@ -31,10 +31,13 @@ pub struct AIGNode {
     // used only for Ands
     and_input0: usize, /* as literal [0..2*maxvar+1] */
     and_input1: usize, /* as literal [0..2*maxvar+1] */
-                       // used only for justice
-                       // justice_size: usize,
-                       // justice_lits: Vec<usize>,
-                       // name: String,
+    
+    // symbols
+    input_symbol: String,
+    latch_symbol: String,
+    output_symbol: String,
+    bad_symbol: String,
+    constraint_symbol: String,
 }
 
 // ************************************************************************************************
@@ -52,6 +55,12 @@ impl AIGNode {
             and_input0: usize::MAX,
             and_input1: usize::MAX,
             node_type,
+
+            input_symbol: String::from(""),
+            latch_symbol: String::from(""),
+            output_symbol: String::from(""),
+            bad_symbol: String::from(""),
+            constraint_symbol: String::from(""),
         }
     }
 
@@ -102,5 +111,49 @@ impl AIGNode {
     pub fn get_and_rhs1(&self) -> usize {
         assert_eq!(self.node_type, AIGNodeType::And);
         self.and_input1
+    }
+
+    pub fn set_input_symbol(&mut self, symbol: &str) {
+        assert_eq!(self.node_type, AIGNodeType::Input);
+        self.input_symbol = symbol.to_string();
+    }
+
+    pub fn get_input_symbol(&self) -> &str {
+        assert_eq!(self.node_type, AIGNodeType::Input);
+        self.input_symbol.as_str()
+    }
+
+    pub fn set_latch_symbol(&mut self, symbol: &str) {
+        assert_eq!(self.node_type, AIGNodeType::Latch);
+        self.latch_symbol = symbol.to_string();
+    }
+
+    pub fn get_latch_symbol(&self) -> &str {
+        assert_eq!(self.node_type, AIGNodeType::Latch);
+        self.latch_symbol.as_str()
+    }
+
+    pub fn set_output_symbol(&mut self, symbol: &str) {
+        self.output_symbol = symbol.to_string();
+    }
+
+    pub fn get_output_symbol(&self) -> &str {
+        self.output_symbol.as_str()
+    }
+
+    pub fn set_bad_symbol(&mut self, symbol: &str) {
+        self.bad_symbol = symbol.to_string();
+    }
+
+    pub fn get_bad_symbol(&self) -> &str {
+        self.bad_symbol.as_str()
+    }
+
+    pub fn set_constraint_symbol(&mut self, symbol: &str){
+        self.constraint_symbol = symbol.to_string();
+    }
+
+    pub fn get_constraint_symbol(&self) -> &str {
+        self.constraint_symbol.as_str()
     }
 }
