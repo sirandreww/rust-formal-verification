@@ -104,6 +104,11 @@ impl AndInverterGraph {
             "The parameter line (first line in aig file) has too few arguments."
         );
 
+        assert!(
+            params.len() < 10,
+            "The parameter line (first line in aig file) has too many arguments."
+        );
+
         // first 5 fields always exist
         self.maximum_variable_index = Self::convert_string_to_number(params[1]);
         self.number_of_inputs = Self::convert_string_to_number(params[2]);
@@ -112,31 +117,15 @@ impl AndInverterGraph {
         self.number_of_and_gates = Self::convert_string_to_number(params[5]);
 
         // these fields do not always exist
-        self.number_of_bad_state_constraints = if params.len() > 6 {
-            Self::convert_string_to_number(params[6])
-        } else {
-            0
-        };
-        self.number_of_invariant_constraints = if params.len() > 7 {
-            Self::convert_string_to_number(params[7])
-        } else {
-            0
-        };
-        self.number_of_justice_constraints = if params.len() > 8 {
-            Self::convert_string_to_number(params[8])
-        } else {
-            0
-        };
-        self.number_of_fairness_constraints = if params.len() > 9 {
-            Self::convert_string_to_number(params[9])
-        } else {
-            0
-        };
+        self.number_of_bad_state_constraints =
+            Self::convert_string_to_number(params.get(6).unwrap_or(&"0"));
+        self.number_of_invariant_constraints =
+            Self::convert_string_to_number(params.get(7).unwrap_or(&"0"));
+        self.number_of_justice_constraints =
+            Self::convert_string_to_number(params.get(8).unwrap_or(&"0"));
+        self.number_of_fairness_constraints =
+            Self::convert_string_to_number(params.get(9).unwrap_or(&"0"));
 
-        assert!(
-            params.len() < 10,
-            "The parameter line (first line in aig file) has too many arguments."
-        );
         assert_eq!(
             self.maximum_variable_index,
             self.number_of_inputs + self.number_of_latches + self.number_of_and_gates,
