@@ -377,7 +377,7 @@ impl AndInverterGraph {
             let node_index = self.constraints[symbol_number] >> 1;
             self.nodes[node_index].set_constraint_symbol(symbol);
         } else {
-            assert!(false);
+            unreachable!();
         }
     }
 
@@ -389,7 +389,7 @@ impl AndInverterGraph {
         // position_of_end_of_and_segment_plus_one == position where symbol table might begin
         let lines: &[Vec<u8>] =
             &Self::split_vector_by_newline(&bytes[position_of_end_of_and_segment_plus_one..]);
-        for line_as_vector_of_chars in lines.into_iter() {
+        for line_as_vector_of_chars in lines.iter() {
             let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
 
             if line_as_string == "c" {
@@ -522,7 +522,7 @@ impl AndInverterGraph {
             let node = &self.nodes[input_index.to_owned()];
             result.push(node.get_literal().to_string());
             let symbol = node.get_input_symbol();
-            if symbol != "" {
+            if !symbol.is_empty() {
                 symbol_table.push(format!("i{index} {symbol}"));
             }
         }
@@ -536,7 +536,7 @@ impl AndInverterGraph {
             }
             result.push(line.join(" "));
             let symbol = node.get_latch_symbol();
-            if symbol != "" {
+            if !symbol.is_empty() {
                 symbol_table.push(format!("l{index} {symbol}"));
             }
         }
@@ -545,7 +545,7 @@ impl AndInverterGraph {
 
             let node = &self.nodes[(output_literal >> 1).to_owned()];
             let symbol = node.get_output_symbol();
-            if symbol != "" {
+            if !symbol.is_empty() {
                 symbol_table.push(format!("o{index} {symbol}"));
             }
         }
@@ -554,7 +554,7 @@ impl AndInverterGraph {
 
             let node = &self.nodes[(bad_literal >> 1).to_owned()];
             let symbol = node.get_bad_symbol();
-            if symbol != "" {
+            if !symbol.is_empty() {
                 symbol_table.push(format!("b{index} {symbol}"));
             }
         }
@@ -563,7 +563,7 @@ impl AndInverterGraph {
 
             let node = &self.nodes[(constraint_literal >> 1).to_owned()];
             let symbol = node.get_constraint_symbol();
-            if symbol != "" {
+            if !symbol.is_empty() {
                 symbol_table.push(format!("c{index} {symbol}"));
             }
         }

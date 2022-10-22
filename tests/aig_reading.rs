@@ -39,13 +39,13 @@ mod tests {
                 first_index_they_differ = for_length;
             }
 
-            let start = max((first_index_they_differ - 20).into(), 0);
+            let start = max(first_index_they_differ - 20, 0);
 
             let end1 = min(first_index_they_differ + 80, str1_chars.len());
-            let str1_short: String = str1_chars[start..end1].into_iter().collect();
+            let str1_short: String = str1_chars[start..end1].iter().collect();
 
             let end2 = min(first_index_they_differ + 80, str2_chars.len());
-            let str2_short: String = str2_chars[start..end2].into_iter().collect();
+            let str2_short: String = str2_chars[start..end2].iter().collect();
 
             assert_eq!(str1_short, str2_short);
             // just in case runtime gets here
