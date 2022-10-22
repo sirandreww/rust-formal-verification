@@ -53,30 +53,22 @@ mod tests {
         }
     }
 
-    fn read_aig(file_path: &str) {
-        let aig = AndInverterGraph::from_aig_path(file_path);
-        let aag_received = aig.get_aag_string();
-
-        let mut file_path_parsed = file_path.split('/').collect::<Vec<&str>>();
-        let file_name = file_path_parsed[file_path_parsed.len() - 1].replace(".aig", ".aag");
-        let len = file_path_parsed.len();
-
-        file_path_parsed[1] = "hwmcc20_aag";
-        file_path_parsed[len - 1] = &file_name;
-
-        let aag_path = file_path_parsed.join("/");
-        let true_aag = fs::read_to_string(aag_path).unwrap();
-
-        assert_long_string_eq(&true_aag, &aag_received);
-    }
-
-    fn get_paths_to_all_aig_files() -> Vec<String> {
+    fn get_paths_to_all_aig_and_corresponding_aag_files() -> Vec<(String, String)> {
         let mut result = Vec::default();
         for aig_file_result in WalkDir::new("tests/hwmcc20_aig") {
             let aig_file = aig_file_result.unwrap();
             if aig_file.path().is_file() {
-                let file_path = aig_file.path().display().to_string();
-                result.push(file_path);
+                let aig_file_path = aig_file.path().display().to_string();
+
+                let mut file_path_parsed = aig_file_path.split('/').collect::<Vec<&str>>();
+                let file_name =
+                    file_path_parsed[file_path_parsed.len() - 1].replace(".aig", ".aag");
+                let len = file_path_parsed.len();
+                file_path_parsed[1] = "hwmcc20_aag";
+                file_path_parsed[len - 1] = &file_name;
+                let aag_file_path = file_path_parsed.join("/");
+
+                result.push((aig_file_path, aag_file_path));
             }
         }
         result.sort();
@@ -90,10 +82,14 @@ mod tests {
 
     #[test]
     fn read_all_aig_files_from_hwmcc20() {
-        let aig_file_paths = get_paths_to_all_aig_files();
-        for aig_file_path in aig_file_paths {
+        let file_paths = get_paths_to_all_aig_and_corresponding_aag_files();
+        for (aig_file_path, aag_file_path) in file_paths {
             println!("file_path = {}", aig_file_path);
-            read_aig(&aig_file_path);
+
+            let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+            let aag_received = aig.get_aag_string();
+            let true_aag = fs::read_to_string(aag_file_path).unwrap();
+            assert_long_string_eq(&true_aag, &aag_received);
         }
     }
 }
