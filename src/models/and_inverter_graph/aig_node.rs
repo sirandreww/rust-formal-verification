@@ -31,7 +31,7 @@ pub struct AIGNode {
     // used only for Ands
     and_input0: usize, /* as literal [0..2*maxvar+1] */
     and_input1: usize, /* as literal [0..2*maxvar+1] */
-    
+
     // symbols
     input_symbol: String,
     latch_symbol: String,
@@ -149,7 +149,7 @@ impl AIGNode {
         self.bad_symbol.as_str()
     }
 
-    pub fn set_constraint_symbol(&mut self, symbol: &str){
+    pub fn set_constraint_symbol(&mut self, symbol: &str) {
         self.constraint_symbol = symbol.to_string();
     }
 

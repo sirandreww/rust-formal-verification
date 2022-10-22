@@ -6,16 +6,19 @@ mod tests {
     // ********************************************************************************************
 
     use rust_formal_verification::models::AndInverterGraph;
-    use std::{fs, cmp::{max, min}};
+    use std::{
+        cmp::{max, min},
+        fs,
+    };
     use walkdir::WalkDir;
 
     // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
 
-    fn assert_long_string_eq(str1: &str, str2: &str){
+    fn assert_long_string_eq(str1: &str, str2: &str) {
         let str1_chars: Vec<char> = str1.chars().collect();
-        let str2_chars: Vec<char>  = str2.chars().collect();
+        let str2_chars: Vec<char> = str2.chars().collect();
         if str1_chars == str2_chars {
             // they are the same do nothing
             assert_eq!(str1, str2);
@@ -35,13 +38,13 @@ mod tests {
                 // they are appear to be the same, but must have different sizes
                 first_index_they_differ = for_length;
             }
-            
+
             let start = max((first_index_they_differ - 20).into(), 0);
 
-            let end1 = min(first_index_they_differ + 80,  str1_chars.len());
+            let end1 = min(first_index_they_differ + 80, str1_chars.len());
             let str1_short: String = str1_chars[start..end1].into_iter().collect();
 
-            let end2 = min(first_index_they_differ + 80,  str2_chars.len());
+            let end2 = min(first_index_they_differ + 80, str2_chars.len());
             let str2_short: String = str2_chars[start..end2].into_iter().collect();
 
             assert_eq!(str1_short, str2_short);

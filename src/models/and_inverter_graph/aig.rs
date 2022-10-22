@@ -273,7 +273,7 @@ impl AndInverterGraph {
         2 * (self.number_of_inputs + self.number_of_latches)
     }
 
-    fn get_position_of_start_of_and_segment(&self, bytes: &[u8]) -> usize{
+    fn get_position_of_start_of_and_segment(&self, bytes: &[u8]) -> usize {
         let mut read_index: usize = 0;
         let amount_of_lines_to_skip: usize = 1
             + self.number_of_latches
@@ -360,7 +360,7 @@ impl AndInverterGraph {
     //     current_line
     // }
 
-    fn add_symbol_to_node(&mut self, symbol_type: &str, symbol_number: usize, symbol: &str){
+    fn add_symbol_to_node(&mut self, symbol_type: &str, symbol_number: usize, symbol: &str) {
         if symbol_type == "i" {
             let node_index = self.inputs[symbol_number];
             self.nodes[node_index].set_input_symbol(symbol);
@@ -381,9 +381,14 @@ impl AndInverterGraph {
         }
     }
 
-    fn read_symbols_and_comments(&mut self, bytes: &[u8], position_of_end_of_and_segment_plus_one: usize) {
+    fn read_symbols_and_comments(
+        &mut self,
+        bytes: &[u8],
+        position_of_end_of_and_segment_plus_one: usize,
+    ) {
         // position_of_end_of_and_segment_plus_one == position where symbol table might begin
-        let lines: &[Vec<u8>] = &Self::split_vector_by_newline(&bytes[position_of_end_of_and_segment_plus_one..]);
+        let lines: &[Vec<u8>] =
+            &Self::split_vector_by_newline(&bytes[position_of_end_of_and_segment_plus_one..]);
         for line_as_vector_of_chars in lines.into_iter() {
             let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
 
@@ -396,14 +401,15 @@ impl AndInverterGraph {
                     parsed_line.len() == 2,
                     "Line '{line_as_string}': Wrong number of arguments for symbol line."
                 );
-                let mut symbol_and_variable_split: Vec<&str> =  parsed_line[0].split("").collect();
+                let mut symbol_and_variable_split: Vec<&str> = parsed_line[0].split("").collect();
                 // "i0" gets split into vec!["" , "i", "0", ""], let's drop start and end.
-                symbol_and_variable_split = symbol_and_variable_split[1..(symbol_and_variable_split.len()-1)].to_vec();
+                symbol_and_variable_split =
+                    symbol_and_variable_split[1..(symbol_and_variable_split.len() - 1)].to_vec();
                 assert!(
                     symbol_and_variable_split.len() > 1,
                     "Line '{line_as_string}': Symbol line should start with [ilobc]<pos>."
                 );
-                
+
                 let symbol_type = symbol_and_variable_split[0];
                 assert!(
                     ["i", "l", "o", "b", "c"].contains(&symbol_type),
@@ -516,7 +522,7 @@ impl AndInverterGraph {
             let node = &self.nodes[input_index.to_owned()];
             result.push(node.get_literal().to_string());
             let symbol = node.get_input_symbol();
-            if symbol != ""{
+            if symbol != "" {
                 symbol_table.push(format!("i{index} {symbol}"));
             }
         }
