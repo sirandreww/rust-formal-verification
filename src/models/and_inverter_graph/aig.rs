@@ -472,9 +472,9 @@ impl AndInverterGraph {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/hwmcc20_aig/2020/mann/stack-p2.aig";
+    /// let file_path = "tests/simple_examples/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
-    /// aig.get_aag_string();
+    /// assert_eq!("aag 5 0 3 1 2\n2 10\n4 2\n6 4\n10\n8 7 5\n10 8 3\n", aig.get_aag_string());
     /// ```
     pub fn get_aag_string(&self) -> String {
         let mut result: Vec<String> = Vec::new();
@@ -553,5 +553,41 @@ impl AndInverterGraph {
         let mut final_res = result.join("\n");
         final_res.push('\n');
         final_res
+    }
+
+    /// Function that gets a vector describing the latch nodes in the system.
+    /// The output is a vector containing tuple with a length of 3,
+    /// representing latch information :
+    /// (latch output literal, latch input literal, latch initial value)
+    ///                    ___________
+    ///                   |           |
+    ///  latch input ---> |   latch   | --> latch output
+    ///                   |___________|
+    ///                         ^
+    ///                         |
+    ///                latch initial value
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// assert_eq!(vec![(2, 10, 0),(4, 2, 0),(6, 4, 0)], aig.get_latch_information());
+    /// ```
+    pub fn get_latch_information(&self) -> Vec<(usize, usize, usize)> {
+        let mut result = Vec::new();
+        for latch_index in self.latches.iter() {
+            let latch = &self.nodes[latch_index.to_owned()];
+
+            let latch_literal = latch.get_literal();
+            let latch_input = latch.get_latch_input();
+            let latch_reset = latch.get_latch_reset();
+
+            result.push((latch_literal, latch_input, latch_reset));
+        }
+        result
     }
 }

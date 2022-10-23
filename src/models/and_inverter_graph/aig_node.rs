@@ -95,21 +95,25 @@ impl AIGNode {
 
     pub fn get_latch_input(&self) -> usize {
         assert_eq!(self.node_type, AIGNodeType::Latch);
+        assert_ne!(self.latch_input, usize::MAX);
         self.latch_input
     }
 
     pub fn get_latch_reset(&self) -> usize {
         assert_eq!(self.node_type, AIGNodeType::Latch);
+        assert_ne!(self.latch_reset, usize::MAX);
         self.latch_reset
     }
 
     pub fn get_and_rhs0(&self) -> usize {
         assert_eq!(self.node_type, AIGNodeType::And);
+        assert_ne!(self.and_input0, usize::MAX);
         self.and_input0
     }
 
     pub fn get_and_rhs1(&self) -> usize {
         assert_eq!(self.node_type, AIGNodeType::And);
+        assert_ne!(self.and_input1, usize::MAX);
         self.and_input1
     }
 
