@@ -42,11 +42,11 @@ impl FiniteStateTransitionSystem {
         //     "transition has variable with a higher number than number_of_variables."
         // );
         Self {
-            initial_states: initial_states,
-            transition: transition,
-            safety_property: safety_property,
-            unsafety_property: unsafety_property,
-            max_variable_number: max_variable_number,
+            initial_states,
+            transition,
+            safety_property,
+            unsafety_property,
+            max_variable_number,
         }
     }
 
