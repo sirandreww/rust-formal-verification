@@ -65,6 +65,10 @@ impl Clause {
         string_vec.push("0".to_string());
         string_vec.join(" ")
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.literals.is_empty()
+    }
 }
 
 // ************************************************************************************************

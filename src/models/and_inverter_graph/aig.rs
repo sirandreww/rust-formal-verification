@@ -590,4 +590,78 @@ impl AndInverterGraph {
         }
         result
     }
+
+    /// Function that gets a vector describing the and nodes in the system.
+    /// The output is a vector containing tuple with a length of 3,
+    /// representing and information :
+    /// (and gate output (a.k.a lhs), and gate inout 1 (a.k.a rhs0), and gate input 2 (a.k.a rhs1))
+    ///                    ___________
+    ///                   /           | <--- rhs0
+    ///         rhs <--- (     and    |
+    ///                   \___________| <--- rhs1
+    ///
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// assert_eq!(vec![(8, 7, 5),(10, 8, 3)], aig.get_and_information());
+    /// ```
+    pub fn get_and_information(&self) -> Vec<(usize, usize, usize)> {
+        let mut result = Vec::new();
+        for and_index in self.ands.iter() {
+            let and = &self.nodes[and_index.to_owned()];
+
+            let lhs = and.get_literal();
+            let rhs0 = and.get_and_rhs0();
+            let rhs1 = and.get_and_rhs1();
+
+            result.push((lhs, rhs0, rhs1));
+        }
+        result
+    }
+
+    /// Function that gets the maximum variable number used in the AIG.
+    ///
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// assert_eq!(5, aig.get_maximum_variable_number());
+    /// ```
+    pub fn get_maximum_variable_number(&self) -> usize {
+        self.maximum_variable_index
+    }
+
+    /// Function that gets a vector describing the bad nodes in the system.
+    /// The output is a vector containing usize numbers, these are the literals
+    /// that are bad.
+    ///
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// assert_eq!(Vec::<usize>::new(), aig.get_bad_information());
+    /// ```
+    pub fn get_bad_information(&self) -> Vec<usize> {
+        let mut result = Vec::new();
+        for bad_lit in self.bad.iter() {
+            result.push(bad_lit.to_owned());
+        }
+        result
+    }
 }
