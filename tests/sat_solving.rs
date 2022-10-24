@@ -15,7 +15,6 @@ mod tests {
     // use
     // ********************************************************************************************
 
-    use pretty_assertions::assert_eq;
     use rust_formal_verification::formulas::Clause;
     use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::Variable;

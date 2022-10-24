@@ -226,9 +226,10 @@ impl FiniteStateTransitionSystem {
     }
 
     pub fn get_transition_relation_for_some_depth(&self, depth:u32, cnf_to_add_to: &mut CNF) {
+        debug_assert!(depth > 0, "Called get_transition_relation_for_some_depth with depth 0. Transition relation for depth 0 is undefined.");
         Self::bump_all_cnf_variables_by_some_number(
             &self.transition, 
-            self.max_variable_number * depth, 
+            self.max_variable_number * (depth - 1), 
             cnf_to_add_to
         );
     }
