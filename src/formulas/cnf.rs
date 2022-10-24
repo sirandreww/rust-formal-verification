@@ -73,8 +73,9 @@ impl CNF {
             self.max_variable_number,
             new_clause.get_highest_variable_number(),
         );
-        if ! self.clauses.contains(new_clause) {
-            self.vector_representation.push(new_clause.to_vector_of_numbers());
+        if !self.clauses.contains(new_clause) {
+            self.vector_representation
+                .push(new_clause.to_vector_of_numbers());
         }
         self.clauses.insert((*new_clause).to_owned());
     }
@@ -183,9 +184,9 @@ impl CNF {
     ///
     /// let mut cnf = CNF::default();
     ///
-    /// let l1 = Literal::new(&Variable::new(1), false);
-    /// let l2 = Literal::new(&Variable::new(2), false);
-    /// let l3 = Literal::new(&Variable::new(3), false);
+    /// let l1 = Literal::new(&Variable::new(1));
+    /// let l2 = Literal::new(&Variable::new(2));
+    /// let l3 = Literal::new(&Variable::new(3));
     ///
     /// cnf.add_clause(&Clause::new(&vec![l1, l2, l3]));
     /// cnf.add_clause(&Clause::new(&vec![!l1, l2, l3]));

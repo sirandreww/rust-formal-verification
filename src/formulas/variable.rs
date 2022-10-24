@@ -23,7 +23,7 @@ impl Variable {
     ///
     /// # Arguments
     ///
-    /// * `variable_number` - An integer that holds the number of the variable, must be positive.
+    /// * `variable_number` - An integer that holds the number of the variable, must be strictly positive.
     ///
     /// # Examples
     ///
@@ -33,6 +33,7 @@ impl Variable {
     /// println!("var1 is {}", var1);
     /// ```
     pub fn new(variable_number: u32) -> Self {
+        debug_assert!(variable_number > 0, "Variable number may not be zero.");
         debug_assert!(
             variable_number <= (u32::MAX >> 1),
             "Variable number is too big."

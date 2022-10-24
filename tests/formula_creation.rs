@@ -19,7 +19,6 @@ mod tests {
     // helper functions
     // ********************************************************************************************
 
-
     // ********************************************************************************************
     // test functions
     // ********************************************************************************************
@@ -120,7 +119,7 @@ mod tests {
         assert_eq!(cnf1.get_highest_variable_number(), 5);
 
         let mut cnf2 = CNF::default();
-        assert_eq!(cnf2.get_highest_variable_number(), 0);
+        assert_eq!(cnf2.get_highest_variable_number(), -1);
         cnf2.add_clause(&(c0.clone()));
         assert_eq!(cnf2.get_highest_variable_number(), 3);
         cnf2.add_clause(&(c00.clone()));
