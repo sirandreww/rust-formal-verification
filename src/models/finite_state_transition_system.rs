@@ -196,5 +196,41 @@ impl FiniteStateTransitionSystem {
         &self.unsafety_property
     }
 
+    pub fn unroll_transition_relation(&self, number_of_steps: i32) -> CNF {
+        debug_assert!(number_of_steps >= 0);
+        let mut cnf = CNF::default();
+        for step in 0..number_of_steps {
+            for clause in self.transition.iter() {
+                let mut new_clause = Clause::new(&[]);
+                for literal in clause.iter() {
+                    let new_number =
+                        literal.get_number() + (self.max_variable_number * step);
+                    let is_negated = literal.is_negated();
+                    let new_lit = Literal::new(&Variable::new(new_number), is_negated);
+                    new_clause.add_literal(&new_lit);
+                }
+                cnf.add_clause(&new_clause);
+            }
+        }
+        cnf
+    }
+
+    pub fn get_unsafety_property_after_unrolling(&self, number_of_steps: i32) -> CNF {
+        debug_assert!(number_of_steps >= 0);
+        let mut cnf = CNF::default();
+        for clause in self.unsafety_property.iter() {
+            let mut new_clause = Clause::new(&[]);
+            for literal in clause.iter() {
+                let new_number =
+                    literal.get_number() + (self.max_variable_number * number_of_steps);
+                let is_negated = literal.is_negated();
+                let new_lit = Literal::new(&Variable::new(new_number), is_negated);
+                new_clause.add_literal(&new_lit);
+            }
+            cnf.add_clause(&new_clause);
+            }
+        cnf
+    }
+
     // pub fn Transition(&self) -> CNF {}
 }

@@ -69,6 +69,10 @@ impl Clause {
     pub fn is_empty(&self) -> bool {
         self.literals.is_empty()
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Literal> {
+        self.literals.iter()
+    }
 }
 
 // ************************************************************************************************
@@ -85,3 +89,21 @@ impl fmt::Display for Clause {
         write!(f, "({})", string_vec.join(" | "))
     }
 }
+
+// impl IntoIterator for Clause {
+//     type Item = Literal;
+//     type IntoIter = <Vec<Literal> as IntoIterator>::IntoIter; // so that you don't have to write std::vec::IntoIter, which nobody remembers anyway
+
+//     fn into_iter(self) -> Self::IntoIter {
+//         self.literals.into_iter()
+//     }
+// }
+
+//   // We deref to slice so that we can reuse the slice impls
+//   impl Deref for BinaryVec {
+//     type Output = [u8];
+
+//     fn deref(&self) -> &[u8] {
+//       &self.vec[..]
+//     }
+//   }

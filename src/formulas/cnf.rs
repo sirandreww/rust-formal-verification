@@ -215,6 +215,10 @@ impl CNF {
             .map(|one_clause| one_clause.to_vector_of_numbers())
             .collect::<Vec<Vec<i32>>>()
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Clause> {
+        self.clauses.iter()
+    }
 }
 
 // ************************************************************************************************
@@ -245,3 +249,12 @@ impl fmt::Display for CNF {
         write!(f, "({})", string_vec.join(" & "))
     }
 }
+
+// impl<'a> IntoIterator for &'a CNF {
+//     type Item = &'a Clause;
+//     type IntoIter = <HashSet<&'a Clause> as IntoIterator>::IntoIter; // so that you don't have to write std::vec::IntoIter, which nobody remembers anyway
+
+//     fn into_iter(self) -> std::collections::hash_set::IntoIter<&'a Clause> {
+//         (&self.clauses).into_iter()
+//     }
+// }
