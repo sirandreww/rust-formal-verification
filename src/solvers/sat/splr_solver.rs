@@ -4,7 +4,8 @@
 
 use crate::formulas::CNF;
 use crate::solvers::sat::SatResponse;
-use splr;
+use splr::{self, SolverError};
+use splr::solver::SolverResult;
 
 // ************************************************************************************************
 // struct
@@ -19,11 +20,25 @@ pub struct SplrSolver {}
 
 impl SplrSolver {
     pub fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
-        let v = cnf_to_solve.to_vector_of_vectors();
+        let v: &Vec<Vec<i32>> = cnf_to_solve.to_vector_of_vectors();
+        let owned: Vec<Vec<i32>> = v.to_owned();
+        // println!("{:?}", owned);
 
-        match splr::Certificate::try_from(v.to_owned()).expect("panic!") {
-            splr::Certificate::UNSAT => SatResponse::UnSat {},
-            splr::Certificate::SAT(assignment) => SatResponse::Sat { assignment },
+        match splr::Certificate::try_from(owned) {
+            SolverResult::Ok(c) => {
+                match c {
+                    splr::Certificate::UNSAT => SatResponse::UnSat {},
+                    splr::Certificate::SAT(assignment) => SatResponse::Sat { assignment },
+                }
+            },
+            SolverResult::Err(e) => {
+                match e {
+                    SolverError::EmptyClause => SatResponse::UnSat {},
+                    _ => {
+                        unreachable!();
+                    }
+                }
+            }
         }
     }
 }

@@ -50,4 +50,33 @@ mod tests {
             SatResponse::UnSat => assert!(false),
         };
     }
+
+    #[test]
+    fn sat_solve_simple_cnf_2() {
+        let mut cnf = CNF::default();
+
+        let l1 = Literal::new(&Variable::new(1));
+        let l2 = Literal::new(&Variable::new(2));
+        let l3 = Literal::new(&Variable::new(3));
+        let l4 = Literal::new(&Variable::new(4));
+        let l5 = Literal::new(&Variable::new(5));
+        
+        cnf.add_clause(&Clause::new(&[l4, !l5]));
+        cnf.add_clause(&Clause::new(&[!l3]));
+        cnf.add_clause(&Clause::new(&[!l3, !l4]));
+        cnf.add_clause(&Clause::new(&[l1, !l4, l5]));
+        cnf.add_clause(&Clause::new(&[!l1]));
+        cnf.add_clause(&Clause::new(&[!l2, !l4]));
+        cnf.add_clause(&Clause::new(&[l2, l3, l4]));
+        cnf.add_clause(&Clause::new(&[!l2]));
+        cnf.add_clause(&Clause::new(&[!l1, !l5]));
+        cnf.add_clause(&Clause::new(&[l3]));
+        
+        let solver = SplrSolver::default();
+        let response = solver.solve_cnf(&cnf);
+        match response {
+            SatResponse::Sat { assignment: _ } => assert!(false),
+            SatResponse::UnSat => assert!(true),
+        };
+    }
 }

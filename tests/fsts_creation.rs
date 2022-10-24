@@ -17,7 +17,7 @@ mod tests {
 
     use rust_formal_verification::{
         formulas::{Clause, Literal, Variable, CNF},
-        models::{AndInverterGraph, FiniteStateTransitionSystem},
+        models::{AndInverterGraph, FiniteStateTransitionSystem}, solvers::sat::{SplrSolver, SatResponse},
     };
     // use std::fs;
 
@@ -158,6 +158,39 @@ mod tests {
 
         fsts.get_transition_relation_for_some_depth(1, &mut initial_got);
         assert_eq!(initial_got.to_string(), initial_expected.to_string());
+
+        let x11 = Literal::new(&Variable::new(11));
+        let x12 = Literal::new(&Variable::new(12));
+        let x13 = Literal::new(&Variable::new(13));
+        let x14 = Literal::new(&Variable::new(14));
+        let x15 = Literal::new(&Variable::new(15));
+
+        // try transition
+
+        // x12 = x6
+        initial_expected.add_clause(&Clause::new(&[!x6, x12]));
+        initial_expected.add_clause(&Clause::new(&[x6, !x12]));
+
+        // x13 = x7
+        initial_expected.add_clause(&Clause::new(&[!x7, x13]));
+        initial_expected.add_clause(&Clause::new(&[x7, !x13]));
+
+        // x11 = x10
+        initial_expected.add_clause(&Clause::new(&[!x10, x11]));
+        initial_expected.add_clause(&Clause::new(&[x10, !x11]));
+
+        // x14 = !x12 & !x13
+        initial_expected.add_clause(&Clause::new(&[!x14, !x12]));
+        initial_expected.add_clause(&Clause::new(&[!x14, !x13]));
+        initial_expected.add_clause(&Clause::new(&[x14, x12, x13]));
+
+        // x15 = x14 ^ !x11
+        initial_expected.add_clause(&Clause::new(&[!x15, x14]));
+        initial_expected.add_clause(&Clause::new(&[!x15, !x11]));
+        initial_expected.add_clause(&Clause::new(&[x15, !x14, x11]));
+
+        fsts.get_transition_relation_for_some_depth(2, &mut initial_got);
+        assert_eq!(initial_got.to_string(), initial_expected.to_string());
     }
 
     // *--------------------------------------------------------------*
@@ -258,6 +291,19 @@ mod tests {
 
         fsts.get_transition_relation_for_some_depth(1, &mut initial_got);
         assert_eq!(initial_got.to_string(), initial_expected.to_string());
+
+        let solver = SplrSolver::default();
+            let response = solver.solve_cnf(&initial_expected);
+            match response {
+                SatResponse::Sat { assignment } => {
+                    assert_ne!(assignment, vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, 10]);
+                    // println!("{:?}", assignment);
+                    return;
+                }
+                SatResponse::UnSat => {
+                    assert!(false);
+                }
+            };
     }
 
     // *--------------------------------------------------------------*
