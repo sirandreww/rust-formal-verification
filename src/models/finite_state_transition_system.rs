@@ -52,17 +52,13 @@ impl FiniteStateTransitionSystem {
 
     fn propagate_latch_values(aig: &AndInverterGraph, cnf_to_add_to: &mut CNF, depth: u32, max_variable_number:u32){
         let and_info = aig.get_and_information();
+        let mut cnf = CNF::default();
         // encode and gates into formula
         for (lhs, rhs0, rhs1) in and_info {
             // get variable numbers
-            let mut lhs_num: u32 = (lhs >> 1).try_into().unwrap();
-            let mut rhs0_num: u32 = (rhs0 >> 1).try_into().unwrap();
-            let mut rhs1_num: u32 = (rhs1 >> 1).try_into().unwrap();
-
-            // increment to match depth.
-            lhs_num += max_variable_number * depth;
-            rhs0_num += max_variable_number * depth;
-            rhs1_num += max_variable_number * depth;
+            let lhs_num: u32 = (lhs >> 1).try_into().unwrap();
+            let rhs0_num: u32 = (rhs0 >> 1).try_into().unwrap();
+            let rhs1_num: u32 = (rhs1 >> 1).try_into().unwrap();
 
             assert_eq!(lhs % 2, 0);
             assert!(lhs > 1);
@@ -73,10 +69,12 @@ impl FiniteStateTransitionSystem {
             // lhs = rhs0 ^ rhs1 <=> (lhs -> rhs0 ^ rhs1) ^ (lhs <- rhs0 ^ rhs1)
             // <=> (!lhs \/ (rhs0 ^ rhs1)) ^ (lhs \/ !(rhs0 ^ rhs1))
             // <=> ((!lhs \/ rhs0) ^ (!lhs \/ rhs1)) ^ (lhs \/ !rhs0 \/ !rhs1)
-            cnf_to_add_to.add_clause(&Clause::new(&[!lhs_lit, rhs0_lit]));
-            cnf_to_add_to.add_clause(&Clause::new(&[!lhs_lit, rhs1_lit]));
-            cnf_to_add_to.add_clause(&Clause::new(&[lhs_lit, !rhs0_lit, !rhs1_lit]));
+            cnf.add_clause(&Clause::new(&[!lhs_lit, rhs0_lit]));
+            cnf.add_clause(&Clause::new(&[!lhs_lit, rhs1_lit]));
+            cnf.add_clause(&Clause::new(&[lhs_lit, !rhs0_lit, !rhs1_lit]));
         }
+
+        Self::bump_all_cnf_variables_by_some_number(&cnf, depth * max_variable_number, cnf_to_add_to);
     }
 
     fn create_initial_cnf(aig: &AndInverterGraph, max_variable_number:u32) -> CNF {
@@ -114,6 +112,7 @@ impl FiniteStateTransitionSystem {
         // encode latch updates into formula
         for (latch_literal, latch_input, _) in latch_info {
             let var_num: u32 = (latch_literal >> 1).try_into().unwrap();
+            debug_assert!(var_num > 0);
             let var_num_after_transition = max_variable_number + var_num;
             let input_var_num: u32 = (latch_input >> 1).try_into().unwrap();
 
@@ -163,6 +162,25 @@ impl FiniteStateTransitionSystem {
         cnf
     }
 
+    fn bump_all_cnf_variables_by_some_number(original_cnf: &CNF, number_to_bump: u32, cnf_to_add_to: &mut CNF) {
+        for clause in original_cnf.iter() {
+            let mut new_clause = Clause::new(&[]);
+            for literal in clause.iter() {
+                let mut new_number = literal.get_number();
+                if literal.get_number() == 0 {
+                    // constant 0 or 1 do not change
+                    
+                } else {
+                    new_number += number_to_bump;
+                }
+                let is_negated = literal.is_negated();
+                let new_lit = Literal::new_with_negation_option(&Variable::new(new_number), is_negated);
+                new_clause.add_literal(&new_lit);
+            }
+            cnf_to_add_to.add_clause(&new_clause);
+        }
+    }
+
     // ********************************************************************************************
     // aig api functions
     // ********************************************************************************************
@@ -208,31 +226,27 @@ impl FiniteStateTransitionSystem {
     }
 
     pub fn get_transition_relation_for_some_depth(&self, depth:u32, cnf_to_add_to: &mut CNF) {
-        for clause in self.transition.iter() {
-            let mut new_clause = Clause::new(&[]);
-            for literal in clause.iter() {
-                // constant x0 does not need to change.
-                let new_number = if literal.get_number() == 0 { 0 } else {literal.get_number() + (self.max_variable_number * depth)};
-                let is_negated = literal.is_negated();
-                let new_lit = Literal::new_with_negation_option(&Variable::new(new_number), is_negated);
-                new_clause.add_literal(&new_lit);
-            }
-            cnf_to_add_to.add_clause(&new_clause);
-        }
+        Self::bump_all_cnf_variables_by_some_number(
+            &self.transition, 
+            self.max_variable_number * depth, 
+            cnf_to_add_to
+        );
     }
 
     pub fn get_unsafety_property_for_some_depth(&self, depth: u32, cnf_to_add_to: &mut CNF) {
-        for clause in self.unsafety_property.iter() {
-            let mut new_clause = Clause::new(&[]);
-            for literal in clause.iter() {
-                let new_number =
-                    literal.get_number() + (self.max_variable_number * depth);
-                let is_negated = literal.is_negated();
-                let new_lit = Literal::new_with_negation_option(&Variable::new(new_number), is_negated);
-                new_clause.add_literal(&new_lit);
-            }
-            cnf_to_add_to.add_clause(&new_clause);
-        }
+        Self::bump_all_cnf_variables_by_some_number(
+            &self.unsafety_property, 
+            self.max_variable_number * depth, 
+            cnf_to_add_to
+        );
+    }
+
+    pub fn get_safety_property_for_some_depth(&self, depth: u32, cnf_to_add_to: &mut CNF) {
+        Self::bump_all_cnf_variables_by_some_number(
+            &self.safety_property, 
+            self.max_variable_number * depth, 
+            cnf_to_add_to
+        );
     }
 
     // pub fn Transition(&self) -> CNF {}
