@@ -28,7 +28,7 @@ mod tests {
         expected_unsafe: &str,
         expected_trans_unrolled: &str,
         expected_unsafe_unrolled_1: &str,
-        expected_unsafe_unrolled_2: &str
+        expected_unsafe_unrolled_2: &str,
     ) {
         let aig = AndInverterGraph::from_aig_path(aig_path);
         let fsts = FiniteStateTransitionSystem::from_aig(&aig);
@@ -36,10 +36,22 @@ mod tests {
         assert_eq!(fsts.get_transition_formula().to_string(), expected_trans);
         assert_eq!(fsts.get_safety_property().to_string(), expected_safe);
         assert_eq!(fsts.get_unsafety_property().to_string(), expected_unsafe);
-        assert_eq!(fsts.unroll_transition_relation(1).to_string(), expected_trans);
-        assert_eq!(fsts.unroll_transition_relation(2).to_string(), expected_trans_unrolled);
-        assert_eq!(fsts.get_unsafety_property_after_unrolling(1).to_string(), expected_unsafe_unrolled_1);
-        assert_eq!(fsts.get_unsafety_property_after_unrolling(2).to_string(), expected_unsafe_unrolled_2);
+        assert_eq!(
+            fsts.unroll_transition_relation(1).to_string(),
+            expected_trans
+        );
+        assert_eq!(
+            fsts.unroll_transition_relation(2).to_string(),
+            expected_trans_unrolled
+        );
+        assert_eq!(
+            fsts.get_unsafety_property_after_unrolling(1).to_string(),
+            expected_unsafe_unrolled_1
+        );
+        assert_eq!(
+            fsts.get_unsafety_property_after_unrolling(2).to_string(),
+            expected_unsafe_unrolled_2
+        );
     }
 
     // ********************************************************************************************

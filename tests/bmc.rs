@@ -37,7 +37,6 @@ mod tests {
     // creating fsts test
     // ********************************************************************************************
 
-
     #[test]
     fn create_fsts_from_simple_example_counter_with_bad_assertion() {
         // test_fsts_creation(

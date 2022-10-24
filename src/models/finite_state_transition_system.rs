@@ -203,8 +203,7 @@ impl FiniteStateTransitionSystem {
             for clause in self.transition.iter() {
                 let mut new_clause = Clause::new(&[]);
                 for literal in clause.iter() {
-                    let new_number =
-                        literal.get_number() + (self.max_variable_number * step);
+                    let new_number = literal.get_number() + (self.max_variable_number * step);
                     let is_negated = literal.is_negated();
                     let new_lit = Literal::new(&Variable::new(new_number), is_negated);
                     new_clause.add_literal(&new_lit);
@@ -228,7 +227,7 @@ impl FiniteStateTransitionSystem {
                 new_clause.add_literal(&new_lit);
             }
             cnf.add_clause(&new_clause);
-            }
+        }
         cnf
     }
 
