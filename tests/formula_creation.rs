@@ -86,31 +86,31 @@ mod tests {
         assert_eq!(c2.to_string(), format!("({x}1 | !{x}4 | {x}5 | !{x}6)"));
 
         let mut cnf0 = CNF::default();
-        assert_eq!(cnf0.get_greatest_variable_number(), 0);
+        assert_eq!(cnf0.get_highest_variable_number(), 0);
         cnf0.add_clause(&(c0.clone()));
-        assert_eq!(cnf0.get_greatest_variable_number(), 3);
+        assert_eq!(cnf0.get_highest_variable_number(), 3);
         cnf0.add_clause(&(c1.clone()));
-        assert_eq!(cnf0.get_greatest_variable_number(), 5);
+        assert_eq!(cnf0.get_highest_variable_number(), 5);
         cnf0.add_clause(&(c2.clone()));
-        assert_eq!(cnf0.get_greatest_variable_number(), 6);
+        assert_eq!(cnf0.get_highest_variable_number(), 6);
 
         let mut cnf1 = CNF::default();
-        assert_eq!(cnf1.get_greatest_variable_number(), 0);
+        assert_eq!(cnf1.get_highest_variable_number(), 0);
         cnf1.add_clause(&(c0.clone()));
-        assert_eq!(cnf1.get_greatest_variable_number(), 3);
+        assert_eq!(cnf1.get_highest_variable_number(), 3);
         cnf1.add_clause(&(c1.clone()));
-        assert_eq!(cnf1.get_greatest_variable_number(), 5);
+        assert_eq!(cnf1.get_highest_variable_number(), 5);
         cnf1.add_clause(&(c1.clone()));
-        assert_eq!(cnf1.get_greatest_variable_number(), 5);
+        assert_eq!(cnf1.get_highest_variable_number(), 5);
 
         let mut cnf2 = CNF::default();
-        assert_eq!(cnf2.get_greatest_variable_number(), 0);
+        assert_eq!(cnf2.get_highest_variable_number(), 0);
         cnf2.add_clause(&(c0.clone()));
-        assert_eq!(cnf2.get_greatest_variable_number(), 3);
+        assert_eq!(cnf2.get_highest_variable_number(), 3);
         cnf2.add_clause(&(c00.clone()));
-        assert_eq!(cnf2.get_greatest_variable_number(), 3);
+        assert_eq!(cnf2.get_highest_variable_number(), 3);
         cnf2.add_clause(&(c000.clone()));
-        assert_eq!(cnf2.get_greatest_variable_number(), 3);
+        assert_eq!(cnf2.get_highest_variable_number(), 3);
 
         assert_eq!(
             cnf0.to_string(),

@@ -11,10 +11,10 @@ use std::fmt;
 // struct
 // ************************************************************************************************
 
-#[derive(Default)]
 pub struct CNF {
     clauses: HashSet<Clause>,
     max_variable_number: i32,
+    vector_representation: Vec<Vec<i32>>,
 }
 
 // ************************************************************************************************
@@ -73,6 +73,9 @@ impl CNF {
             self.max_variable_number,
             new_clause.get_highest_variable_number(),
         );
+        if ! self.clauses.contains(new_clause) {
+            self.vector_representation.push(new_clause.to_vector_of_numbers());
+        }
         self.clauses.insert((*new_clause).to_owned());
     }
 
@@ -160,7 +163,7 @@ impl CNF {
         self.clauses.is_empty()
     }
 
-    pub fn get_greatest_variable_number(&self) -> i32 {
+    pub fn get_highest_variable_number(&self) -> i32 {
         self.max_variable_number
     }
 
@@ -209,11 +212,10 @@ impl CNF {
         format!("{dimacs_first_line}\n{string_without_first_line}")
     }
 
-    pub fn to_vector_of_vectors(&self) -> Vec<Vec<i32>> {
-        self.clauses
-            .iter()
-            .map(|one_clause| one_clause.to_vector_of_numbers())
-            .collect::<Vec<Vec<i32>>>()
+    pub fn to_vector_of_vectors(&self) -> &Vec<Vec<i32>> {
+        // check if somehow we added a clause that should not have been added.
+        assert_eq!(self.vector_representation.len(), self.clauses.len());
+        &self.vector_representation
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Clause> {
@@ -225,14 +227,15 @@ impl CNF {
 // default constructor
 // ************************************************************************************************
 
-// impl Default for CNF {
-//     fn default() -> Self {
-//         Self {
-//             clauses: Default::default(),
-//             max_variable_number: 0,
-//         }
-//     }
-// }
+impl Default for CNF {
+    fn default() -> Self {
+        Self {
+            clauses: Default::default(),
+            max_variable_number: -1,
+            vector_representation: Vec::new(),
+        }
+    }
+}
 
 // ************************************************************************************************
 // printing
