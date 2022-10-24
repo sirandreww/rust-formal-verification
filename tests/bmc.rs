@@ -24,13 +24,13 @@ mod tests {
         expected_safe: &str,
         expected_unsafe: &str,
     ) {
-        let aig = AndInverterGraph::from_aig_path(aig_path);
-        let fsts = FiniteStateTransitionSystem::from_aig(&aig);
-        let bmc_limit = 50;
-        for depth in 1..bmc_limit {
-            let transition_unrolled = fsts.unroll_transition_relation(depth);
-            let bad_after_steps = fsts.get_unsafety_property_after_unrolling(depth);
-        }
+        // let aig = AndInverterGraph::from_aig_path(aig_path);
+        // let fsts = FiniteStateTransitionSystem::from_aig(&aig);
+        // let bmc_limit = 50;
+        // for depth in 1..bmc_limit {
+        //     let transition_unrolled = fsts.unroll_transition_relation(depth);
+        //     let bad_after_steps = fsts.get_unsafety_property_after_unrolling(depth);
+        // }
     }
 
     // ********************************************************************************************

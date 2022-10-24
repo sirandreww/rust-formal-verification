@@ -14,7 +14,7 @@ use std::hash::Hash;
 #[derive(Eq, PartialEq, Clone, Hash)]
 pub struct Clause {
     literals: Vec<Literal>,
-    max_variable_number: i32,
+    max_variable_number: u32,
 }
 
 // ************************************************************************************************
@@ -46,7 +46,8 @@ impl Clause {
     }
 
     pub fn get_highest_variable_number(&self) -> i32 {
-        self.max_variable_number
+        // this should work since all variable numbers must have highest bit be 0.
+        self.max_variable_number.try_into().unwrap()
     }
 
     pub fn to_vector_of_numbers(&self) -> Vec<i32> {

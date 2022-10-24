@@ -11,7 +11,7 @@ use std::fmt;
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 /// Variable representation
 pub struct Variable {
-    variable_number: i32,
+    variable_number: u32,
 }
 
 // ************************************************************************************************
@@ -23,7 +23,7 @@ impl Variable {
     ///
     /// # Arguments
     ///
-    /// * `variable_number` - An integer that holds the number of the variable, must be strictly positive.
+    /// * `variable_number` - An integer that holds the number of the variable, must be positive.
     ///
     /// # Examples
     ///
@@ -32,15 +32,28 @@ impl Variable {
     /// let var1 = Variable::new(30);
     /// println!("var1 is {}", var1);
     /// ```
-    pub fn new(variable_number: i32) -> Self {
+    pub fn new(variable_number: u32) -> Self {
         debug_assert!(
-            variable_number > 0,
-            "Variable number must be strictly positive."
+            variable_number <= (u32::MAX >> 1),
+            "Variable number is too big."
         );
         Self { variable_number }
     }
 
-    pub fn get_number(&self) -> i32 {
+    /// Returns a .the number of the variable
+    ///
+    /// # Arguments
+    ///
+    /// * `&self` - The variable.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rust_formal_verification::formulas::Variable;
+    /// let var1 = Variable::new(30);
+    /// assert_eq!(var1.get_number(), 30);
+    /// ```
+    pub fn get_number(&self) -> u32 {
         self.variable_number
     }
 }

@@ -1,12 +1,28 @@
+// ************************************************************************************************
+// test mod declaration
+// ************************************************************************************************
+
 #[cfg(test)]
 mod tests {
+
+    // ********************************************************************************************
+    // use
+    // ********************************************************************************************
+
     use pretty_assertions::assert_eq;
     use rust_formal_verification::formulas::Clause;
     use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::Variable;
     use rust_formal_verification::formulas::CNF;
-    use rust_formal_verification::solvers::sat::SatResponse;
-    use rust_formal_verification::solvers::sat::SplrSolver;
+
+    // ********************************************************************************************
+    // helper functions
+    // ********************************************************************************************
+
+
+    // ********************************************************************************************
+    // test functions
+    // ********************************************************************************************
 
     #[test]
     fn making_formulas_and_turning_them_into_strings() {
@@ -26,12 +42,12 @@ mod tests {
         assert_eq!(v5.to_string(), format!("{x}5"));
         assert_eq!(v6.to_string(), format!("{x}6"));
 
-        let l1 = Literal::new(&v1, false);
-        let l2 = Literal::new(&v2, true);
-        let l3 = Literal::new(&v3, false);
-        let l4 = Literal::new(&v4, true);
-        let l5 = Literal::new(&v5, false);
-        let l6 = Literal::new(&v6, true);
+        let l1 = Literal::new(&v1);
+        let l2 = !Literal::new(&v2);
+        let l3 = Literal::new(&v3);
+        let l4 = !Literal::new(&v4);
+        let l5 = Literal::new(&v5);
+        let l6 = !Literal::new(&v6);
 
         assert_eq!(l1.to_string(), format!("{x}1"));
         assert_eq!(l2.to_string(), format!("!{x}2"));
@@ -86,7 +102,7 @@ mod tests {
         assert_eq!(c2.to_string(), format!("({x}1 | !{x}4 | {x}5 | !{x}6)"));
 
         let mut cnf0 = CNF::default();
-        assert_eq!(cnf0.get_highest_variable_number(), 0);
+        assert_eq!(cnf0.get_highest_variable_number(), -1);
         cnf0.add_clause(&(c0.clone()));
         assert_eq!(cnf0.get_highest_variable_number(), 3);
         cnf0.add_clause(&(c1.clone()));
@@ -95,7 +111,7 @@ mod tests {
         assert_eq!(cnf0.get_highest_variable_number(), 6);
 
         let mut cnf1 = CNF::default();
-        assert_eq!(cnf1.get_highest_variable_number(), 0);
+        assert_eq!(cnf1.get_highest_variable_number(), -1);
         cnf1.add_clause(&(c0.clone()));
         assert_eq!(cnf1.get_highest_variable_number(), 3);
         cnf1.add_clause(&(c1.clone()));
@@ -129,7 +145,7 @@ mod tests {
 
         let v1 = Variable::new(1);
         assert_eq!(v1.to_string(), format!("{x}1"));
-        let l1 = Literal::new(&v1, false);
+        let l1 = Literal::new(&v1);
         assert_eq!(l1.to_string(), format!("{x}1"));
 
         let l1_not = !l1;
@@ -137,26 +153,5 @@ mod tests {
 
         let l1_not_not = !l1_not;
         assert_eq!(l1_not_not.to_string(), format!("{x}1"));
-    }
-
-    #[test]
-    fn making_formulas_and_sat_solving_them() {
-        let mut cnf = CNF::default();
-
-        let l1 = Literal::new(&Variable::new(1), false);
-        let l2 = Literal::new(&Variable::new(2), false);
-        let l3 = Literal::new(&Variable::new(3), false);
-
-        cnf.add_clause(&Clause::new(&[l1, l2, l3]));
-        cnf.add_clause(&Clause::new(&[!l1, l2, l3]));
-        cnf.add_clause(&Clause::new(&[l1, !l2, l3]));
-        cnf.add_clause(&Clause::new(&[l1, l2, !l3]));
-
-        let solver = SplrSolver::default();
-        let response = solver.solve_cnf(&cnf);
-        match response {
-            SatResponse::Sat { assignment: _ } => assert!(true),
-            SatResponse::UnSat => assert!(false),
-        };
     }
 }

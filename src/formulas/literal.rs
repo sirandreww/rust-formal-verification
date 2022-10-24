@@ -11,7 +11,7 @@ use std::{fmt, ops::Not};
 
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord, Copy)]
 pub struct Literal {
-    literal_number: i32,
+    literal_number: u32,
 }
 
 // ************************************************************************************************
@@ -19,13 +19,21 @@ pub struct Literal {
 // ************************************************************************************************
 
 impl Literal {
-    pub fn new(variable: &Variable, is_negated: bool) -> Self {
+    pub fn new(variable: &Variable) -> Self {
         Self {
-            literal_number: variable.get_number() + variable.get_number() + (is_negated as i32),
+            literal_number: variable.get_number() << 1,
         }
     }
 
-    pub fn get_number(&self) -> i32 {
+    pub fn new_with_negation_option(variable: &Variable, is_negated: bool) -> Self {
+        if is_negated {
+            !Self::new(variable)
+        } else {
+            Self::new(variable)
+        }
+    }
+
+    pub fn get_number(&self) -> u32 {
         self.literal_number >> 1
     }
 
@@ -35,11 +43,12 @@ impl Literal {
 
     pub fn to_dimacs_number(&self) -> i32 {
         let lit_num = self.get_number();
+        // this should succeed because lit num cannot be to large to overflow.
+        let mut lit_num_as_signed_number: i32 = lit_num.try_into().unwrap();
         if self.is_negated() {
-            -lit_num
-        } else {
-            lit_num
+            lit_num_as_signed_number = -lit_num_as_signed_number;
         }
+        lit_num_as_signed_number
     }
 }
 
