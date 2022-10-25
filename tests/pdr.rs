@@ -55,13 +55,11 @@ mod tests {
         response
     }
 
-    fn is_bad_reached_in_1_step_from_f_k(f_k: &CNF, fin_state: &FiniteStateTransitionSystem) -> SatResponse{
-        let mut cnf = CNF::default();
-        for c in f_k.iter() {
-            cnf.add_clause(c);
-        }
-        fin_state.get_transition_relation_for_some_depth(1, &mut cnf);
-        fin_state.get_unsafety_property_for_some_depth(1, &mut cnf);
+    fn is_bad_reached_in_1_step_from_cnf(cnf: &CNF, fin_state: &FiniteStateTransitionSystem) -> SatResponse{
+        let mut new_cnf = CNF::default();
+        new_cnf.concat(cnf);
+        fin_state.get_transition_relation_for_some_depth(1, &mut new_cnf);
+        fin_state.get_unsafety_property_for_some_depth(1, &mut new_cnf);
         let solver = SplrSolver::default();
         let response = solver.solve_cnf(&cnf);
         response
@@ -115,7 +113,7 @@ mod tests {
 
         for k in 1.. {
             loop {
-                let fk_and_tr_and_not_p_tag = is_bad_reached_in_1_step_from_f_k(F.last().unwrap(), fin_state);
+                let fk_and_tr_and_not_p_tag = is_bad_reached_in_1_step_from_cnf(F.last().unwrap(), fin_state);
                 match fk_and_tr_and_not_p_tag {
                     SatResponse::Sat { cube } => {
                         block(cube,k-1)

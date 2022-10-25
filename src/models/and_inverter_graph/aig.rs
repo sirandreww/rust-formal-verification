@@ -440,7 +440,7 @@ impl AndInverterGraph {
     }
 
     // ********************************************************************************************
-    // aig api functions
+    // aig creator
     // ********************************************************************************************
 
     /// Function that takes path to '.aig' file and creates a corresponding AndInverterGraph object.
@@ -461,6 +461,10 @@ impl AndInverterGraph {
             .unwrap_or_else(|_| panic!("Unable to read the '.aig' file {file_path}"));
         Self::from_vector_of_bytes(&file_as_vec_of_bytes)
     }
+
+    // ********************************************************************************************
+    // aig converter
+    // ********************************************************************************************
 
     /// Function that converts an AndInverterGraph into '.aag' format as described in:
     /// The '.aag' file is in accordance to http://fmv.jku.at/aiger/
@@ -555,6 +559,33 @@ impl AndInverterGraph {
         final_res
     }
 
+    // ********************************************************************************************
+    // aig getting node info
+    // ********************************************************************************************
+
+    /// Function that gets a vector describing the input nodes in the system.
+    /// The output is a vector containing number representing input literals.
+    /// 
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// assert_eq!(Vec::<usize>::new(), aig.get_input_information());
+    /// ```
+    pub fn get_input_information(&self) -> Vec<usize> {
+        let mut result = Vec::new();
+        for input_index in self.inputs.iter() {
+            let input = &self.nodes[input_index.to_owned()];
+            result.push(input.get_literal());
+        }
+        result
+    }
+
     /// Function that gets a vector describing the latch nodes in the system.
     /// The output is a vector containing tuple with a length of 3,
     /// representing latch information :
@@ -625,22 +656,9 @@ impl AndInverterGraph {
         result
     }
 
-    /// Function that gets the maximum variable number used in the AIG.
-    ///
-    /// # Arguments
-    ///
-    /// * `&self` - the AndInverterGraph desired.
-    ///
-    /// # Examples
-    /// ```
-    /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/simple_examples/counter.aig";
-    /// let aig = AndInverterGraph::from_aig_path(file_path);
-    /// assert_eq!(5, aig.get_maximum_variable_number());
-    /// ```
-    pub fn get_maximum_variable_number(&self) -> usize {
-        self.maximum_variable_index
-    }
+    // ********************************************************************************************
+    // aig getting special literals
+    // ********************************************************************************************
 
     /// Function that gets a vector describing the bad nodes in the system.
     /// The output is a vector containing usize numbers, these are the literals
@@ -658,10 +676,27 @@ impl AndInverterGraph {
     /// assert_eq!(Vec::<usize>::new(), aig.get_bad_information());
     /// ```
     pub fn get_bad_information(&self) -> Vec<usize> {
-        let mut result = Vec::new();
-        for bad_lit in self.bad.iter() {
-            result.push(bad_lit.to_owned());
-        }
-        result
+        self.bad.clone()
+    }
+
+    // ********************************************************************************************
+    // aig getting numbers
+    // ********************************************************************************************
+
+    /// Function that gets the maximum variable number used in the AIG.
+    ///
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// assert_eq!(5, aig.get_maximum_variable_number());
+    /// ```
+    pub fn get_maximum_variable_number(&self) -> usize {
+        self.maximum_variable_index
     }
 }

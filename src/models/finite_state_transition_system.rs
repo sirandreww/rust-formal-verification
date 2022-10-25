@@ -107,7 +107,7 @@ impl FiniteStateTransitionSystem {
         let latch_info = aig.get_latch_information();
         for (latch_literal, _, latch_reset) in latch_info {
             // if latch is initialized
-            if latch_reset != (latch_literal >> 1) {
+            if latch_reset != latch_literal {
                 let lit = Self::get_literal_from_aig_literal(latch_literal);
                 if latch_reset == 0 {
                     cnf.add_clause(&Clause::new(&[!lit]));
@@ -119,6 +119,7 @@ impl FiniteStateTransitionSystem {
             }
         }
 
+        // todo!("Change this");
         // propagate latch values to all other wires in circuit for first clk.
         Self::propagate_latch_values(aig, &mut cnf, 0, max_variable_number);
 
@@ -191,19 +192,24 @@ impl FiniteStateTransitionSystem {
         number_to_bump: u32,
         cnf_to_add_to: &mut CNF,
     ) {
-        for clause in original_cnf.iter() {
-            let mut new_clause = Clause::new(&[]);
-            for literal in clause.iter() {
-                let mut new_number = literal.get_number();
-                assert_ne!(literal.get_number(), 0);
-                new_number += number_to_bump;
-                let is_negated = literal.is_negated();
-                let new_lit = Literal::new_with_negation_option(
-                    &Variable::new(new_number), is_negated
-                );
-                new_clause.add_literal(&new_lit);
+        if number_to_bump == 0 {
+            // this makes the function faster for the simple case
+            cnf_to_add_to.concat(original_cnf);
+        } else {
+            for clause in original_cnf.iter() {
+                let mut new_clause = Clause::new(&[]);
+                for literal in clause.iter() {
+                    let mut new_number = literal.get_number();
+                    assert_ne!(literal.get_number(), 0);
+                    new_number += number_to_bump;
+                    let is_negated = literal.is_negated();
+                    let new_lit = Literal::new_with_negation_option(
+                        &Variable::new(new_number), is_negated
+                    );
+                    new_clause.add_literal(&new_lit);
+                }
+                cnf_to_add_to.add_clause(&new_clause);
             }
-            cnf_to_add_to.add_clause(&new_clause);
         }
     }
 
@@ -246,11 +252,32 @@ impl FiniteStateTransitionSystem {
     }
 
     pub fn get_initial_relation(&self, cnf_to_add_to: &mut CNF) {
-        for clause in self.initial_states.iter() {
-            cnf_to_add_to.add_clause(&clause);
-        }
+        cnf_to_add_to.concat(&self.initial_states);
     }
 
+    /// Function that gets the transition relation for the FiniteStateTransitionSystem.
+    ///
+    /// # Arguments
+    ///
+    /// * `self: &FiniteStateTransitionSystem` - the FiniteStateTransitionSystem desired.
+    /// * `depth: u32` - the number of tags desire, for example for Tr(X, X') this would be 1
+    ///                  for Tr(X', X'') this would be 2 and so on.
+    /// * `cnf_to_add_to: &mut CNF` - cnf that the result would be added to for performance reasons.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::{AndInverterGraph, FiniteStateTransitionSystem};
+    /// use rust_formal_verification::formulas::CNF;
+    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// let fsts = FiniteStateTransitionSystem::from_aig(&aig);
+    /// let mut tr_x_x_tag = CNF::default();
+    /// fsts.get_transition_relation_for_some_depth(1, &mut tr_x_x_tag);
+    /// assert_eq!(
+    ///     tr_x_x_tag.to_string(), 
+    ///     "((!x1 | x7) & (!x2 | x8) & (!x5 | x6) & (!x6 | !x10) & (!x7 | !x9) & (!x8 | !x9) & (x1 | !x7) & (x2 | !x8) & (x5 | !x6) & (x6 | !x9 | x10) & (x7 | x8 | x9) & (x9 | !x10))"
+    /// );
+    /// ```
     pub fn get_transition_relation_for_some_depth(&self, depth: u32, cnf_to_add_to: &mut CNF) {
         debug_assert!(depth > 0, "Called get_transition_relation_for_some_depth with depth 0. Transition relation for depth 0 is undefined.");
         Self::bump_all_cnf_variables_by_some_number(

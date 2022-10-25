@@ -222,6 +222,12 @@ impl CNF {
     pub fn iter(&self) -> impl Iterator<Item = &Clause> {
         self.clauses.iter()
     }
+
+    pub fn concat(&mut self, cnf: &CNF){
+        for c in cnf.iter(){
+            self.add_clause(c);
+        }
+    }
 }
 
 // ************************************************************************************************
