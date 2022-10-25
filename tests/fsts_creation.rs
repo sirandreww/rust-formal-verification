@@ -293,7 +293,7 @@ mod tests {
             SatResponse::Sat { assignment } => {
                 assert_eq!(assignment, vec![1, -2, -3, 4, 5, 6, -7, -8, 9, 10]);
                 // println!("{:?}", assignment);
-                return;
+                
             }
             SatResponse::UnSat => {
                 assert!(false);

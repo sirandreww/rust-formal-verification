@@ -16,7 +16,7 @@ mod tests {
     // ********************************************************************************************
 
     use rust_formal_verification::{
-        formulas::{Clause, CNF},
+        formulas::{CNF},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{SatResponse, SplrSolver},
     };
@@ -41,8 +41,8 @@ mod tests {
         fin_state.get_initial_relation(&mut cnf);
         fin_state.get_unsafety_property_for_some_depth(0, &mut cnf);
         let solver = SplrSolver::default();
-        let response = solver.solve_cnf(&cnf);
-        response
+        
+        solver.solve_cnf(&cnf)
     }
 
     fn is_bad_reached_in_1_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
@@ -51,8 +51,8 @@ mod tests {
         fin_state.get_transition_relation_for_some_depth(1, &mut cnf);
         fin_state.get_unsafety_property_for_some_depth(1, &mut cnf);
         let solver = SplrSolver::default();
-        let response = solver.solve_cnf(&cnf);
-        response
+        
+        solver.solve_cnf(&cnf)
     }
 
     fn is_bad_reached_in_1_step_from_cnf(
@@ -64,8 +64,8 @@ mod tests {
         fin_state.get_transition_relation_for_some_depth(1, &mut new_cnf);
         fin_state.get_unsafety_property_for_some_depth(1, &mut new_cnf);
         let solver = SplrSolver::default();
-        let response = solver.solve_cnf(&cnf);
-        response
+        
+        solver.solve_cnf(cnf)
     }
 
     // fn shrink_cube_using_trinary_sim(cube: Cube) -> Cube {
@@ -94,7 +94,7 @@ mod tests {
 
     fn property_directed_reachability(
         fin_state: &FiniteStateTransitionSystem,
-        aig: &AndInverterGraph,
+        _aig: &AndInverterGraph,
     ) -> PdrResult {
         let init_and_not_p = is_bad_reached_in_0_steps(fin_state);
         match init_and_not_p {

@@ -28,9 +28,9 @@ impl Literal {
 
     pub fn negate_if_true(&self, is_negated: bool) -> Self {
         if is_negated {
-            return !self.to_owned();
+            !self.to_owned()
         } else {
-            return self.to_owned();
+            self.to_owned()
         }
     }
 
