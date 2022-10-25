@@ -21,10 +21,12 @@ impl Literal {
     pub fn new(number: u32) -> Self {
         debug_assert!(number > 0, "Literal number may not be zero.");
         debug_assert!(number <= (u32::MAX >> 1), "Literal number is too big.");
-        Self { literal_number: (number << 1) }
+        Self {
+            literal_number: (number << 1),
+        }
     }
 
-    pub fn negate_if_true(&self, is_negated: bool) -> Self{
+    pub fn negate_if_true(&self, is_negated: bool) -> Self {
         if is_negated {
             return !self.to_owned();
         } else {

@@ -17,7 +17,8 @@ mod tests {
 
     use rust_formal_verification::{
         formulas::{Clause, Literal, CNF},
-        models::{AndInverterGraph, FiniteStateTransitionSystem}, solvers::sat::{SplrSolver, SatResponse},
+        models::{AndInverterGraph, FiniteStateTransitionSystem},
+        solvers::sat::{SatResponse, SplrSolver},
     };
     // use std::fs;
 
@@ -114,18 +115,12 @@ mod tests {
         // safety is empty
         let mut safety_on_the_literals = CNF::new();
         fsts.get_safety_property_for_some_depth(0, &mut safety_on_the_literals);
-        assert_eq!(
-            safety_on_the_literals.to_string(),
-            CNF::new().to_string()
-        );
+        assert_eq!(safety_on_the_literals.to_string(), CNF::new().to_string());
 
         // unsafety is empty
         let mut unsafety_on_the_literals = CNF::new();
         fsts.get_unsafety_property_for_some_depth(0, &mut unsafety_on_the_literals);
-        assert_eq!(
-            unsafety_on_the_literals.to_string(),
-            CNF::new().to_string()
-        );
+        assert_eq!(unsafety_on_the_literals.to_string(), CNF::new().to_string());
 
         let x6 = Literal::new(6);
         let x7 = Literal::new(7);
@@ -293,17 +288,17 @@ mod tests {
         assert_eq!(initial_got.to_string(), initial_expected.to_string());
 
         let solver = SplrSolver::default();
-            let response = solver.solve_cnf(&initial_expected);
-            match response {
-                SatResponse::Sat { assignment } => {
-                    assert_eq!(assignment, vec![1, -2, -3, 4, 5, 6, -7, -8, 9, 10]);
-                    // println!("{:?}", assignment);
-                    return;
-                }
-                SatResponse::UnSat => {
-                    assert!(false);
-                }
-            };
+        let response = solver.solve_cnf(&initial_expected);
+        match response {
+            SatResponse::Sat { assignment } => {
+                assert_eq!(assignment, vec![1, -2, -3, 4, 5, 6, -7, -8, 9, 10]);
+                // println!("{:?}", assignment);
+                return;
+            }
+            SatResponse::UnSat => {
+                assert!(false);
+            }
+        };
     }
 
     // *--------------------------------------------------------------*

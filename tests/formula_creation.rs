@@ -36,22 +36,17 @@ mod tests {
         assert_eq!(l5.to_string(), format!("x5"));
         assert_eq!(l6.to_string(), format!("!x6"));
 
-
         let c0 = Clause::new(&[l1, l2, l3]);
         assert_eq!(c0.get_highest_variable_number(), 3);
-
 
         let c00 = Clause::new(&[l2, l1, l3]);
         assert_eq!(c00.get_highest_variable_number(), 3);
 
-
         let c000 = Clause::new(&[l2, l3, l1]);
         assert_eq!(c000.get_highest_variable_number(), 3);
 
-
         let c1 = Clause::new(&[l4, l5]);
         assert_eq!(c1.get_highest_variable_number(), 5);
-
 
         let c2 = Clause::new(&[l1, l4, l5, l6]);
         assert_eq!(c2.get_highest_variable_number(), 6);
@@ -93,10 +88,7 @@ mod tests {
             cnf0.to_string(),
             format!("((!x4 | x5) & (x1 | !x2 | x3) & (x1 | !x4 | x5 | !x6))")
         );
-        assert_eq!(
-            cnf1.to_string(),
-            format!("((!x4 | x5) & (x1 | !x2 | x3))")
-        );
+        assert_eq!(cnf1.to_string(), format!("((!x4 | x5) & (x1 | !x2 | x3))"));
         assert_eq!(cnf2.to_string(), format!("((x1 | !x2 | x3))"));
     }
 

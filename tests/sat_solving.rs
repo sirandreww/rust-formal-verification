@@ -59,7 +59,7 @@ mod tests {
         let l3 = Literal::new(3);
         let l4 = Literal::new(4);
         let l5 = Literal::new(5);
-        
+
         cnf.add_clause(&Clause::new(&[l4, !l5]));
         cnf.add_clause(&Clause::new(&[!l3]));
         cnf.add_clause(&Clause::new(&[!l3, !l4]));
@@ -70,7 +70,7 @@ mod tests {
         cnf.add_clause(&Clause::new(&[!l2]));
         cnf.add_clause(&Clause::new(&[!l1, !l5]));
         cnf.add_clause(&Clause::new(&[l3]));
-        
+
         let solver = SplrSolver::default();
         let response = solver.solve_cnf(&cnf);
         match response {

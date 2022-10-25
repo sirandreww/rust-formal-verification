@@ -565,7 +565,7 @@ impl AndInverterGraph {
 
     /// Function that gets a vector describing the input nodes in the system.
     /// The output is a vector containing number representing input literals.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `&self` - the AndInverterGraph desired.

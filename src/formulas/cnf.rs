@@ -21,9 +21,11 @@ pub struct CNF {
 // ************************************************************************************************
 
 impl CNF {
-
     pub fn new() -> Self {
-        Self { clauses: Vec::new(), max_variable_number: 0 }
+        Self {
+            clauses: Vec::new(),
+            max_variable_number: 0,
+        }
     }
 
     /// Function that adds a clause to the CNF.
@@ -130,12 +132,9 @@ impl CNF {
         self.clauses.iter()
     }
 
-    pub fn concat(&mut self, cnf: &mut CNF){
+    pub fn concat(&mut self, cnf: &mut CNF) {
         self.clauses.append(&mut cnf.clauses);
-        self.max_variable_number = max(
-            self.max_variable_number,
-            cnf.max_variable_number
-        );
+        self.max_variable_number = max(self.max_variable_number, cnf.max_variable_number);
     }
 }
 

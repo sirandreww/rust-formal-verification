@@ -16,7 +16,7 @@ mod tests {
     // ********************************************************************************************
 
     use rust_formal_verification::{
-        formulas::{CNF, Clause},
+        formulas::{Clause, CNF},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{SatResponse, SplrSolver},
     };
@@ -29,14 +29,14 @@ mod tests {
 
     enum PdrResult {
         Proof { invariant: CNF },
-        CTX { assignment: Vec<i32> }
+        CTX { assignment: Vec<i32> },
     }
 
     // fn get_bad_cube(fin_state: &FiniteStateTransitionSystem, blocked_cubes_of_each_frame: Vec<Vec<Cube>>, unreachable_cubes: Vec<Cube> ) {
 
     // }
 
-    fn is_bad_reached_in_0_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse{
+    fn is_bad_reached_in_0_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
         let mut cnf = CNF::new();
         fin_state.get_initial_relation(&mut cnf);
         fin_state.get_unsafety_property_for_some_depth(0, &mut cnf);
@@ -45,7 +45,7 @@ mod tests {
         response
     }
 
-    fn is_bad_reached_in_1_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse{
+    fn is_bad_reached_in_1_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
         let mut cnf = CNF::new();
         fin_state.get_initial_relation(&mut cnf);
         fin_state.get_transition_relation_for_some_depth(1, &mut cnf);
@@ -55,7 +55,10 @@ mod tests {
         response
     }
 
-    fn is_bad_reached_in_1_step_from_cnf(cnf: &CNF, fin_state: &FiniteStateTransitionSystem) -> SatResponse{
+    fn is_bad_reached_in_1_step_from_cnf(
+        cnf: &CNF,
+        fin_state: &FiniteStateTransitionSystem,
+    ) -> SatResponse {
         let mut new_cnf = CNF::new();
         new_cnf.concat(&mut cnf.to_owned());
         fin_state.get_transition_relation_for_some_depth(1, &mut new_cnf);
@@ -70,7 +73,6 @@ mod tests {
     // }
 
     // fn block(cube_to_block: Cube, frame_to_block_in: i32){
-
 
     // }
 
@@ -90,8 +92,10 @@ mod tests {
     // helper functions
     // ********************************************************************************************
 
-    fn property_directed_reachability(fin_state: &FiniteStateTransitionSystem, aig: &AndInverterGraph) -> PdrResult{
-
+    fn property_directed_reachability(
+        fin_state: &FiniteStateTransitionSystem,
+        aig: &AndInverterGraph,
+    ) -> PdrResult {
         let init_and_not_p = is_bad_reached_in_0_steps(fin_state);
         match init_and_not_p {
             SatResponse::Sat { assignment } => return PdrResult::CTX { assignment },
@@ -150,7 +154,6 @@ mod tests {
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
             property_directed_reachability(&fin_state, &aig);
-
         }
     }
 }

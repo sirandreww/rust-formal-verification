@@ -132,8 +132,9 @@ impl FiniteStateTransitionSystem {
         for (latch_literal, latch_input, _) in latch_info {
             assert_eq!(latch_literal % 2, 0);
             let latch_lit_before = Self::get_literal_from_aig_literal(latch_literal);
-            let latch_lit_after = Literal::new(latch_lit_before.get_number() + max_variable_number).negate_if_true(latch_lit_before.is_negated());
-        
+            let latch_lit_after = Literal::new(latch_lit_before.get_number() + max_variable_number)
+                .negate_if_true(latch_lit_before.is_negated());
+
             if latch_input == 0 {
                 cnf.add_clause(&Clause::new(&[!latch_lit_after]));
             } else if latch_input == 1 {
@@ -143,7 +144,7 @@ impl FiniteStateTransitionSystem {
 
                 // latch_lit = latch_input_lit <=> (latch_lit -> latch_input_lit) ^ (latch_lit <- latch_input_lit)
                 // <=> (!latch_lit \/ latch_input_lit) ^ (latch_lit \/ !latch_input_lit)
-    
+
                 cnf.add_clause(&Clause::new(&[!latch_lit_after, latch_input_lit]));
                 cnf.add_clause(&Clause::new(&[latch_lit_after, !latch_input_lit]));
             }
@@ -263,7 +264,7 @@ impl FiniteStateTransitionSystem {
     /// let mut tr_x_x_tag = CNF::default();
     /// fsts.get_transition_relation_for_some_depth(1, &mut tr_x_x_tag);
     /// assert_eq!(
-    ///     tr_x_x_tag.to_string(), 
+    ///     tr_x_x_tag.to_string(),
     ///     "((!x1 | x7) & (!x2 | x8) & (!x5 | x6) & (!x6 | !x10) & (!x7 | !x9) & (!x8 | !x9) & (x1 | !x7) & (x2 | !x8) & (x5 | !x6) & (x6 | !x9 | x10) & (x7 | x8 | x9) & (x9 | !x10))"
     /// );
     /// ```
