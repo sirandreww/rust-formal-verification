@@ -2,7 +2,7 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::{Clause, Literal, Variable, CNF};
+use crate::formulas::{Clause, Literal, CNF};
 use crate::models::AndInverterGraph;
 
 // ************************************************************************************************
@@ -52,7 +52,7 @@ impl FiniteStateTransitionSystem {
 
     fn get_literal_from_aig_literal(aig_literal: usize) -> Literal {
         let aig_var_num: u32 = (aig_literal >> 1).try_into().unwrap();
-        Literal::new_with_negation_option(&Variable::new(aig_var_num), aig_literal % 2 == 1)
+        Literal::new(aig_var_num).negate_if_true(aig_literal % 2 == 1)
     }
 
     fn propagate_latch_values(
@@ -62,7 +62,7 @@ impl FiniteStateTransitionSystem {
         max_variable_number: u32,
     ) {
         let and_info = aig.get_and_information();
-        let mut cnf = CNF::default();
+        let mut cnf = CNF::new();
         // encode and gates into formula
         for (lhs, rhs0, rhs1) in and_info {
             // get variable numbers
@@ -101,8 +101,8 @@ impl FiniteStateTransitionSystem {
         );
     }
 
-    fn create_initial_cnf(aig: &AndInverterGraph, max_variable_number: u32) -> CNF {
-        let mut cnf = CNF::default();
+    fn create_initial_cnf(aig: &AndInverterGraph) -> CNF {
+        let mut cnf = CNF::new();
 
         let latch_info = aig.get_latch_information();
         for (latch_literal, _, latch_reset) in latch_info {
@@ -118,26 +118,22 @@ impl FiniteStateTransitionSystem {
                 }
             }
         }
-
-        // todo!("Change this");
-        // propagate latch values to all other wires in circuit for first clk.
-        Self::propagate_latch_values(aig, &mut cnf, 0, max_variable_number);
-
         cnf
     }
 
     fn create_transition_cnf(aig: &AndInverterGraph, max_variable_number: u32) -> CNF {
-        let mut cnf = CNF::default();
+        let mut cnf = CNF::new();
+
+        // propagate new latch values
+        Self::propagate_latch_values(aig, &mut cnf, 0, max_variable_number);
 
         let latch_info = aig.get_latch_information();
         // encode latch updates into formula
         for (latch_literal, latch_input, _) in latch_info {
             assert_eq!(latch_literal % 2, 0);
             let latch_lit_before = Self::get_literal_from_aig_literal(latch_literal);
-            let latch_lit_after = Literal::new_with_negation_option(
-                &Variable::new(latch_lit_before.get_number() + max_variable_number),
-                latch_lit_before.is_negated(),
-            );
+            let latch_lit_after = Literal::new(latch_lit_before.get_number() + max_variable_number).negate_if_true(latch_lit_before.is_negated());
+        
             if latch_input == 0 {
                 cnf.add_clause(&Clause::new(&[!latch_lit_after]));
             } else if latch_input == 1 {
@@ -152,36 +148,29 @@ impl FiniteStateTransitionSystem {
                 cnf.add_clause(&Clause::new(&[latch_lit_after, !latch_input_lit]));
             }
         }
-
-        // propagate new latch values
-        Self::propagate_latch_values(aig, &mut cnf, 1, max_variable_number);
-
         cnf
     }
 
     fn create_safety_property(aig: &AndInverterGraph) -> CNF {
-        let mut cnf = CNF::default();
+        let mut cnf = CNF::new();
         let bad_info = aig.get_bad_information();
         for bad_literal in bad_info {
-            let var_num: u32 = (bad_literal >> 1).try_into().unwrap();
-            let b_lit =
-                Literal::new_with_negation_option(&Variable::new(var_num), bad_literal % 2 == 1);
+            let b_lit = Self::get_literal_from_aig_literal(bad_literal);
             cnf.add_clause(&Clause::new(&[!b_lit]));
         }
         cnf
     }
 
     fn create_unsafety_property(aig: &AndInverterGraph) -> CNF {
-        let mut clause = Clause::new(&[]);
         let bad_info = aig.get_bad_information();
+        let mut literals = Vec::new();
         for bad_literal in bad_info {
-            let var_num: u32 = (bad_literal >> 1).try_into().unwrap();
-            let b_lit =
-                Literal::new_with_negation_option(&Variable::new(var_num), bad_literal % 2 == 1);
-            clause.add_literal(&b_lit);
+            let b_lit = Self::get_literal_from_aig_literal(bad_literal);
+            literals.push(b_lit);
         }
-        let mut cnf = CNF::default();
-        if !clause.is_empty() {
+        let mut cnf = CNF::new();
+        let clause = Clause::new(&literals);
+        if clause.len() != 0 {
             cnf.add_clause(&clause);
         }
         cnf
@@ -194,20 +183,20 @@ impl FiniteStateTransitionSystem {
     ) {
         if number_to_bump == 0 {
             // this makes the function faster for the simple case
-            cnf_to_add_to.concat(original_cnf);
+            cnf_to_add_to.concat(&mut original_cnf.to_owned());
         } else {
             for clause in original_cnf.iter() {
-                let mut new_clause = Clause::new(&[]);
+                let mut literals = Vec::new();
                 for literal in clause.iter() {
-                    let mut new_number = literal.get_number();
                     assert_ne!(literal.get_number(), 0);
+                    let mut new_number = literal.get_number();
                     new_number += number_to_bump;
                     let is_negated = literal.is_negated();
-                    let new_lit = Literal::new_with_negation_option(
-                        &Variable::new(new_number), is_negated
-                    );
-                    new_clause.add_literal(&new_lit);
+                    let new_lit = Literal::new(new_number).negate_if_true(is_negated);
+                    literals.push(new_lit);
                 }
+
+                let new_clause = Clause::new(&literals);
                 cnf_to_add_to.add_clause(&new_clause);
             }
         }
@@ -238,7 +227,7 @@ impl FiniteStateTransitionSystem {
             "AIG has variables with numbers that are too high"
         );
         let max_variable_number: u32 = max_variable_number_as_usize.try_into().unwrap();
-        let initial_states: CNF = Self::create_initial_cnf(aig, max_variable_number);
+        let initial_states: CNF = Self::create_initial_cnf(aig);
         let transition: CNF = Self::create_transition_cnf(aig, max_variable_number);
         let safety_property: CNF = Self::create_safety_property(aig);
         let unsafety_property: CNF = Self::create_unsafety_property(aig);
@@ -252,7 +241,7 @@ impl FiniteStateTransitionSystem {
     }
 
     pub fn get_initial_relation(&self, cnf_to_add_to: &mut CNF) {
-        cnf_to_add_to.concat(&self.initial_states);
+        cnf_to_add_to.concat(&mut self.initial_states.to_owned());
     }
 
     /// Function that gets the transition relation for the FiniteStateTransitionSystem.

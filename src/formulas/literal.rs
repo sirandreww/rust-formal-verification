@@ -2,14 +2,13 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::Variable;
 use std::{fmt, ops::Not};
 
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
-#[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord, Copy)]
+#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy)]
 pub struct Literal {
     literal_number: u32,
 }
@@ -19,17 +18,17 @@ pub struct Literal {
 // ************************************************************************************************
 
 impl Literal {
-    pub fn new(variable: &Variable) -> Self {
-        Self {
-            literal_number: variable.get_number() << 1,
-        }
+    pub fn new(number: u32) -> Self {
+        debug_assert!(number > 0, "Literal number may not be zero.");
+        debug_assert!(number <= (u32::MAX >> 1), "Literal number is too big.");
+        Self { literal_number: (number << 1) }
     }
 
-    pub fn new_with_negation_option(variable: &Variable, is_negated: bool) -> Self {
+    pub fn negate_if_true(&self, is_negated: bool) -> Self{
         if is_negated {
-            !Self::new(variable)
+            return !self.to_owned();
         } else {
-            Self::new(variable)
+            return self.to_owned();
         }
     }
 
@@ -39,16 +38,6 @@ impl Literal {
 
     pub fn is_negated(&self) -> bool {
         (self.literal_number % 2) == 1
-    }
-
-    pub fn to_dimacs_number(&self) -> i32 {
-        let lit_num = self.get_number();
-        // this should succeed because lit num cannot be to large to overflow.
-        let mut lit_num_as_signed_number: i32 = lit_num.try_into().unwrap();
-        if self.is_negated() {
-            lit_num_as_signed_number = -lit_num_as_signed_number;
-        }
-        lit_num_as_signed_number
     }
 }
 

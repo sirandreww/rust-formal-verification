@@ -5,7 +5,7 @@
 // use std::vec;
 
 // use crate::formulas::CNF;
-use crate::formulas::Cube;
+// use crate::formulas::Cube;
 
 // ************************************************************************************************
 // struct
@@ -13,7 +13,7 @@ use crate::formulas::Cube;
 
 pub enum SatResponse {
     // An `enum` may either be `unit-like`,
-    Sat { cube: Cube },
+    Sat { assignment: Vec<i32> },
     UnSat,
 }
 

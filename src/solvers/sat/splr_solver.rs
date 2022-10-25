@@ -2,7 +2,7 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::{CNF, Cube, Variable, Literal};
+use crate::formulas::{CNF};
 use crate::solvers::sat::SatResponse;
 use splr::{self, SolverError};
 use splr::solver::SolverResult;
@@ -20,31 +20,28 @@ pub struct SplrSolver {}
 
 impl SplrSolver {
 
-    fn convert_assignment_to_cube(assignment: Vec<i32>) -> Cube {
-        let mut literals = vec![];
-        for number in assignment {
-            let var = Variable::new(number.abs().try_into().unwrap());
-            let lit = Literal::new(&var);
-            if number < 0 {
-                literals.push(!lit);
-            } else {
-                literals.push(lit);
+    fn convert_cnf_to_vector_of_vectors(cnf_to_solve: &CNF) -> Vec<Vec<i32>>{
+        let mut result = Vec::new();
+        for clause in cnf_to_solve.iter() {
+            let mut i32_lits = Vec::new();
+            for lit in clause.iter() {
+                let number:i32 = lit.get_number().try_into().unwrap();
+                let signed_number = if lit.is_negated() {-number} else {number};
+                i32_lits.push(signed_number);
             }
+            result.push(i32_lits);
         }
-        Cube::new(&literals)
+        result
     }
 
-
     pub fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
-        let v: &Vec<Vec<i32>> = cnf_to_solve.to_vector_of_vectors();
-        let owned: Vec<Vec<i32>> = v.to_owned();
-        // println!("{:?}", owned);
+        let owned = Self::convert_cnf_to_vector_of_vectors(cnf_to_solve);
 
         match splr::Certificate::try_from(owned) {
             SolverResult::Ok(c) => {
                 match c {
                     splr::Certificate::UNSAT => SatResponse::UnSat {},
-                    splr::Certificate::SAT(assignment) => SatResponse::Sat { cube: Self::convert_assignment_to_cube(assignment) },
+                    splr::Certificate::SAT(assignment) => SatResponse::Sat { assignment },
                 }
             },
             SolverResult::Err(e) => {

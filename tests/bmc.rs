@@ -49,7 +49,7 @@ mod tests {
         let fsts = FiniteStateTransitionSystem::from_aig(&aig);
         let bmc_limit: u32 = 10;
         for depth in 0..bmc_limit {
-            let mut cnf_to_check = CNF::default();
+            let mut cnf_to_check = CNF::new();
             fsts.get_initial_relation(&mut cnf_to_check);
             for unroll_depth in 1..(depth + 1) {
                 fsts.get_transition_relation_for_some_depth(unroll_depth, &mut cnf_to_check);
@@ -58,8 +58,8 @@ mod tests {
             let solver = SplrSolver::default();
             let response = solver.solve_cnf(&cnf_to_check);
             match response {
-                SatResponse::Sat { cube } => {
-                    assert_eq!(cube.to_string(), "(!x1 & !x2 & !x3 & x4 & x5 & x6 & !x7 & !x8 & x9 & !x10 & !x11 & x12 & !x13 & !x14 & !x15 & !x16 & !x17 & x18 & !x19 & !x20)");
+                SatResponse::Sat { assignment } => {
+                    assert_eq!(assignment, vec![]);
                     assert!(depth == 3);
                     return;
                 }
@@ -94,7 +94,7 @@ mod tests {
         let fsts = FiniteStateTransitionSystem::from_aig(&aig);
         let bmc_limit: u32 = 10;
         for depth in 0..bmc_limit {
-            let mut cnf_to_check = CNF::default();
+            let mut cnf_to_check = CNF::new();
             fsts.get_initial_relation(&mut cnf_to_check);
             for unroll_depth in 1..(depth + 1) {
                 fsts.get_transition_relation_for_some_depth(unroll_depth, &mut cnf_to_check);
@@ -103,8 +103,8 @@ mod tests {
             let solver = SplrSolver::default();
             let response = solver.solve_cnf(&cnf_to_check);
             match response {
-                SatResponse::Sat { cube } => {
-                    assert_eq!(cube.to_string(), "(!x1 & !x2 & !x3 & x4 & x5 & x6 & !x7 & !x8 & x9 & !x10 & !x11 & x12 & !x13 & !x14 & !x15)");
+                SatResponse::Sat { assignment } => {
+                    assert_eq!(assignment, vec![]);
                     assert!(depth == 2);
                     return;
                 }

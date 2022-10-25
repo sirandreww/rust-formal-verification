@@ -4,17 +4,16 @@
 
 use crate::formulas::Clause;
 use std::cmp::max;
-use std::collections::HashSet;
 use std::fmt;
 
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
+#[derive(Clone)]
 pub struct CNF {
-    clauses: HashSet<Clause>,
-    max_variable_number: i32,
-    vector_representation: Vec<Vec<i32>>,
+    clauses: Vec<Clause>,
+    max_variable_number: u32,
 }
 
 // ************************************************************************************************
@@ -22,6 +21,11 @@ pub struct CNF {
 // ************************************************************************************************
 
 impl CNF {
+
+    pub fn new() -> Self {
+        Self { clauses: Vec::new(), max_variable_number: 0 }
+    }
+
     /// Function that adds a clause to the CNF.
     /// If the clause already exists then it is not added.
     ///
@@ -73,11 +77,7 @@ impl CNF {
             self.max_variable_number,
             new_clause.get_highest_variable_number(),
         );
-        if !self.clauses.contains(new_clause) {
-            self.vector_representation
-                .push(new_clause.to_vector_of_numbers());
-        }
-        self.clauses.insert((*new_clause).to_owned());
+        self.clauses.push(new_clause.to_owned());
     }
 
     /// Function that returns the number of clauses that are currently in the CNF.
@@ -122,125 +122,20 @@ impl CNF {
         self.clauses.len()
     }
 
-    /// Function that returns true if the number of clauses that are currently in the CNF is 0.
-    ///
-    /// # Arguments
-    ///
-    /// * `self` - an immutable reference to self.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use rust_formal_verification::formulas::CNF;
-    /// use rust_formal_verification::formulas::Clause;
-    /// use rust_formal_verification::formulas::Literal;
-    /// use rust_formal_verification::formulas::Variable;
-    ///
-    /// let v1 = Variable::new(1);
-    /// let v2 = Variable::new(2);
-    /// let v3 = Variable::new(3);
-    ///
-    /// let l1 = Literal::new(&v1, false);
-    /// let l2 = Literal::new(&v2, false);
-    /// let l3 = Literal::new(&v3, false);
-    ///
-    /// let c1 = Clause::new(&vec![l1, l2, l3]);
-    /// let c2 = Clause::new(&vec![!l1, l2, l3]);
-    /// let c3 = Clause::new(&vec![l1, !l2, l3]);
-    /// let c4 = Clause::new(&vec![l1, l2, !l3]);
-    ///
-    /// let mut cnf1 = CNF::default();
-    /// assert_eq!(cnf1.is_empty(), true);
-    /// cnf1.add_clause(&c1);
-    /// assert_eq!(cnf1.is_empty(), false);
-    /// cnf1.add_clause(&c2);
-    /// assert_eq!(cnf1.is_empty(), false);
-    /// cnf1.add_clause(&c3);
-    /// assert_eq!(cnf1.is_empty(), false);
-    /// cnf1.add_clause(&c4);
-    /// assert_eq!(cnf1.is_empty(), false);
-    /// ```
-    pub fn is_empty(&self) -> bool {
-        self.clauses.is_empty()
-    }
-
-    pub fn get_highest_variable_number(&self) -> i32 {
+    pub fn get_highest_variable_number(&self) -> u32 {
         self.max_variable_number
-    }
-
-    /// Returns a String representing the CNF formula in dimacs format.
-    ///
-    /// # Arguments
-    ///
-    /// reference to self
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use rust_formal_verification::formulas::CNF;
-    /// use rust_formal_verification::formulas::Clause;
-    /// use rust_formal_verification::formulas::Literal;
-    /// use rust_formal_verification::formulas::Variable;
-    ///
-    /// let mut cnf = CNF::default();
-    ///
-    /// let l1 = Literal::new(&Variable::new(1));
-    /// let l2 = Literal::new(&Variable::new(2));
-    /// let l3 = Literal::new(&Variable::new(3));
-    ///
-    /// cnf.add_clause(&Clause::new(&vec![l1, l2, l3]));
-    /// cnf.add_clause(&Clause::new(&vec![!l1, l2, l3]));
-    /// cnf.add_clause(&Clause::new(&vec![l1, !l2, l3]));
-    /// cnf.add_clause(&Clause::new(&vec![l1, l2, !l3]));
-    ///
-    /// let dimacs_string = cnf.to_dimacs();
-    ///
-    /// // These 3 steps are there because to_dimacs() may return the lines in any order
-    /// let mut dimacs_vector = dimacs_string.split("\n").collect::<Vec<&str>>();
-    /// dimacs_vector.sort();
-    /// dimacs_vector.reverse();
-    ///
-    /// assert_eq!("p cnf 3 4\n1 2 3 0\n1 2 -3 0\n1 -2 3 0\n-1 2 3 0", dimacs_vector.join("\n"));
-    /// ```
-    pub fn to_dimacs(&self) -> String {
-        let string_vec = self
-            .clauses
-            .iter()
-            .map(|one_clause| one_clause.to_dimacs_line())
-            .collect::<Vec<String>>();
-        let dimacs_first_line = format!("p cnf {} {}", self.max_variable_number, self.len());
-        let string_without_first_line = string_vec.join("\n");
-        format!("{dimacs_first_line}\n{string_without_first_line}")
-    }
-
-    pub fn to_vector_of_vectors(&self) -> &Vec<Vec<i32>> {
-        // check if somehow we added a clause that should not have been added.
-        assert_eq!(self.vector_representation.len(), self.clauses.len());
-        &self.vector_representation
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Clause> {
         self.clauses.iter()
     }
 
-    pub fn concat(&mut self, cnf: &CNF){
-        for c in cnf.iter(){
-            self.add_clause(c);
-        }
-    }
-}
-
-// ************************************************************************************************
-// default constructor
-// ************************************************************************************************
-
-impl Default for CNF {
-    fn default() -> Self {
-        Self {
-            clauses: Default::default(),
-            max_variable_number: -1,
-            vector_representation: Vec::new(),
-        }
+    pub fn concat(&mut self, cnf: &mut CNF){
+        self.clauses.append(&mut cnf.clauses);
+        self.max_variable_number = max(
+            self.max_variable_number,
+            cnf.max_variable_number
+        );
     }
 }
 
@@ -250,8 +145,9 @@ impl Default for CNF {
 
 impl fmt::Display for CNF {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut string_vec = self
-            .clauses
+        let mut clauses = self.clauses.to_owned();
+        clauses.sort();
+        let mut string_vec = clauses
             .iter()
             .map(|one_clause| one_clause.to_string())
             .collect::<Vec<String>>();
@@ -259,12 +155,3 @@ impl fmt::Display for CNF {
         write!(f, "({})", string_vec.join(" & "))
     }
 }
-
-// impl<'a> IntoIterator for &'a CNF {
-//     type Item = &'a Clause;
-//     type IntoIter = <HashSet<&'a Clause> as IntoIterator>::IntoIter; // so that you don't have to write std::vec::IntoIter, which nobody remembers anyway
-
-//     fn into_iter(self) -> std::collections::hash_set::IntoIter<&'a Clause> {
-//         (&self.clauses).into_iter()
-//     }
-// }
