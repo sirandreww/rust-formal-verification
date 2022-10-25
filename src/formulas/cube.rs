@@ -3,79 +3,35 @@
 // ************************************************************************************************
 
 use crate::formulas::Literal;
-use std::cmp::max;
+use crate::formulas::Clause;
 use std::fmt;
 use std::hash::Hash;
 use std::ops::Not;
-
-use super::Cube;
 
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
 #[derive(Eq, PartialEq, Clone, Hash)]
-pub struct Clause {
-    literals: Vec<Literal>,
-    max_variable_number: u32,
+pub struct Cube {
+    clause: Clause,
 }
 
 // ************************************************************************************************
 // impl
 // ************************************************************************************************
 
-impl Clause {
+impl Cube {
     pub fn new(literals: &[Literal]) -> Self {
-        if literals.is_empty() {
-            Self {
-                literals: vec![],
-                max_variable_number: 0,
-            }
-        } else {
-            let mut sorted_lits = literals.to_owned();
-            sorted_lits.sort();
-            let biggest_lit = sorted_lits[sorted_lits.len() - 1];
-            Self {
-                literals: sorted_lits,
-                max_variable_number: biggest_lit.get_number(),
-            }
-        }
-    }
-
-    pub fn add_literal(&mut self, new_literal: &Literal) {
-        self.literals.push((*new_literal).to_owned());
-        self.literals.sort();
-        self.max_variable_number = max(new_literal.get_number(), self.max_variable_number)
-    }
-
-    pub fn get_highest_variable_number(&self) -> i32 {
-        // this should work since all variable numbers must have highest bit be 0.
-        self.max_variable_number.try_into().unwrap()
-    }
-
-    pub fn to_vector_of_numbers(&self) -> Vec<i32> {
-        self.literals
-            .iter()
-            .map(|one_literal| one_literal.to_dimacs_number())
-            .collect::<Vec<i32>>()
-    }
-
-    pub fn to_dimacs_line(&self) -> String {
-        let mut string_vec = self
-            .literals
-            .iter()
-            .map(|one_literal| one_literal.to_dimacs_number().to_string())
-            .collect::<Vec<String>>();
-        string_vec.push("0".to_string());
-        string_vec.join(" ")
+        Self { clause : Clause::new(literals) }
     }
 
     pub fn is_empty(&self) -> bool {
-        self.literals.is_empty()
+        self.clause.is_empty()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Literal> {
-        self.literals.iter()
+        self.clause.iter()
     }
 }
 
@@ -83,8 +39,8 @@ impl Clause {
 // negation
 // ************************************************************************************************
 
-impl Not for Clause {
-    type Output = Cube;
+impl Not for Cube {
+    type Output = Clause;
 
     fn not(self) -> Self::Output {
         let mut literals = Vec::new();
@@ -92,7 +48,7 @@ impl Not for Clause {
             literals.push(!lit.to_owned());
 
         }
-        Cube::new(&literals)
+        Clause::new(&literals)
     }
 }
 
@@ -100,14 +56,14 @@ impl Not for Clause {
 // printing
 // ************************************************************************************************
 
-impl fmt::Display for Clause {
+impl fmt::Display for Cube {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let string_vec = self
-            .literals
+            .clause
             .iter()
             .map(|lit| lit.to_string())
             .collect::<Vec<String>>();
-        write!(f, "({})", string_vec.join(" | "))
+        write!(f, "({})", string_vec.join(" & "))
     }
 }
 

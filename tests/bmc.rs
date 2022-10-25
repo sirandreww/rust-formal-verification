@@ -58,8 +58,8 @@ mod tests {
             let solver = SplrSolver::default();
             let response = solver.solve_cnf(&cnf_to_check);
             match response {
-                SatResponse::Sat { assignment } => {
-                    assert_eq!(assignment, vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13, -14, -15, -16, -17, 18, -19, -20]);
+                SatResponse::Sat { cube } => {
+                    assert_eq!(cube.to_string(), "(!x1 & !x2 & !x3 & x4 & x5 & x6 & !x7 & !x8 & x9 & !x10 & !x11 & x12 & !x13 & !x14 & !x15 & !x16 & !x17 & x18 & !x19 & !x20)");
                     assert!(depth == 3);
                     return;
                 }
@@ -103,8 +103,8 @@ mod tests {
             let solver = SplrSolver::default();
             let response = solver.solve_cnf(&cnf_to_check);
             match response {
-                SatResponse::Sat { assignment } => {
-                    assert_eq!(assignment, vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13, -14, -15]);
+                SatResponse::Sat { cube } => {
+                    assert_eq!(cube.to_string(), "(!x1 & !x2 & !x3 & x4 & x5 & x6 & !x7 & !x8 & x9 & !x10 & !x11 & x12 & !x13 & !x14 & !x15)");
                     assert!(depth == 2);
                     return;
                 }

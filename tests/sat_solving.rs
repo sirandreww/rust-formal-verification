@@ -46,7 +46,7 @@ mod tests {
         let solver = SplrSolver::default();
         let response = solver.solve_cnf(&cnf);
         match response {
-            SatResponse::Sat { assignment: _ } => assert!(true),
+            SatResponse::Sat { cube: _ } => assert!(true),
             SatResponse::UnSat => assert!(false),
         };
     }
@@ -75,7 +75,7 @@ mod tests {
         let solver = SplrSolver::default();
         let response = solver.solve_cnf(&cnf);
         match response {
-            SatResponse::Sat { assignment: _ } => assert!(false),
+            SatResponse::Sat { cube: _ } => assert!(false),
             SatResponse::UnSat => assert!(true),
         };
     }

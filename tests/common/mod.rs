@@ -67,3 +67,16 @@ pub fn get_paths_to_all_aig_and_corresponding_aag_files() -> Vec<(String, String
     result.reverse();
     result
 }
+
+pub fn get_paths_to_all_aig_for_2020() -> Vec<String> {
+    let mut result = Vec::default();
+    for aig_file_result in WalkDir::new("tests/hwmcc20_aig/2020") {
+        let aig_file = aig_file_result.unwrap();
+        if aig_file.path().is_file() {
+            let aig_file_path = aig_file.path().display().to_string();
+            result.push(aig_file_path);
+        }
+    }
+    result.sort();
+    result
+}
