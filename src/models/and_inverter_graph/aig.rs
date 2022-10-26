@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::models::and_inverter_graph::aig_node::{AIGNode, AIGNodeType};
-use std::fs;
+use std::{fs, collections::HashSet};
 
 // ************************************************************************************************
 // struct
@@ -679,6 +679,25 @@ impl AndInverterGraph {
         self.bad.clone()
     }
 
+    /// Function that gets a vector describing the constraints nodes in the system.
+    /// The output is a vector containing usize numbers, these are the literals
+    /// that are constraint.
+    ///
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// assert_eq!(Vec::<usize>::new(), aig.get_constraints_information());
+    /// ```
+    pub fn get_constraints_information(&self) -> Vec<usize> {
+        self.constraints.clone()
+    }
+
     // ********************************************************************************************
     // aig getting numbers
     // ********************************************************************************************
@@ -698,5 +717,77 @@ impl AndInverterGraph {
     /// ```
     pub fn get_maximum_variable_number(&self) -> usize {
         self.maximum_variable_index
+    }
+
+    // ********************************************************************************************
+    // aig getting numbers
+    // ********************************************************************************************
+
+    /// Function that gets the cone of influence for some literal.
+    ///
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/simple_examples/counter.aig";
+    /// // the aig looks like this:
+    /// // *--------------------------------------------------------------*
+    /// // |     _________                                                |
+    /// // |    |         |                                               |
+    /// // *--> | latch 0 |  2-*                                          |
+    /// //      |_________|    |                                          |
+    /// //                     |                                          |
+    /// // *-------------------*-------------Not-------*                  |
+    /// // |     _________                             |     ______       |
+    /// // |    |         |                 ______     *--> |      \      |
+    /// // *--> | latch 1 |  4-*---Not---> |      \         |  and  ) 10--*
+    /// //      |_________|    |           |  and  )  8---> |______/
+    /// //                     |     *---> |______/
+    /// // *-------------------*     |
+    /// // |     _________          Not
+    /// // |    |         |          |
+    /// // *--> | latch 2 |  6-------*
+    /// //      |_________|
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(0), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(1), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(2), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(3), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(4), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(5), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(6), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(7), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(8), vec![(8, 7, 5)]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(9), vec![(8, 7, 5)]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(10), vec![(10, 8, 3), (8, 7, 5)]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(10), vec![(10, 8, 3), (8, 7, 5)]);
+    /// ```
+    pub fn get_and_information_in_cone_of_influence(&self, desired_literals: &[usize]) -> Vec<(usize, usize, usize)> {
+        let mut and_gates: HashSet<(usize, usize, usize)> = HashSet::new();
+        self.get_and_literals_in_cone_of_influence(desired_literals, &mut and_gates);
+        Vec::from_iter(and_gates)
+    }
+
+    fn get_and_literals_in_cone_of_influence(&self, desired_literals: &[usize], and_gates: &mut HashSet<(usize, usize, usize)>) {
+        for literal_number in desired_literals{
+            let node = &self.nodes[literal_number >> 1];
+            match node.get_type() {
+                AIGNodeType::ConstantZero => {},
+                AIGNodeType::Input => {},
+                AIGNodeType::Latch => {},
+                AIGNodeType::And => {
+                    let and_out = node.get_literal();
+                    let in0 = node.get_and_rhs0();
+                    let in1 = node.get_and_rhs1();
+                    and_gates.insert((and_out, in0, in1));
+                    self.
+                    // result.append(&mut self.get_and_information_in_cone_of_influence(in0));
+                    // result.append(&mut self.get_and_information_in_cone_of_influence(in1));
+                }
+            }
+        }
     }
 }

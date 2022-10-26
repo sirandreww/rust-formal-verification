@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::formulas::Clause;
-use std::fmt;
+use std::{fmt, collections::HashSet};
 
 // ************************************************************************************************
 // struct
@@ -11,7 +11,7 @@ use std::fmt;
 
 #[derive(Clone)]
 pub struct CNF {
-    clauses: Vec<Clause>,
+    clauses: HashSet<Clause>,
 }
 
 // ************************************************************************************************
@@ -21,7 +21,7 @@ pub struct CNF {
 impl CNF {
     pub fn new() -> Self {
         Self {
-            clauses: Vec::new(),
+            clauses: HashSet::new(),
         }
     }
 
@@ -52,7 +52,7 @@ impl CNF {
         //     self.max_variable_number,
         //     new_clause.get_highest_variable_number(),
         // );
-        self.clauses.push(new_clause.to_owned());
+        self.clauses.insert(new_clause.to_owned());
     }
 
     /// Function that returns the number of clauses that are currently in the CNF.
@@ -109,8 +109,8 @@ impl CNF {
         self.clauses.iter()
     }
 
-    pub fn append(&mut self, cnf: &mut CNF) {
-        self.clauses.append(&mut cnf.clauses);
+    pub fn append(&mut self, cnf: &CNF) {
+        self.clauses.extend(cnf.clauses.to_owned());
         // self.max_variable_number = max(self.max_variable_number, cnf.max_variable_number);
     }
 }
@@ -131,7 +131,7 @@ impl Default for CNF {
 
 impl fmt::Display for CNF {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut clauses = self.clauses.to_owned();
+        let mut clauses = Vec::from_iter(self.clauses.iter());
         clauses.sort();
         let mut string_vec = clauses
             .iter()

@@ -3,9 +3,10 @@
 // ************************************************************************************************
 
 use crate::formulas::Literal;
+use crate::formulas::CNF;
 use std::fmt;
 use std::hash::Hash;
-// use std::ops::Not;
+use std::ops::Not;
 
 // ************************************************************************************************
 // struct
@@ -22,14 +23,12 @@ pub struct Clause {
 
 impl Clause {
     pub fn new(literals: &[Literal]) -> Self {
+        let mut sorted = literals.to_owned();
+        sorted.sort();
         Self {
-            literals: literals.to_owned(),
+            literals: sorted,
         }
     }
-
-    // pub fn get_highest_variable_number(&self) -> u32 {
-    //     self.literals.iter().map(|l| l.get_number()).max().unwrap_or(0)
-    // }
 
     pub fn len(&self) -> usize {
         self.literals.len()
@@ -48,18 +47,17 @@ impl Clause {
 // negation
 // ************************************************************************************************
 
-// impl Not for Clause {
-//     type Output = Cube;
+impl Not for Clause {
+    type Output = CNF;
 
-//     fn not(self) -> Self::Output {
-//         let mut literals = Vec::new();
-//         for lit in self.iter() {
-//             literals.push(!lit.to_owned());
-
-//         }
-//         Cube::new(&literals)
-//     }
-// }
+    fn not(self) -> Self::Output {
+        let mut cnf = CNF::new();
+        for lit in self.iter() {
+            cnf.add_clause(&Clause::new(&[!lit.to_owned()]))
+        }
+        cnf
+    }
+}
 
 // ************************************************************************************************
 // printing

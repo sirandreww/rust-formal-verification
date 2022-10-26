@@ -55,6 +55,11 @@ impl FiniteStateTransitionSystem {
         Literal::new(aig_var_num).negate_if_true(aig_literal % 2 == 1)
     }
 
+
+    fn get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(aig: &AndInverterGraph){
+
+    }
+
     fn get_cnf_that_describes_wire_values_as_a_function_of_latch_values(
         aig: &AndInverterGraph,
     ) -> CNF {
@@ -148,8 +153,7 @@ impl FiniteStateTransitionSystem {
 
     fn create_safety_property(aig: &AndInverterGraph) -> CNF {
         let bad_info = aig.get_bad_information();
-
-        if bad_info.is_empty() {
+        if !bad_info.is_empty() {
             let mut latches_to_wires =
                 Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values(aig);
             for bad_literal in bad_info {
@@ -164,17 +168,20 @@ impl FiniteStateTransitionSystem {
 
     fn create_unsafety_property(aig: &AndInverterGraph) -> CNF {
         let bad_info = aig.get_bad_information();
-        let mut literals = Vec::new();
-        for bad_literal in bad_info {
-            let b_lit = Self::get_literal_from_aig_literal(bad_literal);
-            literals.push(b_lit);
+        if !bad_info.is_empty() {
+            let mut latches_to_wires =
+                Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values(aig);
+            let mut unsafe_literals = Vec::new(); 
+            for bad_literal in bad_info {
+                let b_lit = Self::get_literal_from_aig_literal(bad_literal);
+                unsafe_literals.push(b_lit);
+            }
+            latches_to_wires.add_clause(&Clause::new(&unsafe_literals));
+
+            latches_to_wires
+        } else {
+            CNF::new()
         }
-        let mut cnf = CNF::new();
-        let clause = Clause::new(&literals);
-        if !clause.is_empty() {
-            cnf.add_clause(&clause);
-        }
-        cnf
     }
 
     fn bump_all_cnf_variables_by_some_number(original_cnf: &CNF, number_to_bump: u32) -> CNF {
