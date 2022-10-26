@@ -14,7 +14,6 @@ use std::hash::Hash;
 #[derive(Eq, PartialEq, Clone, Hash, PartialOrd, Ord)]
 pub struct Clause {
     literals: Vec<Literal>,
-    max_variable_number: u32,
 }
 
 // ************************************************************************************************
@@ -25,16 +24,19 @@ impl Clause {
     pub fn new(literals: &[Literal]) -> Self {
         Self {
             literals: literals.to_owned(),
-            max_variable_number: literals.iter().map(|l| l.get_number()).max().unwrap_or(0),
         }
     }
 
-    pub fn get_highest_variable_number(&self) -> u32 {
-        self.max_variable_number
-    }
+    // pub fn get_highest_variable_number(&self) -> u32 {
+    //     self.literals.iter().map(|l| l.get_number()).max().unwrap_or(0)
+    // }
 
     pub fn len(&self) -> usize {
         self.literals.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.literals.is_empty()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Literal> {

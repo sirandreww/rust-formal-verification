@@ -16,7 +16,7 @@ mod tests {
     // ********************************************************************************************
 
     use rust_formal_verification::{
-        formulas::{CNF},
+        formulas::CNF,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{SatResponse, SplrSolver},
     };
@@ -36,37 +36,37 @@ mod tests {
 
     // }
 
-    fn is_bad_reached_in_0_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
-        let mut cnf = CNF::new();
-        fin_state.get_initial_relation(&mut cnf);
-        fin_state.get_unsafety_property_for_some_depth(0, &mut cnf);
-        let solver = SplrSolver::default();
-        
-        solver.solve_cnf(&cnf)
-    }
+    // fn is_bad_reached_in_0_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
+    //     let mut cnf = CNF::new();
+    //     fin_state.get_initial_relation(&mut cnf);
+    //     fin_state.get_unsafety_property_for_some_depth(0, &mut cnf);
+    //     let solver = SplrSolver::default();
 
-    fn is_bad_reached_in_1_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
-        let mut cnf = CNF::new();
-        fin_state.get_initial_relation(&mut cnf);
-        fin_state.get_transition_relation_for_some_depth(1, &mut cnf);
-        fin_state.get_unsafety_property_for_some_depth(1, &mut cnf);
-        let solver = SplrSolver::default();
-        
-        solver.solve_cnf(&cnf)
-    }
+    //     solver.solve_cnf(&cnf)
+    // }
 
-    fn is_bad_reached_in_1_step_from_cnf(
-        cnf: &CNF,
-        fin_state: &FiniteStateTransitionSystem,
-    ) -> SatResponse {
-        let mut new_cnf = CNF::new();
-        new_cnf.concat(&mut cnf.to_owned());
-        fin_state.get_transition_relation_for_some_depth(1, &mut new_cnf);
-        fin_state.get_unsafety_property_for_some_depth(1, &mut new_cnf);
-        let solver = SplrSolver::default();
-        
-        solver.solve_cnf(cnf)
-    }
+    // fn is_bad_reached_in_1_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
+    //     let mut cnf = CNF::new();
+    //     fin_state.get_initial_relation(&mut cnf);
+    //     fin_state.get_transition_relation_for_some_depth(1, &mut cnf);
+    //     fin_state.get_unsafety_property_for_some_depth(1, &mut cnf);
+    //     let solver = SplrSolver::default();
+
+    //     solver.solve_cnf(&cnf)
+    // }
+
+    // fn is_bad_reached_in_1_step_from_cnf(
+    //     cnf: &CNF,
+    //     fin_state: &FiniteStateTransitionSystem,
+    // ) -> SatResponse {
+    //     let mut new_cnf = CNF::new();
+    //     new_cnf.concat(&mut cnf.to_owned());
+    //     fin_state.get_transition_relation_for_some_depth(1, &mut new_cnf);
+    //     fin_state.get_unsafety_property_for_some_depth(1, &mut new_cnf);
+    //     let solver = SplrSolver::default();
+
+    //     solver.solve_cnf(cnf)
+    // }
 
     // fn shrink_cube_using_trinary_sim(cube: Cube) -> Cube {
 
@@ -96,17 +96,17 @@ mod tests {
         fin_state: &FiniteStateTransitionSystem,
         _aig: &AndInverterGraph,
     ) -> PdrResult {
-        let init_and_not_p = is_bad_reached_in_0_steps(fin_state);
-        match init_and_not_p {
-            SatResponse::Sat { assignment } => return PdrResult::CTX { assignment },
-            SatResponse::UnSat => (),
-        }
+        // let init_and_not_p = is_bad_reached_in_0_steps(fin_state);
+        // match init_and_not_p {
+        //     SatResponse::Sat { assignment } => return PdrResult::CTX { assignment },
+        //     SatResponse::UnSat => (),
+        // }
 
-        let init_and_tr_and_not_p_tag = is_bad_reached_in_1_steps(fin_state);
-        match init_and_tr_and_not_p_tag {
-            SatResponse::Sat { assignment } => return PdrResult::CTX { assignment },
-            SatResponse::UnSat => (),
-        }
+        // let init_and_tr_and_not_p_tag = is_bad_reached_in_1_steps(fin_state);
+        // match init_and_tr_and_not_p_tag {
+        //     SatResponse::Sat { assignment } => return PdrResult::CTX { assignment },
+        //     SatResponse::UnSat => (),
+        // }
 
         // // let mut f0 = CNF::default();
         // fin_state.get_initial_relation(&mut f0);

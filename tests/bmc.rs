@@ -16,13 +16,40 @@ mod tests {
     // ********************************************************************************************
 
     use rust_formal_verification::{
-        formulas::CNF,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{SatResponse, SplrSolver},
     };
 
     // ********************************************************************************************
-    // creating fsts test
+    // helper functions
+    // ********************************************************************************************
+
+    fn bmc(fsts: &FiniteStateTransitionSystem) {
+        let bmc_limit: u32 = 10;
+        for depth in 0..bmc_limit {
+            let mut sat_formula = fsts.get_initial_relation();
+            for unroll_depth in 1..(depth + 1) {
+                sat_formula.append(&mut fsts.get_transition_relation_for_some_depth(unroll_depth));
+            }
+            sat_formula.append(&mut fsts.get_unsafety_property_for_some_depth(depth));
+
+            let solver = SplrSolver::default();
+            let response = solver.solve_cnf(&sat_formula);
+            match response {
+                SatResponse::Sat { assignment } => {
+                    assert_eq!(assignment, vec![]);
+                    assert!(depth == 3);
+                    return;
+                }
+                SatResponse::UnSat => {
+                    assert!(depth == 0 || depth == 1 || depth == 2);
+                }
+            };
+        }
+    }
+
+    // ********************************************************************************************
+    // tests
     // ********************************************************************************************
 
     // *--------------------------------------------------------------*
@@ -47,27 +74,8 @@ mod tests {
         let aig =
             AndInverterGraph::from_aig_path("tests/simple_examples/counter_with_bad_assertion.aig");
         let fsts = FiniteStateTransitionSystem::from_aig(&aig);
-        let bmc_limit: u32 = 10;
-        for depth in 0..bmc_limit {
-            let mut cnf_to_check = CNF::new();
-            fsts.get_initial_relation(&mut cnf_to_check);
-            for unroll_depth in 1..(depth + 1) {
-                fsts.get_transition_relation_for_some_depth(unroll_depth, &mut cnf_to_check);
-            }
-            fsts.get_unsafety_property_for_some_depth(depth, &mut cnf_to_check);
-            let solver = SplrSolver::default();
-            let response = solver.solve_cnf(&cnf_to_check);
-            match response {
-                SatResponse::Sat { assignment } => {
-                    assert_eq!(assignment, vec![]);
-                    assert!(depth == 3);
-                    return;
-                }
-                SatResponse::UnSat => {
-                    assert!(depth == 0 || depth == 1 || depth == 2);
-                }
-            };
-        }
+
+        bmc(&fsts);
     }
 
     // *--------------------------------------------------------------*
@@ -93,26 +101,7 @@ mod tests {
             "tests/simple_examples/counter_with_2_bad_assertions.aig",
         );
         let fsts = FiniteStateTransitionSystem::from_aig(&aig);
-        let bmc_limit: u32 = 10;
-        for depth in 0..bmc_limit {
-            let mut cnf_to_check = CNF::new();
-            fsts.get_initial_relation(&mut cnf_to_check);
-            for unroll_depth in 1..(depth + 1) {
-                fsts.get_transition_relation_for_some_depth(unroll_depth, &mut cnf_to_check);
-            }
-            fsts.get_unsafety_property_for_some_depth(depth, &mut cnf_to_check);
-            let solver = SplrSolver::default();
-            let response = solver.solve_cnf(&cnf_to_check);
-            match response {
-                SatResponse::Sat { assignment } => {
-                    assert_eq!(assignment, vec![]);
-                    assert!(depth == 2);
-                    return;
-                }
-                SatResponse::UnSat => {
-                    assert!(depth == 0 || depth == 1);
-                }
-            };
-        }
+
+        bmc(&fsts);
     }
 }
