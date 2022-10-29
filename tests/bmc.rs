@@ -29,9 +29,9 @@ mod tests {
         for depth in 0..bmc_limit {
             let mut sat_formula = fsts.get_initial_relation();
             for unroll_depth in 1..(depth + 1) {
-                sat_formula.append(fsts.get_transition_relation_for_some_depth(unroll_depth));
+                sat_formula.append(&fsts.get_transition_relation_for_some_depth(unroll_depth));
             }
-            sat_formula.append(fsts.get_unsafety_property_for_some_depth(depth));
+            sat_formula.append(&fsts.get_unsafety_property_for_some_depth(depth));
 
             let solver = SplrSolver::default();
             let response = solver.solve_cnf(&sat_formula);

@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::models::and_inverter_graph::aig_node::{AIGNode, AIGNodeType};
-use std::{fs, collections::HashSet};
+use std::{collections::HashSet, fs};
 
 // ************************************************************************************************
 // struct
@@ -583,6 +583,7 @@ impl AndInverterGraph {
             let input = &self.nodes[input_index.to_owned()];
             result.push(input.get_literal());
         }
+        assert_eq!(result, self.inputs);
         result
     }
 
@@ -618,40 +619,6 @@ impl AndInverterGraph {
             let latch_reset = latch.get_latch_reset();
 
             result.push((latch_literal, latch_input, latch_reset));
-        }
-        result
-    }
-
-    /// Function that gets a vector describing the and nodes in the system.
-    /// The output is a vector containing tuple with a length of 3,
-    /// representing and information :
-    /// (and gate output (a.k.a lhs), and gate inout 1 (a.k.a rhs0), and gate input 2 (a.k.a rhs1))
-    ///                    ___________
-    ///                   /           | <--- rhs0
-    ///         rhs <--- (     and    |
-    ///                   \___________| <--- rhs1
-    ///
-    /// # Arguments
-    ///
-    /// * `&self` - the AndInverterGraph desired.
-    ///
-    /// # Examples
-    /// ```
-    /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/simple_examples/counter.aig";
-    /// let aig = AndInverterGraph::from_aig_path(file_path);
-    /// assert_eq!(vec![(8, 7, 5),(10, 8, 3)], aig.get_and_information());
-    /// ```
-    pub fn get_and_information(&self) -> Vec<(usize, usize, usize)> {
-        let mut result = Vec::new();
-        for and_index in self.ands.iter() {
-            let and = &self.nodes[and_index.to_owned()];
-
-            let lhs = and.get_literal();
-            let rhs0 = and.get_and_rhs0();
-            let rhs1 = and.get_and_rhs1();
-
-            result.push((lhs, rhs0, rhs1));
         }
         result
     }
@@ -715,19 +682,20 @@ impl AndInverterGraph {
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// assert_eq!(5, aig.get_maximum_variable_number());
     /// ```
-    pub fn get_maximum_variable_number(&self) -> usize {
+    pub fn get_highest_variable_number(&self) -> usize {
         self.maximum_variable_index
     }
 
     // ********************************************************************************************
-    // aig getting numbers
+    // aig getting and gates
     // ********************************************************************************************
 
-    /// Function that gets the cone of influence for some literal.
+    /// Function that gets the cone of influence for some list of literals.
     ///
     /// # Arguments
     ///
-    /// * `&self` - the AndInverterGraph desired.
+    /// * `&self` - The AndInverterGraph desired.
+    /// * `desired_literals: &[usize]` - The literals you want the AND gates for.
     ///
     /// # Examples
     /// ```
@@ -752,42 +720,49 @@ impl AndInverterGraph {
     /// // *--> | latch 2 |  6-------*
     /// //      |_________|
     /// let aig = AndInverterGraph::from_aig_path(file_path);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(0), vec![]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(1), vec![]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(2), vec![]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(3), vec![]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(4), vec![]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(5), vec![]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(6), vec![]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(7), vec![]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(8), vec![(8, 7, 5)]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(9), vec![(8, 7, 5)]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(10), vec![(10, 8, 3), (8, 7, 5)]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(10), vec![(10, 8, 3), (8, 7, 5)]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[0]), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[1]), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[2]), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[3]), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[4]), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[5]), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[6]), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[7]), vec![]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[8]), vec![(8, 7, 5)]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[9]), vec![(8, 7, 5)]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[10]), vec![(10, 8, 3), (8, 7, 5)]);
+    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[11]), vec![(10, 8, 3), (8, 7, 5)]);
     /// ```
-    pub fn get_and_information_in_cone_of_influence(&self, desired_literals: &[usize]) -> Vec<(usize, usize, usize)> {
+    pub fn get_and_information_in_cone_of_influence(
+        &self,
+        desired_literals: &[usize],
+    ) -> Vec<(usize, usize, usize)> {
         let mut and_gates: HashSet<(usize, usize, usize)> = HashSet::new();
-        self.get_and_literals_in_cone_of_influence(desired_literals, &mut and_gates);
-        Vec::from_iter(and_gates)
-    }
-
-    fn get_and_literals_in_cone_of_influence(&self, desired_literals: &[usize], and_gates: &mut HashSet<(usize, usize, usize)>) {
-        for literal_number in desired_literals{
-            let node = &self.nodes[literal_number >> 1];
+        assert!(and_gates.is_empty());
+        let mut current_wanted_literals = desired_literals.to_owned();
+        let mut i = 0;
+        while i < current_wanted_literals.len() {
+            let node = &self.nodes[current_wanted_literals[i] >> 1];
             match node.get_type() {
-                AIGNodeType::ConstantZero => {},
-                AIGNodeType::Input => {},
-                AIGNodeType::Latch => {},
+                AIGNodeType::ConstantZero => {}
+                AIGNodeType::Input => {}
+                AIGNodeType::Latch => {}
                 AIGNodeType::And => {
                     let and_out = node.get_literal();
                     let in0 = node.get_and_rhs0();
                     let in1 = node.get_and_rhs1();
-                    and_gates.insert((and_out, in0, in1));
-                    self.
-                    // result.append(&mut self.get_and_information_in_cone_of_influence(in0));
-                    // result.append(&mut self.get_and_information_in_cone_of_influence(in1));
+                    if and_gates.contains(&(and_out, in0, in1)) {
+                        // already visited this AND gate
+                    } else {
+                        // haven't seen this AND gate before
+                        and_gates.insert((and_out, in0, in1));
+                        current_wanted_literals.push(in0);
+                        current_wanted_literals.push(in1);
+                    }
                 }
-            }
+            };
+            i += 1;
         }
+        Vec::from_iter(and_gates)
     }
 }

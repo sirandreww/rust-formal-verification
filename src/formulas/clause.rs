@@ -25,9 +25,7 @@ impl Clause {
     pub fn new(literals: &[Literal]) -> Self {
         let mut sorted = literals.to_owned();
         sorted.sort();
-        Self {
-            literals: sorted,
-        }
+        Self { literals: sorted }
     }
 
     pub fn len(&self) -> usize {

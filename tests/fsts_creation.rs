@@ -56,8 +56,8 @@ mod tests {
             "((!x1) & (!x2) & (!x3))"
         );
         assert_eq!(
-            fsts.get_safety_property_for_some_depth(0).to_string(), 
-            "((!x1 | !x5) & (!x1 | x7) & (!x2 | !x4) & (!x2 | x8) & (!x3 | !x4) & (!x5 | x6) & (x1 | !x4 | x5) & (x1 | !x7) & (x2 | !x8) & (x2 | x3 | x4) & (x4 | !x5) & (x5 | !x6))"
+            fsts.get_safety_property_for_some_depth(0).to_string(),
+            "()"
         );
         assert_eq!(
             fsts.get_unsafety_property_for_some_depth(0).to_string(),
@@ -65,7 +65,7 @@ mod tests {
         );
         assert_eq!(
             fsts.get_transition_relation_for_some_depth(1).to_string(),
-            ""
+            "((!x1 | !x5) & (!x1 | x7) & (!x2 | !x4) & (!x2 | x8) & (!x3 | !x4) & (!x5 | x6) & (x1 | !x4 | x5) & (x1 | !x7) & (x2 | !x8) & (x2 | x3 | x4) & (x4 | !x5) & (x5 | !x6))"
         );
     }
 
@@ -96,14 +96,14 @@ mod tests {
             fsts.get_initial_relation().to_string(),
             "((!x1) & (!x2) & (!x3))"
         );
-        assert_eq!(fsts.get_safety_property_for_some_depth(0).to_string(), "()");
+        assert_eq!(fsts.get_safety_property_for_some_depth(0).to_string(), "((!x3))");
         assert_eq!(
             fsts.get_unsafety_property_for_some_depth(0).to_string(),
-            "()"
+            "((x3))"
         );
         assert_eq!(
             fsts.get_transition_relation_for_some_depth(1).to_string(),
-            ""
+            "((!x1 | !x5) & (!x1 | x7) & (!x2 | !x4) & (!x2 | x8) & (!x3 | !x4) & (!x5 | x6) & (x1 | !x4 | x5) & (x1 | !x7) & (x2 | !x8) & (x2 | x3 | x4) & (x4 | !x5) & (x5 | !x6))"
         );
     }
 
@@ -135,14 +135,14 @@ mod tests {
             fsts.get_initial_relation().to_string(),
             "((!x1) & (!x2) & (!x3))"
         );
-        assert_eq!(fsts.get_safety_property_for_some_depth(0).to_string(), "()");
+        assert_eq!(fsts.get_safety_property_for_some_depth(0).to_string(), "((!x2) & (!x3))");
         assert_eq!(
             fsts.get_unsafety_property_for_some_depth(0).to_string(),
-            "()"
+            "((x2 | x3))"
         );
         assert_eq!(
             fsts.get_transition_relation_for_some_depth(1).to_string(),
-            ""
+            "((!x1 | !x5) & (!x1 | x7) & (!x2 | !x4) & (!x2 | x8) & (!x3 | !x4) & (!x5 | x6) & (x1 | !x4 | x5) & (x1 | !x7) & (x2 | !x8) & (x2 | x3 | x4) & (x4 | !x5) & (x5 | !x6))"
         );
     }
 

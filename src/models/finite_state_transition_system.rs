@@ -55,18 +55,13 @@ impl FiniteStateTransitionSystem {
         Literal::new(aig_var_num).negate_if_true(aig_literal % 2 == 1)
     }
 
-
-    fn get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(aig: &AndInverterGraph){
-
-    }
-
-    fn get_cnf_that_describes_wire_values_as_a_function_of_latch_values(
+    fn get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(
         aig: &AndInverterGraph,
+        wires: &[usize],
     ) -> CNF {
+        let and_info = aig.get_and_information_in_cone_of_influence(wires);
+
         let mut cnf = CNF::new();
-
-        let and_info = aig.get_and_information();
-
         // encode and gates into formula
         for (lhs, rhs0, rhs1) in and_info {
             // get variable numbers
@@ -123,8 +118,8 @@ impl FiniteStateTransitionSystem {
 
     fn create_transition_cnf(aig: &AndInverterGraph, max_variable_number: u32) -> CNF {
         // propagate new latch values
-        let mut latches_to_wires =
-            Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values(aig);
+        let mut latches_to_wires = CNF::new();
+        let mut wires_we_care_about = Vec::new();
 
         let latch_info = aig.get_latch_information();
         // encode latch updates into formula
@@ -133,6 +128,7 @@ impl FiniteStateTransitionSystem {
             let latch_lit_before = Self::get_literal_from_aig_literal(latch_literal);
             let latch_lit_after = Literal::new(latch_lit_before.get_number() + max_variable_number)
                 .negate_if_true(latch_lit_before.is_negated());
+            wires_we_care_about.push(latch_input);
 
             if latch_input == 0 {
                 latches_to_wires.add_clause(&Clause::new(&[!latch_lit_after]));
@@ -148,14 +144,23 @@ impl FiniteStateTransitionSystem {
                 latches_to_wires.add_clause(&Clause::new(&[latch_lit_after, !latch_input_lit]));
             }
         }
+
+        latches_to_wires.append(
+            &Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(
+            aig,
+            &wires_we_care_about,
+        )
+    );
         latches_to_wires
     }
 
     fn create_safety_property(aig: &AndInverterGraph) -> CNF {
         let bad_info = aig.get_bad_information();
         if !bad_info.is_empty() {
-            let mut latches_to_wires =
-                Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values(aig);
+            let mut latches_to_wires = Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(
+                aig,
+                &bad_info,
+            );
             for bad_literal in bad_info {
                 let b_lit = Self::get_literal_from_aig_literal(bad_literal);
                 latches_to_wires.add_clause(&Clause::new(&[!b_lit]));
@@ -169,9 +174,11 @@ impl FiniteStateTransitionSystem {
     fn create_unsafety_property(aig: &AndInverterGraph) -> CNF {
         let bad_info = aig.get_bad_information();
         if !bad_info.is_empty() {
-            let mut latches_to_wires =
-                Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values(aig);
-            let mut unsafe_literals = Vec::new(); 
+            let mut latches_to_wires = Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(
+                aig,
+                &bad_info,
+            );
+            let mut unsafe_literals = Vec::new();
             for bad_literal in bad_info {
                 let b_lit = Self::get_literal_from_aig_literal(bad_literal);
                 unsafe_literals.push(b_lit);
@@ -227,7 +234,7 @@ impl FiniteStateTransitionSystem {
     /// assert_eq!(fsts.get_initial_states().to_string(), "((!x1) & (!x2) & (!x3))");
     /// ```
     pub fn from_aig(aig: &AndInverterGraph) -> Self {
-        let max_variable_number_as_usize = aig.get_maximum_variable_number();
+        let max_variable_number_as_usize = aig.get_highest_variable_number();
         assert!(
             max_variable_number_as_usize < (u32::MAX >> 1).try_into().unwrap(),
             "AIG has variables with numbers that are too high"
