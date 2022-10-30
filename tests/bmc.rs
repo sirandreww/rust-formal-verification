@@ -21,10 +21,19 @@ mod tests {
     };
 
     // ********************************************************************************************
+    // Enum
+    // ********************************************************************************************
+
+    enum BMCResult {
+        NoCTX,
+        CTX { assignment: Vec<i32>, depth: u32 },
+    }
+
+    // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
 
-    fn bmc(fsts: &FiniteStateTransitionSystem) {
+    fn bmc(fsts: &FiniteStateTransitionSystem) -> BMCResult {
         let bmc_limit: u32 = 10;
         for depth in 0..bmc_limit {
             let mut sat_formula = fsts.get_initial_relation();
@@ -32,20 +41,17 @@ mod tests {
                 sat_formula.append(&fsts.get_transition_relation_for_some_depth(unroll_depth));
             }
             sat_formula.append(&fsts.get_unsafety_property_for_some_depth(depth));
-
+            
             let solver = SplrSolver::default();
             let response = solver.solve_cnf(&sat_formula);
             match response {
                 SatResponse::Sat { assignment } => {
-                    assert_eq!(assignment, vec![]);
-                    assert!(depth == 3);
-                    return;
+                    return BMCResult::CTX { assignment: assignment, depth: depth }
                 }
-                SatResponse::UnSat => {
-                    assert!(depth == 0 || depth == 1 || depth == 2);
-                }
-            };
+                SatResponse::UnSat => {}
+            }
         }
+        return BMCResult::NoCTX;
     }
 
     // ********************************************************************************************
@@ -75,7 +81,14 @@ mod tests {
             AndInverterGraph::from_aig_path("tests/simple_examples/counter_with_bad_assertion.aig");
         let fsts = FiniteStateTransitionSystem::from_aig(&aig);
 
-        bmc(&fsts);
+        let res = bmc(&fsts);
+        match res {
+            BMCResult::NoCTX => { panic!(); },
+            BMCResult::CTX { assignment, depth } => {
+                assert_eq!(assignment, vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13, -14, -15, -16, -17, 18]);
+                assert_eq!(depth, 3);
+            }
+        }
     }
 
     // *--------------------------------------------------------------*
@@ -102,6 +115,13 @@ mod tests {
         );
         let fsts = FiniteStateTransitionSystem::from_aig(&aig);
 
-        bmc(&fsts);
+        let res = bmc(&fsts);
+        match res {
+            BMCResult::NoCTX => { panic!(); },
+            BMCResult::CTX { assignment, depth } => {
+                assert_eq!(assignment, vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13]);
+                assert_eq!(depth, 2);
+            }
+        }
     }
 }
