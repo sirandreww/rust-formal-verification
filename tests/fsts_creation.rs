@@ -55,10 +55,7 @@ mod tests {
             fsts.get_initial_relation().to_string(),
             "((!x1) & (!x2) & (!x3))"
         );
-        assert_eq!(
-            fsts.get_safety_property_for_some_depth(0).to_string(),
-            "()"
-        );
+        assert_eq!(fsts.get_safety_property_for_some_depth(0).to_string(), "()");
         assert_eq!(
             fsts.get_unsafety_property_for_some_depth(0).to_string(),
             "()"
@@ -96,7 +93,10 @@ mod tests {
             fsts.get_initial_relation().to_string(),
             "((!x1) & (!x2) & (!x3))"
         );
-        assert_eq!(fsts.get_safety_property_for_some_depth(0).to_string(), "((!x3))");
+        assert_eq!(
+            fsts.get_safety_property_for_some_depth(0).to_string(),
+            "((!x3))"
+        );
         assert_eq!(
             fsts.get_unsafety_property_for_some_depth(0).to_string(),
             "((x3))"
@@ -135,7 +135,10 @@ mod tests {
             fsts.get_initial_relation().to_string(),
             "((!x1) & (!x2) & (!x3))"
         );
-        assert_eq!(fsts.get_safety_property_for_some_depth(0).to_string(), "((!x2) & (!x3))");
+        assert_eq!(
+            fsts.get_safety_property_for_some_depth(0).to_string(),
+            "((!x2) & (!x3))"
+        );
         assert_eq!(
             fsts.get_unsafety_property_for_some_depth(0).to_string(),
             "((x2 | x3))"

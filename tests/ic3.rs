@@ -15,6 +15,8 @@ mod tests {
     // use
     // ********************************************************************************************
 
+    use std::collections::HashSet;
+
     use rust_formal_verification::{
         formulas::CNF,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
@@ -27,14 +29,10 @@ mod tests {
     // Enum
     // ********************************************************************************************
 
-    enum PdrResult {
+    enum IC3Result {
         Proof { invariant: CNF },
-        CTX { assignment: Vec<i32> },
+        CTX { input: Vec<Vec<bool>> },
     }
-
-    // fn get_bad_cube(fin_state: &FiniteStateTransitionSystem, blocked_cubes_of_each_frame: Vec<Vec<Cube>>, unreachable_cubes: Vec<Cube> ) {
-
-    // }
 
     fn is_bad_reached_in_0_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
         let mut cnf = CNF::new();
@@ -93,6 +91,27 @@ mod tests {
     //     return clause;
     // }
 
+    fn get_ctx_from_assignment(fin_state: &FiniteStateTransitionSystem, assignment: Vec<i32>) -> Vec<Vec<bool>> {
+        let mut result = Vec::new();
+        let input_literals: HashSet<u32> = fin_state.get_input_literals().iter().map(|l| l.get_number()).collect();
+        let max_variable_number: usize = fin_state.get_max_literal_number().try_into().unwrap();
+        let mut this_clk = Vec::new();
+        for (i_usize, var_value) in assignment.iter().enumerate() {
+            let i: u32 = i_usize.try_into().unwrap(); 
+            assert!(var_value.abs() == (i + 1).try_into().unwrap());
+            if i_usize % max_variable_number == 1 {
+                // new clk
+                result.push(this_clk);
+                this_clk = Vec::new();                
+            }
+            if input_literals.contains(&i) {
+                this_clk.push(var_value.is_positive());
+            }
+        }
+        result.push(this_clk);
+        result
+    }
+
     // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
@@ -100,42 +119,25 @@ mod tests {
     fn property_directed_reachability(
         fin_state: &FiniteStateTransitionSystem,
         _aig: &AndInverterGraph,
-    ) -> PdrResult {
+    ) -> IC3Result {
         let init_and_not_p = is_bad_reached_in_0_steps(fin_state);
         match init_and_not_p {
-            SatResponse::Sat { assignment } => return PdrResult::CTX { assignment },
+            SatResponse::Sat { assignment } => return IC3Result::CTX { input: vec![] },
             SatResponse::UnSat => (),
         }
 
         let init_and_tr_and_not_p_tag = is_bad_reached_in_1_steps(fin_state);
         match init_and_tr_and_not_p_tag {
-            SatResponse::Sat { assignment } => return PdrResult::CTX { assignment },
+            SatResponse::Sat { assignment } => return IC3Result::CTX {
+                input:get_ctx_from_assignment(fin_state, assignment) 
+            },
             SatResponse::UnSat => (),
         }
 
         let mut F = vec![
-            fin_state.get_initial_relation(), 
-            fin_state.get_safety_property_for_some_depth(0)
+            fin_state.get_initial_relation(),
+            fin_state.get_safety_property_for_some_depth(0),
         ];
-
-        for k in 1..{
-            loop {
-                match is_bad_reached_in_1_step_from_cnf(F.last().unwrap(), fin_state) {
-                    SatResponse::Sat { assignment } => {
-                        // trinary sim here
-                        let bad_state = fin_state.assignment_to_state_cnf(assignment);
-                        block(bad_state, k-1);
-                    },
-                    SatResponse::UnSat => {
-                        break;
-                    },
-                }
-                
-                F.push();
-            }
-            // push p to back of F
-            F.push(fin_state.get_safety_property_for_some_depth(0));
-        }
     }
 
     // fn property_directed_reachability(fin_state: &FiniteStateTransitionSystem) -> PdrResult{

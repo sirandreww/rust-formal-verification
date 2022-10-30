@@ -114,7 +114,7 @@
 //         }
 
 //         let mut F = vec![
-//             fin_state.get_initial_relation(), 
+//             fin_state.get_initial_relation(),
 //             fin_state.get_safety_property_for_some_depth(0)
 //         ];
 
@@ -130,7 +130,7 @@
 //                         break;
 //                     },
 //                 }
-                
+
 //                 F.push();
 //             }
 //             // push p to back of F

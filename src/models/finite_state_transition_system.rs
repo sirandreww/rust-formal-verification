@@ -2,8 +2,6 @@
 // use
 // ************************************************************************************************
 
-use splr::state::State;
-
 use crate::formulas::{Clause, Literal, CNF};
 use crate::models::AndInverterGraph;
 
@@ -39,14 +37,6 @@ impl FiniteStateTransitionSystem {
         state_literals: Vec<Literal>,
         input_literals: Vec<Literal>,
     ) -> Self {
-        // debug_assert!(
-        //     initial_states.get_greatest_variable_number() <= number_of_variables,
-        //     "initial_states has variable with a higher number than number_of_variables."
-        // );
-        // debug_assert!(
-        //     transition.get_highest_variable_number() <= max_variable_number,
-        //     "transition has variable with a higher number than number_of_variables."
-        // );
         Self {
             initial_states,
             transition,
@@ -155,10 +145,10 @@ impl FiniteStateTransitionSystem {
 
         latches_to_wires.append(
             &Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(
-            aig,
-            &wires_we_care_about,
-        )
-    );
+                aig,
+                &wires_we_care_about,
+            )
+        );
         latches_to_wires
     }
 
@@ -225,14 +215,14 @@ impl FiniteStateTransitionSystem {
 
     fn create_input_and_state_literals(aig: &AndInverterGraph) -> (Vec<Literal>, Vec<Literal>) {
         let mut input_literals = Vec::new();
-        for input_literal in aig.get_input_information(){
+        for input_literal in aig.get_input_information() {
             let lit = Self::get_literal_from_aig_literal(input_literal);
             assert!(!lit.is_negated());
             input_literals.push(lit);
         }
 
         let mut state_literals = Vec::new();
-        for (latch_literal, _, _) in aig.get_latch_information(){
+        for (latch_literal, _, _) in aig.get_latch_information() {
             let lit = Self::get_literal_from_aig_literal(latch_literal);
             assert!(!lit.is_negated());
             state_literals.push(lit);
@@ -281,43 +271,16 @@ impl FiniteStateTransitionSystem {
         )
     }
 
-    // pub fn convert_assignment_to_input_and_state_values(&self, assignment: Vec<i32>) -> (Vec<bool>, Vec<bool>) {
-    //     let mut i = 0;
-    //     let mut input_assignment = Vec::new();
-    //     for input_lit in &self.input_literals {
-    //         let assignment_i = assignment[i];
-    //         let input_literal_number = input_lit.get_number().try_into().unwrap();
-    //         assert!(assignment_i == input_literal_number || assignment_i == -input_literal_number);
-    //         input_assignment.push(assignment_i == input_literal_number);
-    //         i += 1;
-    //     }
-    //     let mut state_assignment = Vec::new();
-    //     for state_lit in &self.state_literals {
-    //         let assignment_i = assignment[i];
-    //         let state_literal_number = state_lit.get_number().try_into().unwrap();
-    //         assert!(assignment_i == state_literal_number || assignment_i == -state_literal_number);
-    //         state_assignment.push(assignment_i == state_literal_number);
-    //         i+=1;
-    //     }
-    //     (input_assignment, state_assignment)
-    // }
+    pub fn get_max_literal_number(&self) -> u32 {
+        self.max_literal_number
+    }
 
-    pub fn assignment_to_state_cnf(&self, assignment: Vec<i32>) -> CNF {
-        let mut i = self.input_literals.len();
-        let mut cnf = CNF::new();
-        for state_lit in &self.state_literals {
-            let assignment_i = assignment[i];
-            let state_literal_number:i32 = state_lit.get_number().try_into().unwrap();
-            assert!(assignment_i == state_literal_number.abs());
-            assert!(!state_lit.is_negated());
-            if assignment_i == state_literal_number {
-                cnf.add_clause(&Clause::new(&[state_lit.to_owned()]));
-            } else {
-                cnf.add_clause(&Clause::new(&[!state_lit.to_owned()]));
-            }
-            i+=1;
-        }
-        cnf
+    pub fn get_state_literals(&self) -> Vec<Literal> {
+        self.state_literals.to_owned()
+    }
+
+    pub fn get_input_literals(&self) -> Vec<Literal> {
+        self.input_literals.to_owned()
     }
 
     pub fn get_initial_relation(&self) -> CNF {

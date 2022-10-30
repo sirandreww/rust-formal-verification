@@ -41,12 +41,15 @@ mod tests {
                 sat_formula.append(&fsts.get_transition_relation_for_some_depth(unroll_depth));
             }
             sat_formula.append(&fsts.get_unsafety_property_for_some_depth(depth));
-            
+
             let solver = SplrSolver::default();
             let response = solver.solve_cnf(&sat_formula);
             match response {
                 SatResponse::Sat { assignment } => {
-                    return BMCResult::CTX { assignment: assignment, depth: depth }
+                    return BMCResult::CTX {
+                        assignment: assignment,
+                        depth: depth,
+                    }
                 }
                 SatResponse::UnSat => {}
             }
@@ -83,9 +86,14 @@ mod tests {
 
         let res = bmc(&fsts);
         match res {
-            BMCResult::NoCTX => { panic!(); },
+            BMCResult::NoCTX => {
+                panic!();
+            }
             BMCResult::CTX { assignment, depth } => {
-                assert_eq!(assignment, vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13, -14, -15, -16, -17, 18]);
+                assert_eq!(
+                    assignment,
+                    vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13, -14, -15, -16, -17, 18]
+                );
                 assert_eq!(depth, 3);
             }
         }
@@ -117,9 +125,14 @@ mod tests {
 
         let res = bmc(&fsts);
         match res {
-            BMCResult::NoCTX => { panic!(); },
+            BMCResult::NoCTX => {
+                panic!();
+            }
             BMCResult::CTX { assignment, depth } => {
-                assert_eq!(assignment, vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13]);
+                assert_eq!(
+                    assignment,
+                    vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13]
+                );
                 assert_eq!(depth, 2);
             }
         }
