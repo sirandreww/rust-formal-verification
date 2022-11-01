@@ -5,12 +5,19 @@
 use std::{fmt, ops::Not};
 
 // ************************************************************************************************
+// type alias
+// ************************************************************************************************
+
+/// This is the type that the literal
+pub type VariableType = u32;
+
+// ************************************************************************************************
 // struct
 // ************************************************************************************************
 
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy)]
 pub struct Literal {
-    literal_number: u32,
+    literal_number: VariableType,
 }
 
 // ************************************************************************************************
@@ -18,9 +25,9 @@ pub struct Literal {
 // ************************************************************************************************
 
 impl Literal {
-    pub fn new(number: u32) -> Self {
+    pub fn new(number: VariableType) -> Self {
         debug_assert!(number > 0, "Literal number may not be zero.");
-        debug_assert!(number <= (u32::MAX >> 1), "Literal number is too big.");
+        debug_assert!(number <= (VariableType::MAX >> 1), "Literal number is too big.");
         Self {
             literal_number: (number << 1),
         }
@@ -34,7 +41,7 @@ impl Literal {
         }
     }
 
-    pub fn get_number(&self) -> u32 {
+    pub fn get_number(&self) -> VariableType {
         self.literal_number >> 1
     }
 

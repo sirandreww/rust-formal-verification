@@ -26,7 +26,7 @@ mod tests {
 
     #[test]
     fn read_all_aig_files_from_hwmcc20() {
-        let file_paths = common::get_paths_to_all_aig_and_corresponding_aag_files();
+        let file_paths = common::_get_paths_to_all_aig_and_corresponding_aag_files();
         for (aig_file_path, aag_file_path) in file_paths {
             let mut rng = rand::thread_rng();
             let random_number_between_0_and_1: f64 = rng.gen();
@@ -36,7 +36,7 @@ mod tests {
                 let aig = AndInverterGraph::from_aig_path(&aig_file_path);
                 let aag_received = aig.get_aag_string();
                 let true_aag = fs::read_to_string(aag_file_path).unwrap();
-                common::assert_long_string_eq(&true_aag, &aag_received);
+                common::_assert_long_string_eq(&true_aag, &aag_received);
             }
         }
     }

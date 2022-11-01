@@ -9,7 +9,7 @@ use walkdir::WalkDir;
 // helper functions
 // ********************************************************************************************
 
-pub fn assert_long_string_eq(str1: &str, str2: &str) {
+pub fn _assert_long_string_eq(str1: &str, str2: &str) {
     let str1_chars: Vec<char> = str1.chars().collect();
     let str2_chars: Vec<char> = str2.chars().collect();
     if str1_chars == str2_chars {
@@ -46,7 +46,7 @@ pub fn assert_long_string_eq(str1: &str, str2: &str) {
     }
 }
 
-pub fn get_paths_to_all_aig_and_corresponding_aag_files() -> Vec<(String, String)> {
+pub fn _get_paths_to_all_aig_and_corresponding_aag_files() -> Vec<(String, String)> {
     let mut result = Vec::default();
     for aig_file_result in WalkDir::new("tests/hwmcc20_aig") {
         let aig_file = aig_file_result.unwrap();
@@ -68,7 +68,7 @@ pub fn get_paths_to_all_aig_and_corresponding_aag_files() -> Vec<(String, String
     result
 }
 
-pub fn get_paths_to_all_aig_for_2020() -> Vec<String> {
+pub fn _get_paths_to_all_aig_for_2020() -> Vec<String> {
     let mut result = Vec::default();
     for aig_file_result in WalkDir::new("tests/hwmcc20_aig/2020") {
         let aig_file = aig_file_result.unwrap();

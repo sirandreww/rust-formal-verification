@@ -3,9 +3,11 @@
 // ************************************************************************************************
 
 use crate::formulas::CNF;
+use crate::formulas::literal::VariableType;
 use crate::solvers::sat::SatResponse;
 use splr::solver::SolverResult;
 use splr::{self, SolverError};
+use std::collections::HashMap;
 
 // ************************************************************************************************
 // struct
@@ -33,13 +35,25 @@ impl SplrSolver {
         result
     }
 
+    fn convert_result_to_hashmap(assignment: &Vec<i32>) -> HashMap<VariableType, bool> {
+        let mut result = HashMap::<VariableType, bool>::new();
+        for var in assignment {
+            let var_num: VariableType = var.abs().try_into().unwrap();
+            debug_assert!(var_num != 0);
+            result.insert(var_num, var > &0);
+        }
+        result
+    }
+
     pub fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
         let owned = Self::convert_cnf_to_vector_of_vectors(cnf_to_solve);
 
         match splr::Certificate::try_from(owned) {
             SolverResult::Ok(c) => match c {
                 splr::Certificate::UNSAT => SatResponse::UnSat {},
-                splr::Certificate::SAT(assignment) => SatResponse::Sat { assignment },
+                splr::Certificate::SAT(assignment) => SatResponse::Sat {
+                    assignment: Self::convert_result_to_hashmap(&assignment),
+                },
             },
             SolverResult::Err(e) => match e {
                 SolverError::EmptyClause => SatResponse::UnSat {},

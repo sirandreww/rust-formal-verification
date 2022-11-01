@@ -17,8 +17,21 @@ mod tests {
 
     use rust_formal_verification::{
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::{SatResponse, SplrSolver},
+        solvers::sat::{SatResponse, SplrSolver}, formulas::literal::VariableType,
     };
+    use std::collections::HashMap;
+
+    // ********************************************************************************************
+    // macro
+    // ********************************************************************************************
+
+    macro_rules! hashmap {
+        ($( $key: expr => $val: expr ),*) => {{
+             let mut map = ::std::collections::HashMap::new();
+             $( map.insert($key, $val); )*
+             map
+        }}
+    }
 
     // ********************************************************************************************
     // Enum
@@ -26,7 +39,10 @@ mod tests {
 
     enum BMCResult {
         NoCTX,
-        CTX { assignment: Vec<i32>, depth: u32 },
+        CTX {
+            assignment: HashMap<VariableType, bool>,
+            depth: VariableType,
+        },
     }
 
     // ********************************************************************************************
@@ -34,7 +50,7 @@ mod tests {
     // ********************************************************************************************
 
     fn bmc(fsts: &FiniteStateTransitionSystem) -> BMCResult {
-        let bmc_limit: u32 = 10;
+        let bmc_limit = 10;
         for depth in 0..bmc_limit {
             let mut sat_formula = fsts.get_initial_relation();
             for unroll_depth in 1..(depth + 1) {
@@ -92,7 +108,12 @@ mod tests {
             BMCResult::CTX { assignment, depth } => {
                 assert_eq!(
                     assignment,
-                    vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13, -14, -15, -16, -17, 18]
+                    hashmap![
+                        1 => false, 2 => false, 3 => false, 4 => true, 5 => true, 
+                        6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
+                        11 =>false, 12 => true, 13 => false, 14 => false, 15 => false, 
+                        16 => false, 17 => false, 18 => true
+                    ]
                 );
                 assert_eq!(depth, 3);
             }
@@ -131,7 +152,11 @@ mod tests {
             BMCResult::CTX { assignment, depth } => {
                 assert_eq!(
                     assignment,
-                    vec![-1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13]
+                    hashmap![
+                        1 => false, 2 => false, 3 => false, 4 => true, 5 => true, 
+                        6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
+                        11 =>false, 12 => true, 13 => false
+                    ]
                 );
                 assert_eq!(depth, 2);
             }

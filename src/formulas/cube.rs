@@ -6,15 +6,14 @@ use crate::formulas::Literal;
 use std::fmt;
 use std::hash::Hash;
 use std::ops::Not;
-
-use super::Cube;
+use super::{Clause, CNF};
 
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
 #[derive(Eq, PartialEq, Clone, Hash, PartialOrd, Ord)]
-pub struct Clause {
+pub struct Cube {
     literals: Vec<Literal>,
 }
 
@@ -22,7 +21,7 @@ pub struct Clause {
 // impl
 // ************************************************************************************************
 
-impl Clause {
+impl Cube {
     pub fn new(literals: &[Literal]) -> Self {
         let mut sorted = literals.to_owned();
         sorted.sort();
@@ -40,21 +39,29 @@ impl Clause {
     pub fn iter(&self) -> impl Iterator<Item = &Literal> {
         self.literals.iter()
     }
+
+    pub fn to_cnf(&self) -> CNF {
+        let mut cnf = CNF::new();
+        for lit in self.literals.iter() {
+            cnf.add_clause(&Clause::new(&[lit.to_owned()]));
+        }
+        cnf
+    }
 }
 
 // ************************************************************************************************
 // negation
 // ************************************************************************************************
 
-impl Not for Clause {
-    type Output = Cube;
+impl Not for Cube {
+    type Output = Clause;
 
     fn not(self) -> Self::Output {
         let mut literals = Vec::new();
         for lit in self.iter() {
             literals.push(!lit.to_owned());
         }
-        Cube::new(&literals)
+        Clause::new(&literals)
     }
 }
 
@@ -62,7 +69,7 @@ impl Not for Clause {
 // printing
 // ************************************************************************************************
 
-impl fmt::Display for Clause {
+impl fmt::Display for Cube {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut literals = self.literals.to_owned();
         literals.sort();
@@ -70,6 +77,6 @@ impl fmt::Display for Clause {
             .iter()
             .map(|lit| lit.to_string())
             .collect::<Vec<String>>();
-        write!(f, "({})", string_vec.join(" | "))
+        write!(f, "({})", string_vec.join(" & "))
     }
 }

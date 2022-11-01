@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn read_all_aig_files_from_hwmcc20() {
-        let file_paths = common::get_paths_to_all_aig_and_corresponding_aag_files();
+        let file_paths = common::_get_paths_to_all_aig_and_corresponding_aag_files();
         for (aig_file_path, _aag_file_path) in file_paths {
             let mut rng = rand::thread_rng();
             let random_number_between_0_and_1: f64 = rng.gen();

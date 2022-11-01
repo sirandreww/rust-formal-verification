@@ -2,6 +2,7 @@
 // use
 // ************************************************************************************************
 
+use crate::formulas::literal::VariableType;
 use crate::formulas::{Clause, Literal, CNF};
 use crate::models::AndInverterGraph;
 
@@ -9,14 +10,15 @@ use crate::models::AndInverterGraph;
 // struct
 // ************************************************************************************************
 
+#[derive(Clone)]
 pub struct FiniteStateTransitionSystem {
     initial_states: CNF,
     transition: CNF,
     safety_property: CNF,
     unsafety_property: CNF,
-    max_literal_number: u32,
-    state_literals: Vec<Literal>,
-    input_literals: Vec<Literal>,
+    max_literal_number: VariableType,
+    state_literals: Vec<VariableType>,
+    input_literals: Vec<VariableType>,
 }
 
 // ************************************************************************************************
@@ -33,9 +35,9 @@ impl FiniteStateTransitionSystem {
         transition: CNF,
         safety_property: CNF,
         unsafety_property: CNF,
-        max_literal_number: u32,
-        state_literals: Vec<Literal>,
-        input_literals: Vec<Literal>,
+        max_literal_number: VariableType,
+        state_literals: Vec<VariableType>,
+        input_literals: Vec<VariableType>,
     ) -> Self {
         Self {
             initial_states,
@@ -49,7 +51,7 @@ impl FiniteStateTransitionSystem {
     }
 
     fn get_literal_from_aig_literal(aig_literal: usize) -> Literal {
-        let aig_var_num: u32 = (aig_literal >> 1).try_into().unwrap();
+        let aig_var_num: VariableType = (aig_literal >> 1).try_into().unwrap();
         Literal::new(aig_var_num).negate_if_true(aig_literal % 2 == 1)
     }
 
@@ -114,7 +116,7 @@ impl FiniteStateTransitionSystem {
         cnf
     }
 
-    fn create_transition_cnf(aig: &AndInverterGraph, max_variable_number: u32) -> CNF {
+    fn create_transition_cnf(aig: &AndInverterGraph, max_variable_number: VariableType) -> CNF {
         // propagate new latch values
         let mut latches_to_wires = CNF::new();
         let mut wires_we_care_about = Vec::new();
@@ -189,7 +191,7 @@ impl FiniteStateTransitionSystem {
         }
     }
 
-    fn bump_all_cnf_variables_by_some_number(original_cnf: &CNF, number_to_bump: u32) -> CNF {
+    fn bump_all_cnf_variables_by_some_number(original_cnf: &CNF, number_to_bump: VariableType) -> CNF {
         if number_to_bump == 0 {
             // this makes the function faster for the simple case
             original_cnf.to_owned()
@@ -213,19 +215,19 @@ impl FiniteStateTransitionSystem {
         }
     }
 
-    fn create_input_and_state_literals(aig: &AndInverterGraph) -> (Vec<Literal>, Vec<Literal>) {
+    fn create_input_and_state_literal_numbers(aig: &AndInverterGraph) -> (Vec<VariableType>, Vec<VariableType>) {
         let mut input_literals = Vec::new();
         for input_literal in aig.get_input_information() {
             let lit = Self::get_literal_from_aig_literal(input_literal);
             assert!(!lit.is_negated());
-            input_literals.push(lit);
+            input_literals.push(lit.get_number());
         }
 
         let mut state_literals = Vec::new();
         for (latch_literal, _, _) in aig.get_latch_information() {
             let lit = Self::get_literal_from_aig_literal(latch_literal);
             assert!(!lit.is_negated());
-            state_literals.push(lit);
+            state_literals.push(lit.get_number());
         }
         (input_literals, state_literals)
     }
@@ -254,8 +256,8 @@ impl FiniteStateTransitionSystem {
             max_variable_number_as_usize < (u32::MAX >> 1).try_into().unwrap(),
             "AIG has variables with numbers that are too high (too many variables)."
         );
-        let max_literal_number: u32 = max_variable_number_as_usize.try_into().unwrap();
-        let (input_literals, state_literals) = Self::create_input_and_state_literals(aig);
+        let max_literal_number: VariableType = max_variable_number_as_usize.try_into().unwrap();
+        let (input_literals, state_literals) = Self::create_input_and_state_literal_numbers(aig);
         let initial_states: CNF = Self::create_initial_cnf(aig);
         let transition: CNF = Self::create_transition_cnf(aig, max_literal_number);
         let safety_property: CNF = Self::create_safety_property(aig);
@@ -271,15 +273,15 @@ impl FiniteStateTransitionSystem {
         )
     }
 
-    pub fn get_max_literal_number(&self) -> u32 {
+    pub fn get_max_literal_number(&self) -> VariableType {
         self.max_literal_number
     }
 
-    pub fn get_state_literals(&self) -> Vec<Literal> {
+    pub fn get_state_literal_numbers(&self) -> Vec<VariableType> {
         self.state_literals.to_owned()
     }
 
-    pub fn get_input_literals(&self) -> Vec<Literal> {
+    pub fn get_input_literal_numbers(&self) -> Vec<VariableType> {
         self.input_literals.to_owned()
     }
 
@@ -310,7 +312,7 @@ impl FiniteStateTransitionSystem {
     ///     "((!x1 | x7) & (!x2 | x8) & (!x5 | x6) & (!x6 | !x10) & (!x7 | !x9) & (!x8 | !x9) & (x1 | !x7) & (x2 | !x8) & (x5 | !x6) & (x6 | !x9 | x10) & (x7 | x8 | x9) & (x9 | !x10))"
     /// );
     /// ```
-    pub fn get_transition_relation_for_some_depth(&self, depth: u32) -> CNF {
+    pub fn get_transition_relation_for_some_depth(&self, depth: VariableType) -> CNF {
         debug_assert!(depth > 0, "Called get_transition_relation_for_some_depth with depth 0. Transition relation for depth 0 is undefined.");
         Self::bump_all_cnf_variables_by_some_number(
             &self.transition,
@@ -318,16 +320,23 @@ impl FiniteStateTransitionSystem {
         )
     }
 
-    pub fn get_unsafety_property_for_some_depth(&self, depth: u32) -> CNF {
+    pub fn get_unsafety_property_for_some_depth(&self, depth: VariableType) -> CNF {
         Self::bump_all_cnf_variables_by_some_number(
             &self.unsafety_property,
             self.max_literal_number * depth,
         )
     }
 
-    pub fn get_safety_property_for_some_depth(&self, depth: u32) -> CNF {
+    pub fn get_safety_property_for_some_depth(&self, depth: VariableType) -> CNF {
         Self::bump_all_cnf_variables_by_some_number(
             &self.safety_property,
+            self.max_literal_number * depth,
+        )
+    }
+
+    pub fn add_depth_to_property(&self, property: &CNF, depth: VariableType) -> CNF {
+        Self::bump_all_cnf_variables_by_some_number(
+            property,
             self.max_literal_number * depth,
         )
     }
