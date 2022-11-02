@@ -153,11 +153,11 @@ impl CNF {
     /// let mut cnf1 = CNF::default();
     /// cnf1.add_clause(&Clause::new(&[l1, l2, l3]));
     /// cnf1.add_clause(&Clause::new(&[!l1, l2, l3]));
-    /// 
+    ///
     /// let mut cnf2 = CNF::default();
     /// cnf2.add_clause(&Clause::new(&[l1, !l2, l3]));
     /// cnf2.add_clause(&Clause::new(&[l1, l2, !l3]));
-    /// 
+    ///
     /// assert_eq!(cnf1.len(), 2);
     /// cnf1.append(&cnf2);
     /// assert_eq!(cnf1.len(), 4);
