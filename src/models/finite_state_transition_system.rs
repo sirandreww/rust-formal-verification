@@ -250,10 +250,10 @@ impl FiniteStateTransitionSystem {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::{AndInverterGraph, FiniteStateTransitionSystem};
-    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// let fsts = FiniteStateTransitionSystem::from_aig(&aig);
-    /// assert_eq!(fsts.get_initial_states().to_string(), "((!x1) & (!x2) & (!x3))");
+    /// assert_eq!(fsts.get_initial_relation().to_string(), "((!x1) & (!x2) & (!x3))");
     /// ```
     pub fn from_aig(aig: &AndInverterGraph) -> Self {
         let max_variable_number_as_usize = aig.get_highest_variable_number();
@@ -310,14 +310,14 @@ impl FiniteStateTransitionSystem {
     /// ```
     /// use rust_formal_verification::models::{AndInverterGraph, FiniteStateTransitionSystem};
     /// use rust_formal_verification::formulas::CNF;
-    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// let fsts = FiniteStateTransitionSystem::from_aig(&aig);
     /// let mut tr_x_x_tag = CNF::default();
     /// let tr_x_x_tag = fsts.get_transition_relation_for_some_depth(1);
     /// assert_eq!(
     ///     tr_x_x_tag.to_string(),
-    ///     "((!x1 | x7) & (!x2 | x8) & (!x5 | x6) & (!x6 | !x10) & (!x7 | !x9) & (!x8 | !x9) & (x1 | !x7) & (x2 | !x8) & (x5 | !x6) & (x6 | !x9 | x10) & (x7 | x8 | x9) & (x9 | !x10))"
+    ///     "((x1 | !x7) & (!x1 | !x5) & (!x1 | x7) & (x2 | !x8) & (!x2 | !x4) & (!x2 | x8) & (!x3 | !x4) & (x4 | !x5) & (x5 | !x6) & (!x5 | x6) & (x1 | !x4 | x5) & (x2 | x3 | x4))"
     /// );
     /// ```
     pub fn get_transition_relation_for_some_depth(&self, depth: VariableType) -> CNF {

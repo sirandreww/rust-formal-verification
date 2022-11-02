@@ -453,7 +453,7 @@ impl AndInverterGraph {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/hwmcc20_aig/2020/mann/stack-p2.aig";
+    /// let file_path = "tests/examples/hwmcc20/2020/mann/stack-p2.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// ```
     pub fn from_aig_path(file_path: &str) -> AndInverterGraph {
@@ -476,7 +476,7 @@ impl AndInverterGraph {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// assert_eq!("aag 5 0 3 1 2\n2 10\n4 2\n6 4\n10\n8 7 5\n10 8 3\n", aig.get_aag_string());
     /// ```
@@ -573,7 +573,7 @@ impl AndInverterGraph {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// assert_eq!(Vec::<usize>::new(), aig.get_input_information());
     /// ```
@@ -604,7 +604,7 @@ impl AndInverterGraph {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// assert_eq!(vec![(2, 10, 0),(4, 2, 0),(6, 4, 0)], aig.get_latch_information());
     /// ```
@@ -637,7 +637,7 @@ impl AndInverterGraph {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// assert_eq!(Vec::<usize>::new(), aig.get_bad_information());
     /// ```
@@ -656,7 +656,7 @@ impl AndInverterGraph {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// assert_eq!(Vec::<usize>::new(), aig.get_constraints_information());
     /// ```
@@ -677,9 +677,9 @@ impl AndInverterGraph {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
-    /// assert_eq!(5, aig.get_maximum_variable_number());
+    /// assert_eq!(5, aig.get_highest_variable_number());
     /// ```
     pub fn get_highest_variable_number(&self) -> usize {
         self.maximum_variable_index
@@ -699,7 +699,7 @@ impl AndInverterGraph {
     /// # Examples
     /// ```
     /// use rust_formal_verification::models::AndInverterGraph;
-    /// let file_path = "tests/simple_examples/counter.aig";
+    /// let file_path = "tests/examples/ours/counter.aig";
     /// // the aig looks like this:
     /// // *--------------------------------------------------------------*
     /// // |     _________                                                |
@@ -729,8 +729,12 @@ impl AndInverterGraph {
     /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[7]), vec![]);
     /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[8]), vec![(8, 7, 5)]);
     /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[9]), vec![(8, 7, 5)]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[10]), vec![(10, 8, 3), (8, 7, 5)]);
-    /// assert_eq!(aig.get_and_information_in_cone_of_influence(&[11]), vec![(10, 8, 3), (8, 7, 5)]);
+    /// let mut sorted = aig.get_and_information_in_cone_of_influence(&[10]);
+    /// sorted.sort();
+    /// assert_eq!(sorted, vec![(8, 7, 5), (10, 8, 3)]);
+    /// let mut sorted = aig.get_and_information_in_cone_of_influence(&[11]);
+    /// sorted.sort();
+    /// assert_eq!(sorted, vec![(8, 7, 5), (10, 8, 3)]);
     /// ```
     pub fn get_and_information_in_cone_of_influence(
         &self,
