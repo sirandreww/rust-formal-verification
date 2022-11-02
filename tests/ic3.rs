@@ -28,8 +28,7 @@ mod tests {
     };
     use std::{
         cmp::{max, Reverse},
-        collections::{BinaryHeap, HashMap},
-        vec,
+        collections::{HashMap},
     };
 
     // ********************************************************************************************
@@ -48,6 +47,11 @@ mod tests {
 
     pub enum InductivelyGeneralizeResult {
         Success { n: usize },
+        Failure,
+    }
+
+    pub enum PushGeneralizeResult {
+        Success,
         Failure,
     }
 
@@ -86,7 +90,7 @@ mod tests {
             clauses_fk
         }
 
-        fn get_ctx_from_assignment(
+        fn _get_ctx_from_assignment(
             &self,
             assignment: &HashMap<VariableType, bool>,
         ) -> Vec<Vec<bool>> {
@@ -107,6 +111,7 @@ mod tests {
             let mut cnf = CNF::new();
             cnf.append(&self.fin_state.get_initial_relation());
             cnf.append(&self.fin_state.get_unsafety_property_for_some_depth(0));
+            // println!("I ^ !P = {}", cnf);
             self.solver.solve_cnf(&cnf)
         }
 
@@ -115,12 +120,13 @@ mod tests {
             cnf.append(&self.fin_state.get_initial_relation());
             cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
             cnf.append(&self.fin_state.get_unsafety_property_for_some_depth(1));
+            // println!("I ^ T ^ !P' = {}", cnf);
             self.solver.solve_cnf(&cnf)
         }
 
         fn propagate_clauses(&mut self, k: usize) {
             for i in 1..(k + 1) {
-                let clauses_fi = self.clauses[i];
+                let clauses_fi = self.clauses[i].to_owned();
                 for c in clauses_fi.iter() {
                     let mut cnf = CNF::new();
                     cnf.append(&self.get_fk(i));
@@ -182,9 +188,8 @@ mod tests {
         fn is_clause_inductive_relative_to_fi(&self, d: &Clause, i: usize) -> bool {
             // return !(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’)
 
-            let d = d.to_owned();
             let mut first_cnf = self.fin_state.get_initial_relation();
-            first_cnf.append(&(!d).to_cnf());
+            first_cnf.append(&(!d.to_owned()).to_cnf());
             match self.solver.solve_cnf(&first_cnf) {
                 SatResponse::UnSat => {}
                 SatResponse::Sat { assignment: _ } => {
@@ -193,9 +198,9 @@ mod tests {
             }
 
             let mut second_cnf = self.get_fk(i);
-            second_cnf.add_clause(&d);
+            second_cnf.add_clause(d);
             second_cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
-            second_cnf.append(&self.fin_state.add_depth_to_property(&(!d).to_cnf(), 1));
+            second_cnf.append(&self.fin_state.add_depth_to_property(&(!d.to_owned()).to_cnf(), 1));
             match self.solver.solve_cnf(&second_cnf) {
                 SatResponse::UnSat => true,
                 SatResponse::Sat { assignment: _ } => false,
@@ -203,29 +208,31 @@ mod tests {
         }
 
         fn get_subclause_of_not_s_that_is_inductive_relative_to_fi(
-            &self,
+            &mut self,
             s: &Cube,
             i: usize,
         ) -> Clause {
             let c = !(s.to_owned());
             let mut c_literals: Vec<Literal> = c.iter().map(|l| l.to_owned()).collect();
             c_literals.shuffle(&mut self.rng);
-            let mut i = 0;
-            while i < c_literals.len() {
-                let removed = c_literals.swap_remove(i);
+            let mut j = 0;
+            while j < c_literals.len() {
+                let removed = c_literals.swap_remove(j);
                 let d = Clause::new(&c_literals);
                 if self.is_clause_inductive_relative_to_fi(&d, i) {
                     // remove successful
                 } else {
                     // undo remove
                     c_literals.push(removed);
-                    c_literals.swap(i, c_literals.len() - 1);
+                    let last_index = c_literals.len() - 1;
+                    c_literals.swap(j, last_index);
                 }
+                j += 1;
             }
             Clause::new(&c_literals)
         }
 
-        fn generate_clause(&self, s: &Cube, i: usize, k: usize) {
+        fn generate_clause(&mut self, s: &Cube, i: usize, _k: usize) {
             let c = self.get_subclause_of_not_s_that_is_inductive_relative_to_fi(s, i);
             for j in 1..(i + 2) {
                 self.clauses[j].add_clause(&c);
@@ -233,16 +240,16 @@ mod tests {
         }
 
         fn inductively_generalize(
-            &self,
+            &mut self,
             s: &Cube,
-            min: usize,
+            min: isize,
             k: usize,
         ) -> InductivelyGeneralizeResult {
             if min < 0 && self.is_fi_and_t_and_not_s_and_s_tag_sat(0, s) {
                 return InductivelyGeneralizeResult::Failure;
             }
 
-            for i in max(1, min + 1)..(k + 1) {
+            for i in max(1, min + 1).try_into().unwrap()..(k + 1) {
                 if self.is_fi_and_t_and_not_s_and_s_tag_sat(i, s) {
                     self.generate_clause(s, i - 1, k);
                     return InductivelyGeneralizeResult::Success { n: i - 1 };
@@ -252,29 +259,51 @@ mod tests {
             return InductivelyGeneralizeResult::Success { n: k };
         }
 
-        fn push_generalization(&self, states: PriorityQueue<Cube, Reverse<usize>>, k: usize) {
-            // while true :
+        // calculates sat(Fi ^ T ^ s')
+        fn solve_fi_and_t_and_s_tag(&self, i: usize, s: &Cube) -> SatResponse {
+            let mut new_cnf = CNF::new();
+            new_cnf.append(&self.get_fk(i));
+            new_cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
+            new_cnf.append(&self.fin_state.add_depth_to_property(&s.to_cnf(), 1));
+            self.solver.solve_cnf(&new_cnf)
+        }
+
+        fn push_generalization(&mut self, states: &PriorityQueue<Cube, Reverse<usize>>, k: usize) -> PushGeneralizeResult{
+            let mut states = states.to_owned();
             loop {
-                // { @rank : (k + 1)2|x̄|
-                // @assert (D ) :
-                // (1) pre
-                // ( 2 ) ∀ (i, q) ∈ states prev , ∃j ≥ i, (j, q) ∈ states }
-                let (s, reversed_n) = states.peek().unwrap();
+                let (s, reversed_n) = states.pop().unwrap();
                 let n = reversed_n.0;
-                // (n, s) := choose from states , minimizing n
-                // i f n > k : return
                 if n > k {
-                    return;
+                    return PushGeneralizeResult::Success;
                 }
-                // i f sat ( Fn ∧ T ∧ s′ ) :
-                // p := the predecessor extracted from the witness
-                // { @ a s s e r t (E ) : ∀ (i, q) ∈ states , p 6= q }
-                // m := inductivelyGeneralize ( p , n − 2 , k )
-                // states := states ∪ {(m + 1, p)}
-                // else :
-                // m := inductivelyGeneralize ( s , n , k )
-                // { @ a s s e r t (F ) : m + 1 > n }
-                // states := states \ {(n, s)} ∪ {(m + 1, s)}
+                match self.solve_fi_and_t_and_s_tag(n, &s) {
+                    SatResponse::Sat { assignment } => {
+                        // we have to block p in order to block n.
+                        let p = self.extract_predecessor_from_assignment(&assignment);
+                        println!("Should block p = {} from F{}", p, n-1);
+                        match self.inductively_generalize(&p, <usize as TryInto<isize>>::try_into(n).unwrap() - 2, k){
+                            InductivelyGeneralizeResult::Failure => {
+                                return PushGeneralizeResult::Failure;
+                            },
+                            InductivelyGeneralizeResult::Success { n: m } => {
+                                states.push(s, reversed_n);
+                                states.push(p, Reverse(m+1));
+                            }
+                        }
+                    },
+                    SatResponse::UnSat => {
+                        // n can be blocked
+                        match self.inductively_generalize(&s, n.try_into().unwrap(), k){
+                            InductivelyGeneralizeResult::Failure => {
+                                return PushGeneralizeResult::Failure;
+                            },
+                            InductivelyGeneralizeResult::Success { n: m } => {
+                                states.push(s.to_owned(), Reverse(m+1));
+                            }
+                        }
+
+                    }
+                }
             }
         }
 
@@ -286,8 +315,22 @@ mod tests {
                     }
                     SatResponse::Sat { assignment } => {
                         let s = self.extract_predecessor_from_assignment(&assignment);
-                        let n = self.inductively_generalize(s, k - 2, k);
-                        self.push_generalization({ (n + 1, s) }, k);
+                        println!("Should block s = {} from F{}", s, k-1);
+                        match self.inductively_generalize(&s, <usize as TryInto<isize>>::try_into(k).unwrap() - 2, k){
+                            InductivelyGeneralizeResult::Failure => {
+                                return StrengthenResult::Failure { depth: k.try_into().unwrap() };
+                            },
+                            InductivelyGeneralizeResult::Success { n } => {
+                                let mut queue = PriorityQueue::<Cube, Reverse<usize>>::new();
+                                queue.push(s, Reverse(n + 1));
+                                match self.push_generalization(&queue, k) {
+                                    PushGeneralizeResult::Failure => {
+                                        return StrengthenResult::Failure { depth: k.try_into().unwrap() };
+                                    },
+                                    PushGeneralizeResult::Success => {}
+                                };
+                            }
+                        };
                     }
                 }
             }
@@ -308,12 +351,14 @@ mod tests {
                 SatResponse::UnSat => (),
             }
 
+            self.clauses.push(CNF::new());
             for k in 1.. {
-                debug_assert!(self.clauses.len() == (k + 1));
+                self.clauses.push(CNF::new());
+                debug_assert_eq!(self.clauses.len(), (k + 1));
                 match self.strengthen(k) {
                     StrengthenResult::Success => {}
-                    StrengthenResult::Failure { depth } => {
-                        return IC3Result::CTX { depth };
+                    StrengthenResult::Failure { depth: _ } => {
+                        return IC3Result::CTX { depth: k.try_into().unwrap() };
                     }
                 };
                 self.propagate_clauses(k);
@@ -333,18 +378,43 @@ mod tests {
     // helper functions
     // ********************************************************************************************
 
-    fn ic3(fin_state: &FiniteStateTransitionSystem, _aig: &AndInverterGraph) -> IC3Result {
+    fn check_invariant(_fin_state: &FiniteStateTransitionSystem, _inv_candidate: &CNF){
+        // check INIT -> inv_candidate
+        // let init = fin_state.get_initial_relation();
+
+    }
+
+    fn ic3(fin_state: &FiniteStateTransitionSystem, _aig: &AndInverterGraph) {
         let mut ic3_solver = IC3::new(fin_state);
-        return ic3_solver.prove();
+        match ic3_solver.prove() {
+            IC3Result::Proof { invariant } => {
+                check_invariant(fin_state, &invariant);
+            },
+            IC3Result::CTX { depth: _ } => {
+                // do nothing for now
+            },
+        }
     }
 
     // ********************************************************************************************
     // tests
     // ********************************************************************************************
 
+    // #[test]
+    // fn pdr_on_2020_examples() {
+    //     let file_paths = common::_get_paths_to_all_aig_for_2020();
+    //     for aig_file_path in file_paths {
+    //         println!("file_path = {}", aig_file_path);
+
+    //         let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+    //         let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+    //         ic3(&fin_state, &aig);
+    //     }
+    // }
+
     #[test]
-    fn pdr_on_2020_examples() {
-        let file_paths = common::_get_paths_to_all_aig_for_2020();
+    fn ic3_on_our_examples() {
+        let file_paths = common::_get_paths_to_all_our_example_aig_files();
         for aig_file_path in file_paths {
             println!("file_path = {}", aig_file_path);
 

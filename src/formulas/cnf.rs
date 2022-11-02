@@ -148,12 +148,12 @@ impl Eq for CNF {}
 impl fmt::Display for CNF {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut clauses = Vec::from_iter(self.clauses.iter());
-        clauses.sort();
-        let mut string_vec = clauses
+        clauses.sort_by(|a, b| a.len().cmp(&b.len()).then(a.cmp(b)));
+        let string_vec = clauses
             .iter()
             .map(|one_clause| one_clause.to_string())
             .collect::<Vec<String>>();
-        string_vec.sort();
+        // string_vec.sort();
         write!(f, "({})", string_vec.join(" & "))
     }
 }
