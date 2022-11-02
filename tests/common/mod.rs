@@ -4,6 +4,7 @@
 
 use std::cmp::{max, min};
 use walkdir::WalkDir;
+use rand::Rng;
 
 // ********************************************************************************************
 // helper functions to helper functions
@@ -70,6 +71,13 @@ pub fn _assert_long_string_eq(str1: &str, str2: &str) {
 
 pub fn _get_paths_to_all_aig_and_corresponding_aag_files() -> Vec<(String, String)> {
     get_aig_and_aag_files_in_dir("tests/examples/hwmcc20")
+}
+
+pub fn _true_with_probability(prob: f64) -> bool {
+    assert!(0.0 <= prob && prob <= 1.0);
+    let mut rng = rand::thread_rng();
+    let random_number_between_0_and_1: f64 = rng.gen();
+    return random_number_between_0_and_1 > (1.0 - prob);
 }
 
 // pub fn _get_paths_to_all_aig_for_2020() -> Vec<String> {

@@ -98,7 +98,7 @@ mod tests {
     #[test]
     fn bmc_on_simple_example_counter_with_bad_assertion() {
         let aig =
-            AndInverterGraph::from_aig_path("tests/simple_examples/counter_with_bad_assertion.aig");
+            AndInverterGraph::from_aig_path("tests/examples/ours/counter_with_bad_assertion.aig");
         let fsts = FiniteStateTransitionSystem::from_aig(&aig);
 
         let res = bmc(&fsts);
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn bmc_on_simple_example_counter_with_2_bad_assertion() {
         let aig = AndInverterGraph::from_aig_path(
-            "tests/simple_examples/counter_with_2_bad_assertions.aig",
+            "tests/examples/ours/counter_with_2_bad_assertions.aig",
         );
         let fsts = FiniteStateTransitionSystem::from_aig(&aig);
 

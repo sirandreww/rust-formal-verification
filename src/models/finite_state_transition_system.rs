@@ -261,6 +261,9 @@ impl FiniteStateTransitionSystem {
             max_variable_number_as_usize < (u32::MAX >> 1).try_into().unwrap(),
             "AIG has variables with numbers that are too high (too many variables)."
         );
+        if !aig.get_constraints_information().is_empty(){
+            eprintln!("Warning: Making 'FiniteStateTransitionSystem' from aig with constraints, constraints are not yet supported, they will simply be ignored.");
+        } 
         let max_literal_number: VariableType = max_variable_number_as_usize.try_into().unwrap();
         let (input_literals, state_literals) = Self::create_input_and_state_literal_numbers(aig);
         let initial_states: CNF = Self::create_initial_cnf(aig);

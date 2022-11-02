@@ -583,7 +583,6 @@ impl AndInverterGraph {
             let input = &self.nodes[input_index.to_owned()];
             result.push(input.get_literal());
         }
-        assert_eq!(result, self.inputs);
         result
     }
 
