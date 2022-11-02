@@ -2,14 +2,16 @@
 // use
 // ************************************************************************************************
 
-use std::collections::HashMap;
 use crate::formulas::literal::VariableType;
+use std::collections::HashMap;
 
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
 pub enum SatResponse {
-    Sat { assignment: HashMap<VariableType, bool> },
+    Sat {
+        assignment: HashMap<VariableType, bool>,
+    },
     UnSat,
 }

@@ -27,7 +27,10 @@ pub struct Literal {
 impl Literal {
     pub fn new(number: VariableType) -> Self {
         debug_assert!(number > 0, "Literal number may not be zero.");
-        debug_assert!(number <= (VariableType::MAX >> 1), "Literal number is too big.");
+        debug_assert!(
+            number <= (VariableType::MAX >> 1),
+            "Literal number is too big."
+        );
         Self {
             literal_number: (number << 1),
         }

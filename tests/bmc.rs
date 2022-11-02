@@ -16,8 +16,9 @@ mod tests {
     // ********************************************************************************************
 
     use rust_formal_verification::{
+        formulas::literal::VariableType,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::{SatResponse, SplrSolver}, formulas::literal::VariableType,
+        solvers::sat::{SatResponse, SplrSolver},
     };
     use std::collections::HashMap;
 
@@ -109,9 +110,9 @@ mod tests {
                 assert_eq!(
                     assignment,
                     hashmap![
-                        1 => false, 2 => false, 3 => false, 4 => true, 5 => true, 
+                        1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
                         6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
-                        11 =>false, 12 => true, 13 => false, 14 => false, 15 => false, 
+                        11 =>false, 12 => true, 13 => false, 14 => false, 15 => false,
                         16 => false, 17 => false, 18 => true
                     ]
                 );
@@ -153,7 +154,7 @@ mod tests {
                 assert_eq!(
                     assignment,
                     hashmap![
-                        1 => false, 2 => false, 3 => false, 4 => true, 5 => true, 
+                        1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
                         6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
                         11 =>false, 12 => true, 13 => false
                     ]

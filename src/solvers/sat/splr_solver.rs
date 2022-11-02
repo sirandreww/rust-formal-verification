@@ -2,8 +2,8 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::CNF;
 use crate::formulas::literal::VariableType;
+use crate::formulas::CNF;
 use crate::solvers::sat::SatResponse;
 use splr::solver::SolverResult;
 use splr::{self, SolverError};

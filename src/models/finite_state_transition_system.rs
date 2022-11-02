@@ -191,7 +191,10 @@ impl FiniteStateTransitionSystem {
         }
     }
 
-    fn bump_all_cnf_variables_by_some_number(original_cnf: &CNF, number_to_bump: VariableType) -> CNF {
+    fn bump_all_cnf_variables_by_some_number(
+        original_cnf: &CNF,
+        number_to_bump: VariableType,
+    ) -> CNF {
         if number_to_bump == 0 {
             // this makes the function faster for the simple case
             original_cnf.to_owned()
@@ -215,7 +218,9 @@ impl FiniteStateTransitionSystem {
         }
     }
 
-    fn create_input_and_state_literal_numbers(aig: &AndInverterGraph) -> (Vec<VariableType>, Vec<VariableType>) {
+    fn create_input_and_state_literal_numbers(
+        aig: &AndInverterGraph,
+    ) -> (Vec<VariableType>, Vec<VariableType>) {
         let mut input_literals = Vec::new();
         for input_literal in aig.get_input_information() {
             let lit = Self::get_literal_from_aig_literal(input_literal);
@@ -335,9 +340,6 @@ impl FiniteStateTransitionSystem {
     }
 
     pub fn add_depth_to_property(&self, property: &CNF, depth: VariableType) -> CNF {
-        Self::bump_all_cnf_variables_by_some_number(
-            property,
-            self.max_literal_number * depth,
-        )
+        Self::bump_all_cnf_variables_by_some_number(property, self.max_literal_number * depth)
     }
 }
