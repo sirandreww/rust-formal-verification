@@ -9,8 +9,7 @@ def main():
             file_path = os.path.join(subdir, file)
             if file_path[-4:] == ".aig":
                 print(file_path)
-                os.system(f"./aigtoaig -a {file_path} > {file_path[:-4]}.aag")
-                os.system(f"rm {file_path}")
+                os.system(f"./aigtoaig {file_path} {file_path[:-4]}.aag")
             
 
 
