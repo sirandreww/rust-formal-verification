@@ -86,5 +86,8 @@ pub fn _get_paths_to_all_aig_and_corresponding_aag_files() -> Vec<(String, Strin
 // }
 
 pub fn _get_paths_to_all_our_example_aig_files() -> Vec<String> {
-    get_aig_and_aag_files_in_dir("tests/examples/ours").iter().map(|t| t.to_owned().0).collect()
+    get_aig_and_aag_files_in_dir("tests/examples/ours")
+        .iter()
+        .map(|t| t.to_owned().0)
+        .collect()
 }

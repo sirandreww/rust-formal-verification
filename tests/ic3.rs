@@ -28,7 +28,7 @@ mod tests {
     };
     use std::{
         cmp::{max, Reverse},
-        collections::{HashMap},
+        collections::HashMap,
     };
 
     // ********************************************************************************************
@@ -200,7 +200,11 @@ mod tests {
             let mut second_cnf = self.get_fk(i);
             second_cnf.add_clause(d);
             second_cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
-            second_cnf.append(&self.fin_state.add_depth_to_property(&(!d.to_owned()).to_cnf(), 1));
+            second_cnf.append(
+                &self
+                    .fin_state
+                    .add_depth_to_property(&(!d.to_owned()).to_cnf(), 1),
+            );
             match self.solver.solve_cnf(&second_cnf) {
                 SatResponse::UnSat => true,
                 SatResponse::Sat { assignment: _ } => false,
@@ -268,7 +272,11 @@ mod tests {
             self.solver.solve_cnf(&new_cnf)
         }
 
-        fn push_generalization(&mut self, states: &PriorityQueue<Cube, Reverse<usize>>, k: usize) -> PushGeneralizeResult{
+        fn push_generalization(
+            &mut self,
+            states: &PriorityQueue<Cube, Reverse<usize>>,
+            k: usize,
+        ) -> PushGeneralizeResult {
             let mut states = states.to_owned();
             loop {
                 let (s, reversed_n) = states.pop().unwrap();
@@ -280,28 +288,31 @@ mod tests {
                     SatResponse::Sat { assignment } => {
                         // we have to block p in order to block n.
                         let p = self.extract_predecessor_from_assignment(&assignment);
-                        println!("Should block p = {} from F{}", p, n-1);
-                        match self.inductively_generalize(&p, <usize as TryInto<isize>>::try_into(n).unwrap() - 2, k){
+                        println!("Should block p = {} from F{}", p, n - 1);
+                        match self.inductively_generalize(
+                            &p,
+                            <usize as TryInto<isize>>::try_into(n).unwrap() - 2,
+                            k,
+                        ) {
                             InductivelyGeneralizeResult::Failure => {
                                 return PushGeneralizeResult::Failure;
-                            },
+                            }
                             InductivelyGeneralizeResult::Success { n: m } => {
                                 states.push(s, reversed_n);
-                                states.push(p, Reverse(m+1));
+                                states.push(p, Reverse(m + 1));
                             }
                         }
-                    },
+                    }
                     SatResponse::UnSat => {
                         // n can be blocked
-                        match self.inductively_generalize(&s, n.try_into().unwrap(), k){
+                        match self.inductively_generalize(&s, n.try_into().unwrap(), k) {
                             InductivelyGeneralizeResult::Failure => {
                                 return PushGeneralizeResult::Failure;
-                            },
+                            }
                             InductivelyGeneralizeResult::Success { n: m } => {
-                                states.push(s.to_owned(), Reverse(m+1));
+                                states.push(s.to_owned(), Reverse(m + 1));
                             }
                         }
-
                     }
                 }
             }
@@ -315,18 +326,26 @@ mod tests {
                     }
                     SatResponse::Sat { assignment } => {
                         let s = self.extract_predecessor_from_assignment(&assignment);
-                        println!("Should block s = {} from F{}", s, k-1);
-                        match self.inductively_generalize(&s, <usize as TryInto<isize>>::try_into(k).unwrap() - 2, k){
+                        println!("Should block s = {} from F{}", s, k - 1);
+                        match self.inductively_generalize(
+                            &s,
+                            <usize as TryInto<isize>>::try_into(k).unwrap() - 2,
+                            k,
+                        ) {
                             InductivelyGeneralizeResult::Failure => {
-                                return StrengthenResult::Failure { depth: k.try_into().unwrap() };
-                            },
+                                return StrengthenResult::Failure {
+                                    depth: k.try_into().unwrap(),
+                                };
+                            }
                             InductivelyGeneralizeResult::Success { n } => {
                                 let mut queue = PriorityQueue::<Cube, Reverse<usize>>::new();
                                 queue.push(s, Reverse(n + 1));
                                 match self.push_generalization(&queue, k) {
                                     PushGeneralizeResult::Failure => {
-                                        return StrengthenResult::Failure { depth: k.try_into().unwrap() };
-                                    },
+                                        return StrengthenResult::Failure {
+                                            depth: k.try_into().unwrap(),
+                                        };
+                                    }
                                     PushGeneralizeResult::Success => {}
                                 };
                             }
@@ -358,7 +377,9 @@ mod tests {
                 match self.strengthen(k) {
                     StrengthenResult::Success => {}
                     StrengthenResult::Failure { depth: _ } => {
-                        return IC3Result::CTX { depth: k.try_into().unwrap() };
+                        return IC3Result::CTX {
+                            depth: k.try_into().unwrap(),
+                        };
                     }
                 };
                 self.propagate_clauses(k);
@@ -378,10 +399,9 @@ mod tests {
     // helper functions
     // ********************************************************************************************
 
-    fn check_invariant(_fin_state: &FiniteStateTransitionSystem, _inv_candidate: &CNF){
+    fn check_invariant(_fin_state: &FiniteStateTransitionSystem, _inv_candidate: &CNF) {
         // check INIT -> inv_candidate
         // let init = fin_state.get_initial_relation();
-
     }
 
     fn ic3(fin_state: &FiniteStateTransitionSystem, _aig: &AndInverterGraph) {
@@ -389,10 +409,10 @@ mod tests {
         match ic3_solver.prove() {
             IC3Result::Proof { invariant } => {
                 check_invariant(fin_state, &invariant);
-            },
+            }
             IC3Result::CTX { depth: _ } => {
                 // do nothing for now
-            },
+            }
         }
     }
 
