@@ -2,7 +2,7 @@
 // mod declaration
 // ************************************************************************************************
 
-// mod common;
+mod common;
 
 // ************************************************************************************************
 // test mod declaration
@@ -15,12 +15,16 @@ mod tests {
     // use
     // ********************************************************************************************
 
+    use crate::common;
     use rust_formal_verification::{
         formulas::literal::VariableType,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{SatResponse, SplrSolver},
     };
-    use std::collections::HashMap;
+    use std::{
+        collections::HashMap,
+        time::{Duration, Instant},
+    };
 
     // ********************************************************************************************
     // macro
@@ -39,7 +43,9 @@ mod tests {
     // ********************************************************************************************
 
     enum BMCResult {
-        NoCTX,
+        NoCTX {
+            depth_reached: VariableType,
+        },
         CTX {
             assignment: HashMap<VariableType, bool>,
             depth: VariableType,
@@ -51,8 +57,15 @@ mod tests {
     // ********************************************************************************************
 
     fn bmc(fsts: &FiniteStateTransitionSystem) -> BMCResult {
-        let bmc_limit = 10;
-        for depth in 0..bmc_limit {
+        let start = Instant::now();
+        for depth in 0.. {
+            let elapsed_time = start.elapsed();
+            if elapsed_time > Duration::from_secs(5) {
+                return BMCResult::NoCTX {
+                    depth_reached: depth,
+                };
+            }
+
             let mut sat_formula = fsts.get_initial_relation();
             for unroll_depth in 1..(depth + 1) {
                 sat_formula.append(&fsts.get_transition_relation_for_some_depth(unroll_depth));
@@ -71,7 +84,7 @@ mod tests {
                 SatResponse::UnSat => {}
             }
         }
-        return BMCResult::NoCTX;
+        unreachable!();
     }
 
     // ********************************************************************************************
@@ -103,7 +116,7 @@ mod tests {
 
         let res = bmc(&fsts);
         match res {
-            BMCResult::NoCTX => {
+            BMCResult::NoCTX { depth_reached: _ } => {
                 panic!();
             }
             BMCResult::CTX { assignment, depth } => {
@@ -147,7 +160,7 @@ mod tests {
 
         let res = bmc(&fsts);
         match res {
-            BMCResult::NoCTX => {
+            BMCResult::NoCTX { depth_reached: _ } => {
                 panic!();
             }
             BMCResult::CTX { assignment, depth } => {
@@ -160,6 +173,35 @@ mod tests {
                     ]
                 );
                 assert_eq!(depth, 2);
+            }
+        }
+    }
+
+    #[test]
+    fn bmc_on_hwmcc20_only_unconstrained_problems() {
+        let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
+        for aig_file_path in file_paths {
+            println!("{}",aig_file_path);
+            let start = Instant::now();
+            let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+            let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+            let res = bmc(&fin_state);
+            match res {
+                BMCResult::NoCTX { depth_reached } => {
+                    println!(
+                        "Seems Ok, ran till depth = {}\t, time = {}",
+                        depth_reached, start.elapsed().as_secs_f32()
+                    );
+                }
+                BMCResult::CTX {
+                    assignment: _,
+                    depth,
+                } => {
+                    println!(
+                        "UNSAFE - CTX found at depth = {}, time = {}",
+                        depth, start.elapsed().as_secs_f32()
+                    );
+                }
             }
         }
     }

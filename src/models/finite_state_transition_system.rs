@@ -187,7 +187,9 @@ impl FiniteStateTransitionSystem {
 
             latches_to_wires
         } else {
-            CNF::new()
+            let mut res = CNF::new();
+            res.add_clause(&Clause::new(&[]));
+            res
         }
     }
 
@@ -263,6 +265,7 @@ impl FiniteStateTransitionSystem {
         );
         if !aig.get_constraints_information().is_empty() {
             eprintln!("Warning: Making 'FiniteStateTransitionSystem' from aig with constraints, constraints are not yet supported, they will simply be ignored.");
+            println!("Warning: Making 'FiniteStateTransitionSystem' from aig with constraints, constraints are not yet supported, they will simply be ignored.");
         }
         let max_literal_number: VariableType = max_variable_number_as_usize.try_into().unwrap();
         let (input_literals, state_literals) = Self::create_input_and_state_literal_numbers(aig);

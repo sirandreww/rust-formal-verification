@@ -10,7 +10,7 @@ use walkdir::WalkDir;
 // helper functions to helper functions
 // ********************************************************************************************
 
-fn get_aig_and_aag_files_in_dir(dir: &str) -> Vec<(String, String)> {
+fn _get_aig_and_aag_files_in_dir(dir: &str) -> Vec<(String, String)> {
     let mut result = Vec::default();
     for dir_entry_result in WalkDir::new(dir) {
         let dir_entry = dir_entry_result.unwrap();
@@ -70,7 +70,7 @@ pub fn _assert_long_string_eq(str1: &str, str2: &str) {
 }
 
 pub fn _get_paths_to_all_aig_and_corresponding_aag_files() -> Vec<(String, String)> {
-    get_aig_and_aag_files_in_dir("tests/examples/hwmcc20")
+    _get_aig_and_aag_files_in_dir("tests/examples/hwmcc20")
 }
 
 pub fn _true_with_probability(prob: f64) -> bool {
@@ -94,7 +94,14 @@ pub fn _true_with_probability(prob: f64) -> bool {
 // }
 
 pub fn _get_paths_to_all_our_example_aig_files() -> Vec<String> {
-    get_aig_and_aag_files_in_dir("tests/examples/ours")
+    _get_aig_and_aag_files_in_dir("tests/examples/ours")
+        .iter()
+        .map(|t| t.to_owned().0)
+        .collect()
+}
+
+pub fn _get_paths_to_hwmcc20_unconstrained() -> Vec<String> {
+    _get_aig_and_aag_files_in_dir("tests/examples/folded_hwmcc20")
         .iter()
         .map(|t| t.to_owned().0)
         .collect()

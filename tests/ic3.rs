@@ -288,7 +288,7 @@ mod tests {
                     SatResponse::Sat { assignment } => {
                         // we have to block p in order to block n.
                         let p = self.extract_predecessor_from_assignment(&assignment);
-                        println!("Should block p = {} from F{}", p, n - 1);
+                        // println!("Should block p = {} from F{}", p, n - 1);
                         match self.inductively_generalize(
                             &p,
                             <usize as TryInto<isize>>::try_into(n).unwrap() - 2,
@@ -326,7 +326,7 @@ mod tests {
                     }
                     SatResponse::Sat { assignment } => {
                         let s = self.extract_predecessor_from_assignment(&assignment);
-                        println!("Should block s = {} from F{}", s, k - 1);
+                        // println!("Should block s = {} from F{}", s, k - 1);
                         match self.inductively_generalize(
                             &s,
                             <usize as TryInto<isize>>::try_into(k).unwrap() - 2,
@@ -371,9 +371,10 @@ mod tests {
             }
 
             self.clauses.push(CNF::new());
+            self.clauses.push(CNF::new());
             for k in 1.. {
                 self.clauses.push(CNF::new());
-                debug_assert_eq!(self.clauses.len(), (k + 1));
+                debug_assert_eq!(self.clauses.len(), (k + 2));
                 match self.strengthen(k) {
                     StrengthenResult::Success => {}
                     StrengthenResult::Failure { depth: _ } => {
@@ -408,10 +409,12 @@ mod tests {
         let mut ic3_solver = IC3::new(fin_state);
         match ic3_solver.prove() {
             IC3Result::Proof { invariant } => {
+                println!("Safe, invariant = {}", invariant);
                 check_invariant(fin_state, &invariant);
             }
-            IC3Result::CTX { depth: _ } => {
+            IC3Result::CTX { depth } => {
                 // do nothing for now
+                println!("Unsafe, depth = {}", depth);
             }
         }
     }
@@ -435,6 +438,18 @@ mod tests {
     #[test]
     fn ic3_on_our_examples() {
         let file_paths = common::_get_paths_to_all_our_example_aig_files();
+        for aig_file_path in file_paths {
+            println!("file_path = {}", aig_file_path);
+
+            let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+            let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+            ic3(&fin_state, &aig);
+        }
+    }
+
+    #[test]
+    fn ic3_on_hwmcc20_only_unconstrained_problems() {
+        let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
         for aig_file_path in file_paths {
             println!("file_path = {}", aig_file_path);
 
