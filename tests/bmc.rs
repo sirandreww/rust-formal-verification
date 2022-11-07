@@ -51,11 +51,11 @@ mod tests {
         for _ in 0..(number_of_clocks_in_assignment - 1) {
             let mut clk_inputs = HashMap::new(); // <usize, bool>
             for input in input_literals.iter() {
-                let val = if assignment.contains_key(&input) {
+                let val = if assignment.contains_key(input) {
                     // doesn't matter
                     false
                 } else {
-                    assignment.get(&input).unwrap().to_owned()
+                    assignment.get(input).unwrap().to_owned()
                 };
                 let input: usize = input.to_owned().try_into().unwrap();
                 clk_inputs.insert(input, val);
@@ -105,7 +105,7 @@ mod tests {
                     extract_initial_latches_from_assignment(&assignment, &fin_state);
                 assert_eq!(inputs.len(), depth.try_into().unwrap());
 
-                let sim_result = aig.simulate(&inputs, &initial_latches);
+                let _sim_result = aig.simulate(&inputs, &initial_latches);
             }
         }
     }

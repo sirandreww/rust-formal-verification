@@ -120,7 +120,7 @@ impl AndInverterGraph {
         );
         assert_eq!(self.latches.len(), self.number_of_latches);
         for latch_var in self.latches.iter() {
-            assert!(initial_latches.contains_key(&latch_var));
+            assert!(initial_latches.contains_key(latch_var));
         }
 
         // prepare result
@@ -128,8 +128,7 @@ impl AndInverterGraph {
 
         let mut last_state = self.get_pre_initial_simulation_state(&inputs[0], initial_latches);
         println!("State -1 = {:?}", last_state);
-        for clk_number in 0..inputs.len() {
-            let current_input = &inputs[clk_number];
+        for (clk_number, current_input) in inputs.iter().enumerate() {
             let next_state = self.get_next_simulation_state(&last_state, current_input);
             last_state = next_state.to_owned();
             result.states.push(next_state);

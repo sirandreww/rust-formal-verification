@@ -74,10 +74,10 @@ pub fn _get_paths_to_all_aig_and_corresponding_aag_files() -> Vec<(String, Strin
 }
 
 pub fn _true_with_probability(prob: f64) -> bool {
-    assert!(0.0 <= prob && prob <= 1.0);
+    assert!((0.0..=1.0).contains(&prob));
     let mut rng = rand::thread_rng();
     let random_number_between_0_and_1: f64 = rng.gen();
-    return random_number_between_0_and_1 > (1.0 - prob);
+    random_number_between_0_and_1 > (1.0 - prob)
 }
 
 // pub fn _get_paths_to_all_aig_for_2020() -> Vec<String> {

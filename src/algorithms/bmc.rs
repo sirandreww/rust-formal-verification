@@ -76,12 +76,7 @@ impl BMC {
 
             let response = self.solver.solve_cnf(&sat_formula);
             match response {
-                SatResponse::Sat { assignment } => {
-                    return BMCResult::CTX {
-                        assignment,
-                        depth,
-                    }
-                }
+                SatResponse::Sat { assignment } => return BMCResult::CTX { assignment, depth },
                 SatResponse::UnSat => {}
             }
         }
@@ -90,9 +85,11 @@ impl BMC {
 }
 
 // ************************************************************************************************
-// negation
+// Default
 // ************************************************************************************************
 
-// ************************************************************************************************
-// printing
-// ************************************************************************************************
+impl Default for BMC {
+    fn default() -> Self {
+        Self::new()
+    }
+}

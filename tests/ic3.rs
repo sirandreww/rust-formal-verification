@@ -179,10 +179,10 @@ mod tests {
             new_cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
             new_cnf.add_clause(&!(s.to_owned()));
             new_cnf.append(&self.fin_state.add_depth_to_property(&s.to_cnf(), 1));
-            return match self.solver.solve_cnf(&new_cnf) {
+            match self.solver.solve_cnf(&new_cnf) {
                 SatResponse::UnSat => false,
                 SatResponse::Sat { assignment: _ } => true,
-            };
+            }
         }
 
         fn is_clause_inductive_relative_to_fi(&self, d: &Clause, i: usize) -> bool {
@@ -260,7 +260,7 @@ mod tests {
                 }
             }
             self.generate_clause(s, k, k);
-            return InductivelyGeneralizeResult::Success { n: k };
+            InductivelyGeneralizeResult::Success { n: k }
         }
 
         // calculates sat(Fi ^ T ^ s')
