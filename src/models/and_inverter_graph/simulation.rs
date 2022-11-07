@@ -6,13 +6,11 @@ use crate::models::and_inverter_graph::aig_node::AIGNodeType;
 use crate::models::and_inverter_graph::AndInverterGraph;
 use std::collections::HashMap;
 
+use super::aig_node::AIGNode;
+
 // ************************************************************************************************
 // AIG simulation result
 // ************************************************************************************************
-
-pub struct AIGSimulationResult {
-    states: Vec<Vec<bool>>,
-}
 
 // ************************************************************************************************
 // impl
@@ -23,22 +21,58 @@ impl AndInverterGraph {
     // helper functions
     // ********************************************************************************************
 
-    fn get_pre_initial_simulation_state(
+    fn get_and_result(aig_node: &AIGNode, current_result: &[bool]) -> bool {
+        let rhs0 = aig_node.get_and_rhs0();
+        let rhs1 = aig_node.get_and_rhs1();
+        let rhs0_value = if rhs0 % 2 == 0 {
+            current_result[rhs0 >> 1]
+        } else {
+            !current_result[rhs0 >> 1]
+        };
+        let rhs1_value = if rhs1 % 2 == 0 {
+            current_result[rhs1 >> 1]
+        } else {
+            !current_result[rhs1 >> 1]
+        };
+        rhs0_value && rhs1_value
+    }
+
+    fn get_initial_simulation_state(
         &self,
         initial_input: &HashMap<usize, bool>,
         initial_latches: &HashMap<usize, bool>,
     ) -> Vec<bool> {
-        let mut result = vec![false; self.nodes.len()];
-        for (input, value) in initial_input.iter() {
-            result[input.to_owned()] = value.to_owned();
-        }
-        for (latch, value) in initial_latches.iter() {
-            let node = &self.nodes[latch.to_owned()];
-            let latch_input = node.get_latch_input();
-            if latch_input % 2 == 0 {
-                result[latch_input >> 1] = value.to_owned();
-            } else {
-                result[latch_input >> 1] = !value.to_owned();
+        let mut result = Vec::new();
+        for (i, aig_node) in self.nodes.iter().enumerate() {
+            let var_num = aig_node.get_literal() >> 1;
+            assert_eq!(var_num, i);
+            assert_eq!(result.len(), var_num);
+            match aig_node.get_type() {
+                AIGNodeType::ConstantZero => {
+                    assert_eq!(result.len(), 0);
+                    result.push(false);
+                }
+                AIGNodeType::Input => {
+                    result.push(initial_input[&var_num]);
+                }
+                AIGNodeType::Latch => {
+                    let reset = aig_node.get_latch_reset();
+                    if reset == 1 {
+                        result.push(true);
+                    } else if reset == 0 {
+                        result.push(false);
+                    } else {
+                        assert_eq!(reset, var_num);
+                        assert!(
+                            initial_latches.contains_key(&var_num),
+                            "Initial latch value is unknown, it must be provided."
+                        );
+                        result.push(initial_latches[&var_num]);
+                    }
+                }
+                AIGNodeType::And => {
+                    result.push(Self::get_and_result(aig_node, &result));
+                }
             }
         }
         assert_eq!(result.len(), self.nodes.len());
@@ -71,19 +105,7 @@ impl AndInverterGraph {
                     });
                 }
                 AIGNodeType::And => {
-                    let rhs0 = aig_node.get_and_rhs0();
-                    let rhs1 = aig_node.get_and_rhs1();
-                    let rhs0_value = if rhs0 % 2 == 0 {
-                        result[rhs0 >> 1]
-                    } else {
-                        !result[rhs0 >> 1]
-                    };
-                    let rhs1_value = if rhs1 % 2 == 0 {
-                        result[rhs1 >> 1]
-                    } else {
-                        !result[rhs1 >> 1]
-                    };
-                    result.push(rhs0_value && rhs1_value);
+                    result.push(Self::get_and_result(aig_node, &result));
                 }
             }
         }
@@ -99,7 +121,7 @@ impl AndInverterGraph {
         &self,
         inputs: &Vec<HashMap<usize, bool>>,
         initial_latches: &HashMap<usize, bool>,
-    ) -> AIGSimulationResult {
+    ) -> Vec<Vec<bool>> {
         // check inputs
         assert!(
             !inputs.is_empty(),
@@ -120,19 +142,28 @@ impl AndInverterGraph {
         );
         assert_eq!(self.latches.len(), self.number_of_latches);
         for latch_var in self.latches.iter() {
-            assert!(initial_latches.contains_key(latch_var));
+            let node = &self.nodes[latch_var.to_owned()];
+            // check that all uninitialized latches have a provided value.
+            if &node.get_latch_reset() == latch_var {
+                assert!(initial_latches.contains_key(latch_var));
+            }
         }
 
         // prepare result
-        let mut result = AIGSimulationResult { states: Vec::new() };
+        let mut result = Vec::new();
 
-        let mut last_state = self.get_pre_initial_simulation_state(&inputs[0], initial_latches);
-        println!("State -1 = {:?}", last_state);
+        // start simulation
         for (clk_number, current_input) in inputs.iter().enumerate() {
-            let next_state = self.get_next_simulation_state(&last_state, current_input);
-            last_state = next_state.to_owned();
-            result.states.push(next_state);
-            println!("State {} = {:?}", clk_number, last_state);
+            if clk_number == 0 {
+                let last_state = self.get_initial_simulation_state(&inputs[0], initial_latches);
+                result.push(last_state);
+            } else {
+                let last_state = result.last().unwrap();
+                let next_state = self.get_next_simulation_state(last_state, current_input);
+                result.push(next_state);
+            }
+
+            println!("State {} = {:?}", clk_number, result.last().unwrap());
         }
         result
     }

@@ -39,6 +39,10 @@ mod tests {
     // helper functions
     // ********************************************************************************************
 
+    fn ceil_division(a: VariableType, b: VariableType) -> VariableType {
+        (a + b - 1) / b
+    }
+
     fn extract_inputs_from_assignment(
         assignment: &HashMap<VariableType, bool>,
         fin_state: &FiniteStateTransitionSystem,
@@ -46,9 +50,10 @@ mod tests {
         let mut result = Vec::new();
         let input_literals = fin_state.get_input_literal_numbers();
         let max_literal: VariableType = fin_state.get_max_literal_number().try_into().unwrap();
-        let assignment_length: VariableType = assignment.len().try_into().unwrap();
-        let number_of_clocks_in_assignment = (assignment_length + max_literal + 1) / (max_literal);
-        for _ in 0..(number_of_clocks_in_assignment - 1) {
+        let assignment_length: VariableType =
+            assignment.iter().map(|(k, _)| k).max().unwrap().to_owned();
+        let number_of_clocks_in_assignment = ceil_division(assignment_length, max_literal);
+        for _ in 0..number_of_clocks_in_assignment {
             let mut clk_inputs = HashMap::new(); // <usize, bool>
             for input in input_literals.iter() {
                 let val = if assignment.contains_key(input) {
@@ -86,6 +91,40 @@ mod tests {
         result
     }
 
+    fn check_that_bad_is_true_only_for_last_cycle(
+        aig: &AndInverterGraph,
+        sim_res: &Vec<Vec<bool>>,
+    ) {
+        // get bad wires
+        let bad_literals = aig.get_bad_information();
+
+        // go over all clk cycles
+        for (i, state) in sim_res.iter().enumerate() {
+            // keep track of if you saw a bad wire that had a true value
+            let mut was_bad_seen = false;
+            // go over all bad wires
+            for bad_lit in bad_literals.iter() {
+                // get value
+                let bad_variable = bad_lit >> 1;
+                let wire_value = if bad_lit % 2 == 0 {
+                    state[bad_variable]
+                } else {
+                    !state[bad_variable]
+                };
+
+                // update if bad was seen
+                was_bad_seen = was_bad_seen || wire_value;
+            }
+            if i == (sim_res.len() - 1) {
+                // last cycle
+                assert!(was_bad_seen);
+            } else {
+                // not last cycle
+                assert!(!was_bad_seen);
+            }
+        }
+    }
+
     fn bmc_test(aig_path: &str, expected_assignment: &HashMap<u32, bool>, expected_depth: u32) {
         let aig = AndInverterGraph::from_aig_path(aig_path);
         let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
@@ -103,9 +142,11 @@ mod tests {
                 let inputs = extract_inputs_from_assignment(&assignment, &fin_state);
                 let initial_latches =
                     extract_initial_latches_from_assignment(&assignment, &fin_state);
-                assert_eq!(inputs.len(), depth.try_into().unwrap());
+                assert_eq!(inputs.len() - 1, depth.try_into().unwrap());
 
-                let _sim_result = aig.simulate(&inputs, &initial_latches);
+                let sim_result = aig.simulate(&inputs, &initial_latches);
+                assert_eq!(sim_result.len() - 1, depth.try_into().unwrap());
+                check_that_bad_is_true_only_for_last_cycle(&aig, &sim_result);
             }
         }
     }

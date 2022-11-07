@@ -50,4 +50,4 @@ mod aig_node;
 // re-exports of structs in these modules to simplify paths for other imports
 // ************************************************************************************************
 
-pub use simulation::AIGSimulationResult;
+// pub use simulation::AIGSimulationResult;
