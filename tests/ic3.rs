@@ -449,13 +449,16 @@ mod tests {
 
     #[test]
     fn ic3_on_hwmcc20_only_unconstrained_problems() {
-        let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
-        for aig_file_path in file_paths {
-            println!("file_path = {}", aig_file_path);
+        let run_test = false;
+        if run_test {
+            let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
+            for aig_file_path in file_paths {
+                println!("file_path = {}", aig_file_path);
 
-            let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-            let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
-            ic3(&fin_state, &aig);
+                let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+                let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+                ic3(&fin_state, &aig);
+            }
         }
     }
 }

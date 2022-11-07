@@ -177,31 +177,34 @@ mod tests {
 
     #[test]
     fn bmc_on_hwmcc20_only_unconstrained_problems() {
-        let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
-        for aig_file_path in file_paths {
-            println!("{}", aig_file_path);
-            let start = Instant::now();
-            let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-            let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
-            let bmc = BMC::new();
-            let res = bmc.search(5, &fin_state);
-            match res {
-                BMCResult::NoCTX { depth_reached } => {
-                    println!(
-                        "Seems Ok, ran till depth = {}\t, time = {}",
-                        depth_reached,
-                        start.elapsed().as_secs_f32()
-                    );
-                }
-                BMCResult::CTX {
-                    assignment: _,
-                    depth,
-                } => {
-                    println!(
-                        "UNSAFE - CTX found at depth = {}, time = {}",
+        let run_test = false;
+        if run_test {
+            let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
+            for aig_file_path in file_paths {
+                println!("{}", aig_file_path);
+                let start = Instant::now();
+                let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+                let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+                let bmc = BMC::new();
+                let res = bmc.search(5, &fin_state);
+                match res {
+                    BMCResult::NoCTX { depth_reached } => {
+                        println!(
+                            "Seems Ok, ran till depth = {}\t, time = {}",
+                            depth_reached,
+                            start.elapsed().as_secs_f32()
+                        );
+                    }
+                    BMCResult::CTX {
+                        assignment: _,
                         depth,
-                        start.elapsed().as_secs_f32()
-                    );
+                    } => {
+                        println!(
+                            "UNSAFE - CTX found at depth = {}, time = {}",
+                            depth,
+                            start.elapsed().as_secs_f32()
+                        );
+                    }
                 }
             }
         }

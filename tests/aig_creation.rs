@@ -77,7 +77,7 @@ mod tests {
         let mut max_size_of_file_path = 0;
         for (aig_file_path, aag_file_path) in file_paths {
             // make the test faster by only doing this with 5% of the files
-            if common::_true_with_probability(1.0) {
+            if common::_true_with_probability(0.05) {
                 println!("file_path = {}", aig_file_path);
                 max_size_of_file_path = max(max_size_of_file_path, aig_file_path.chars().count());
                 let aig = AndInverterGraph::from_aig_path(&aig_file_path);
@@ -101,30 +101,4 @@ mod tests {
         });
         print_table(&table, max_size_of_file_path);
     }
-
-    //     #[test]
-    //     fn read_all_aig_files_from_hwmcc20_folded() {
-    //         let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
-    //         let mut table = Vec::new();
-    //         let mut max_size_of_file_path = 0;
-    //         for aig_file_path in file_paths {
-    //             // make the test faster by only doing this with 5% of the files
-    //             if common::_true_with_probability(1.0) {
-    //                 println!("file_path = {}", aig_file_path);
-    //                 max_size_of_file_path = max(max_size_of_file_path, aig_file_path.chars().count());
-    //                 let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-    //                 table.push((
-    //                     aig_file_path,
-    //                     aig.get_input_information().len(),
-    //                     aig.get_latch_information().len(),
-    //                     aig.get_highest_variable_number(),
-    //                     aig.get_bad_information().len(),
-    //                     aig.get_constraints_information().len(),
-    //                 ));
-    //                 aig.get_aag_string();
-    //             }
-    //         }
-    //         table.sort_by(|a, b| a.5.cmp(&b.5).then(a.3.cmp(&b.3)));
-    //         print_table(&table, max_size_of_file_path);
-    // }
 }
