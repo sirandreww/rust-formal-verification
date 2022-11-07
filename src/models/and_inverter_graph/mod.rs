@@ -39,7 +39,7 @@ pub struct AndInverterGraph {
 // rust submodule declaration, they get searched in their respective file  names
 // ************************************************************************************************
 
-pub mod getters;
+pub mod getting;
 pub mod construction;
 pub mod conversion;
 pub mod simulation;
