@@ -4,11 +4,11 @@
 
 use std::{
     collections::HashMap,
-    time::{Duration, Instant},
+    time::{Duration, Instant}, thread,
 };
 
 use crate::{
-    formulas::literal::VariableType,
+    formulas::{literal::VariableType, CNF},
     models::FiniteStateTransitionSystem,
     solvers::sat::{SatResponse, SplrSolver},
 };
@@ -27,6 +27,11 @@ pub enum BMCResult {
     },
 }
 
+enum TimedSatResult {
+    TimeOut,
+    NoTimeOut{ response: SatResponse }
+}
+
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
@@ -41,13 +46,40 @@ pub struct BMC {
 // ************************************************************************************************
 
 impl BMC {
-    // ************************************************************************************************
+    // ********************************************************************************************
     // helper functions
-    // ************************************************************************************************
+    // ********************************************************************************************
 
-    // ************************************************************************************************
+    fn timed_sat_call(&self, sat_formula: CNF, start_instant: &Instant, timeout_duration: Duration) -> TimedSatResult {
+        let solver = self.solver.to_owned();
+        let join_handle = thread::spawn(move || {
+            let response = solver.solve_cnf(&sat_formula);
+            response
+        });
+
+        // wait until sat call finished or timeout has passed
+        let mut sleep_duration_in_millis = 1;
+        while !join_handle.is_finished() && (start_instant.elapsed() < timeout_duration) {
+            thread::sleep(Duration::from_millis(sleep_duration_in_millis));
+            // exponential increase no more than 1 second.
+            if sleep_duration_in_millis < 1000 {
+                sleep_duration_in_millis *= 2;
+            }
+        }
+
+        if join_handle.is_finished(){
+            // the sat call has stopped
+            let response = join_handle.join().unwrap();
+            TimedSatResult::NoTimeOut { response: response }
+        } else {
+            // let thread run until completion
+            TimedSatResult::TimeOut
+        }
+    }
+
+    // ********************************************************************************************
     // api functions
-    // ************************************************************************************************
+    // ********************************************************************************************
 
     pub fn new(verbose: bool) -> Self {
         Self {
@@ -60,7 +92,7 @@ impl BMC {
         &self,
         fin_state: &FiniteStateTransitionSystem,
         search_depth_limit: u32,
-        timeout_in_seconds: u64,
+        timeout_duration: Duration,
     ) -> BMCResult {
         let start = Instant::now();
         for depth in 0..(search_depth_limit + 1) {
@@ -71,8 +103,7 @@ impl BMC {
                     start.elapsed().as_secs_f32()
                 );
             }
-            let elapsed_time = start.elapsed();
-            if elapsed_time > Duration::from_secs(timeout_in_seconds) {
+            if start.elapsed() > timeout_duration {
                 let depth: i32 = depth.try_into().unwrap();
                 return BMCResult::NoCTX {
                     depth_reached: (depth - 1),
@@ -85,11 +116,22 @@ impl BMC {
             }
             sat_formula.append(&fin_state.get_unsafety_property_for_some_depth(depth));
 
-            let response = self.solver.solve_cnf(&sat_formula);
-            match response {
-                SatResponse::Sat { assignment } => return BMCResult::CTX { assignment, depth },
-                SatResponse::UnSat => {}
+            let timed_response = self.timed_sat_call(sat_formula, &start, timeout_duration);
+            match timed_response {
+                TimedSatResult::NoTimeOut { response } => {
+                    match response {
+                        SatResponse::Sat { assignment } => return BMCResult::CTX { assignment, depth },
+                        SatResponse::UnSat => {}
+                    }
+                }, 
+                TimedSatResult::TimeOut => {
+                    let depth: i32 = depth.try_into().unwrap();
+                    return BMCResult::NoCTX {
+                        depth_reached: (depth - 1),
+                    };
+                }
             }
+            
         }
         BMCResult::NoCTX {
             depth_reached: search_depth_limit.try_into().unwrap(),

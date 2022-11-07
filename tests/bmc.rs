@@ -21,7 +21,7 @@ mod tests {
         formulas::literal::VariableType,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
     };
-    use std::{collections::HashMap, time::Instant};
+    use std::{collections::HashMap, time::{Instant, Duration}};
 
     // ********************************************************************************************
     // macro
@@ -140,7 +140,7 @@ mod tests {
         let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
 
         let bmc = BMC::new(true);
-        let res = bmc.search(&fin_state, search_depth_limit, timeout_in_seconds);
+        let res = bmc.search(&fin_state, search_depth_limit, Duration::from_secs(timeout_in_seconds));
         match res {
             BMCResult::NoCTX { depth_reached } => {
                 if is_ctx_certain {
@@ -271,7 +271,7 @@ mod tests {
             let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
             for aig_file_path in file_paths {
                 if common::_true_with_probability(0.05) {
-                    let solved = bmc_test(&aig_file_path, &None, None, 5, 20, false, false);
+                    let solved = bmc_test(&aig_file_path, &None, None, 10, 20, false, false);
                     number_of_solved += if solved { 1 } else { 0 };
                 }
             }
