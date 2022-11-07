@@ -62,7 +62,7 @@ impl AndInverterGraph {
                     } else if reset == 0 {
                         result.push(false);
                     } else {
-                        assert_eq!(reset, var_num);
+                        assert_eq!(reset >> 1, var_num);
                         assert!(
                             initial_latches.contains_key(&var_num),
                             "Initial latch value is unknown, it must be provided."
@@ -163,7 +163,7 @@ impl AndInverterGraph {
                 result.push(next_state);
             }
 
-            println!("State {} = {:?}", clk_number, result.last().unwrap());
+            // println!("State {} = {:?}", clk_number, result.last().unwrap());
         }
         result
     }

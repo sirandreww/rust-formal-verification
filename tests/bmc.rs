@@ -27,11 +27,11 @@ mod tests {
     // macro
     // ********************************************************************************************
 
-    macro_rules! hashmap {
+    macro_rules! hashmap_option {
         ($( $key: expr => $val: expr ),*) => {{
              let mut map = ::std::collections::HashMap::new();
              $( map.insert($key, $val); )*
-             map
+             Some(map)
         }}
     }
 
@@ -125,19 +125,45 @@ mod tests {
         }
     }
 
-    fn bmc_test(aig_path: &str, expected_assignment: &HashMap<u32, bool>, expected_depth: u32) {
+    fn bmc_test(
+        aig_path: &str,
+        expected_assignment: &Option<HashMap<u32, bool>>,
+        expected_depth: Option<u32>,
+        timeout_in_seconds: u64,
+        search_depth_limit: u32,
+        is_ctx_certain: bool,
+        is_known_to_be_safe: bool,
+    ) -> bool {
+        println!("{}", aig_path);
+        let start = Instant::now();
         let aig = AndInverterGraph::from_aig_path(aig_path);
         let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
 
-        let bmc = BMC::new();
-        let res = bmc.search(5, &fin_state);
+        let bmc = BMC::new(true);
+        let res = bmc.search(&fin_state, search_depth_limit, timeout_in_seconds);
         match res {
-            BMCResult::NoCTX { depth_reached: _ } => {
-                panic!();
+            BMCResult::NoCTX { depth_reached } => {
+                if is_ctx_certain {
+                    panic!("CTX is certain yet none was found...");
+                }
+
+                println!(
+                    "Seems Ok, ran till depth = {}\t, time = {}",
+                    depth_reached,
+                    start.elapsed().as_secs_f32()
+                );
+
+                false
             }
             BMCResult::CTX { assignment, depth } => {
-                assert_eq!(&assignment, expected_assignment);
-                assert_eq!(depth, expected_depth);
+                match expected_assignment {
+                    Some(eas) => assert_eq!(&assignment, eas),
+                    None => {}
+                };
+                match expected_depth {
+                    Some(ed) => assert_eq!(depth, ed),
+                    None => {}
+                };
 
                 let inputs = extract_inputs_from_assignment(&assignment, &fin_state);
                 let initial_latches =
@@ -147,6 +173,19 @@ mod tests {
                 let sim_result = aig.simulate(&inputs, &initial_latches);
                 assert_eq!(sim_result.len() - 1, depth.try_into().unwrap());
                 check_that_bad_is_true_only_for_last_cycle(&aig, &sim_result);
+
+                if is_known_to_be_safe {
+                    // How did we get here anyway? previous checks should have caught this...
+                    panic!("Test is known to be safe but BMC found counter example. How did we get here anyway? previous checks should have caught this...")
+                }
+
+                println!(
+                    "UNSAFE - CTX found at depth = {}, time = {}",
+                    depth,
+                    start.elapsed().as_secs_f32()
+                );
+
+                true
             }
         }
     }
@@ -176,13 +215,17 @@ mod tests {
     fn bmc_on_simple_example_counter_with_bad_assertion() {
         bmc_test(
             "tests/examples/ours/counter_with_bad_assertion.aig",
-            &hashmap![
+            &hashmap_option![
                 1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
                 6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
                 11 =>false, 12 => true, 13 => false, 14 => false, 15 => false,
                 16 => false, 17 => false, 18 => true
             ],
-            3,
+            Some(3),
+            5,
+            10,
+            true,
+            false,
         );
     }
 
@@ -207,47 +250,32 @@ mod tests {
     fn bmc_on_simple_example_counter_with_2_bad_assertion() {
         bmc_test(
             "tests/examples/ours/counter_with_2_bad_assertions.aig",
-            &hashmap![
+            &hashmap_option![
                 1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
                 6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
                 11 =>false, 12 => true, 13 => false
             ],
-            2,
+            Some(2),
+            5,
+            10,
+            true,
+            false,
         );
     }
 
     #[test]
     fn bmc_on_hwmcc20_only_unconstrained_problems() {
-        let run_test = false;
+        let run_test = true;
+        let mut number_of_solved = 0;
         if run_test {
             let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
             for aig_file_path in file_paths {
-                println!("{}", aig_file_path);
-                let start = Instant::now();
-                let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-                let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
-                let bmc = BMC::new();
-                let res = bmc.search(5, &fin_state);
-                match res {
-                    BMCResult::NoCTX { depth_reached } => {
-                        println!(
-                            "Seems Ok, ran till depth = {}\t, time = {}",
-                            depth_reached,
-                            start.elapsed().as_secs_f32()
-                        );
-                    }
-                    BMCResult::CTX {
-                        assignment: _,
-                        depth,
-                    } => {
-                        println!(
-                            "UNSAFE - CTX found at depth = {}, time = {}",
-                            depth,
-                            start.elapsed().as_secs_f32()
-                        );
-                    }
+                if common::_true_with_probability(0.05) {
+                    let solved = bmc_test(&aig_file_path, &None, None, 5, 20, false, false);
+                    number_of_solved += if solved {1} else {0};
                 }
             }
         }
+        println!("Number of solved problems = {}", number_of_solved);
     }
 }

@@ -19,7 +19,7 @@ use crate::{
 
 pub enum BMCResult {
     NoCTX {
-        depth_reached: VariableType,
+        depth_reached: i32,
     },
     CTX {
         assignment: HashMap<VariableType, bool>,
@@ -32,6 +32,7 @@ pub enum BMCResult {
 // ************************************************************************************************
 
 pub struct BMC {
+    verbose: bool,
     solver: SplrSolver,
 }
 
@@ -48,23 +49,29 @@ impl BMC {
     // api functions
     // ************************************************************************************************
 
-    pub fn new() -> Self {
+    pub fn new(verbose: bool) -> Self {
         Self {
             solver: SplrSolver::default(),
+            verbose,
         }
     }
 
     pub fn search(
         &self,
-        timeout_in_seconds: u64,
         fin_state: &FiniteStateTransitionSystem,
+        search_depth_limit: u32,
+        timeout_in_seconds: u64,
     ) -> BMCResult {
         let start = Instant::now();
-        for depth in 0.. {
+        for depth in 0..(search_depth_limit + 1) {
+            if self.verbose {
+                println!("BMC running - depth = {}, elapsed time = {}", depth, start.elapsed().as_secs_f32());
+            }
             let elapsed_time = start.elapsed();
             if elapsed_time > Duration::from_secs(timeout_in_seconds) {
+                let depth: i32 = depth.try_into().unwrap();
                 return BMCResult::NoCTX {
-                    depth_reached: depth,
+                    depth_reached: (depth - 1),
                 };
             }
 
@@ -80,16 +87,9 @@ impl BMC {
                 SatResponse::UnSat => {}
             }
         }
-        unreachable!();
+        BMCResult::NoCTX {
+            depth_reached: search_depth_limit.try_into().unwrap(),
+        }
     }
 }
 
-// ************************************************************************************************
-// Default
-// ************************************************************************************************
-
-impl Default for BMC {
-    fn default() -> Self {
-        Self::new()
-    }
-}
