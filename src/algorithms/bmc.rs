@@ -65,7 +65,11 @@ impl BMC {
         let start = Instant::now();
         for depth in 0..(search_depth_limit + 1) {
             if self.verbose {
-                println!("BMC running - depth = {}, elapsed time = {}", depth, start.elapsed().as_secs_f32());
+                println!(
+                    "BMC running - depth = {}, elapsed time = {}",
+                    depth,
+                    start.elapsed().as_secs_f32()
+                );
             }
             let elapsed_time = start.elapsed();
             if elapsed_time > Duration::from_secs(timeout_in_seconds) {
@@ -92,4 +96,3 @@ impl BMC {
         }
     }
 }
-

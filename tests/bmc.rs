@@ -272,7 +272,7 @@ mod tests {
             for aig_file_path in file_paths {
                 if common::_true_with_probability(0.05) {
                     let solved = bmc_test(&aig_file_path, &None, None, 5, 20, false, false);
-                    number_of_solved += if solved {1} else {0};
+                    number_of_solved += if solved { 1 } else { 0 };
                 }
             }
         }
