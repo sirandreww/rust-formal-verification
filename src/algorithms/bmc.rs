@@ -4,7 +4,8 @@
 
 use std::{
     collections::HashMap,
-    time::{Duration, Instant}, thread,
+    thread,
+    time::{Duration, Instant},
 };
 
 use crate::{
@@ -29,7 +30,7 @@ pub enum BMCResult {
 
 enum TimedSatResult {
     TimeOut,
-    NoTimeOut{ response: SatResponse }
+    NoTimeOut { response: SatResponse },
 }
 
 // ************************************************************************************************
@@ -50,12 +51,14 @@ impl BMC {
     // helper functions
     // ********************************************************************************************
 
-    fn timed_sat_call(&self, sat_formula: CNF, start_instant: &Instant, timeout_duration: Duration) -> TimedSatResult {
+    fn timed_sat_call(
+        &self,
+        sat_formula: CNF,
+        start_instant: &Instant,
+        timeout_duration: Duration,
+    ) -> TimedSatResult {
         let solver = self.solver.to_owned();
-        let join_handle = thread::spawn(move || {
-            let response = solver.solve_cnf(&sat_formula);
-            response
-        });
+        let join_handle = thread::spawn(move || solver.solve_cnf(&sat_formula));
 
         // wait until sat call finished or timeout has passed
         let mut sleep_duration_in_millis = 1;
@@ -67,10 +70,10 @@ impl BMC {
             }
         }
 
-        if join_handle.is_finished(){
+        if join_handle.is_finished() {
             // the sat call has stopped
             let response = join_handle.join().unwrap();
-            TimedSatResult::NoTimeOut { response: response }
+            TimedSatResult::NoTimeOut { response }
         } else {
             // let thread run until completion
             TimedSatResult::TimeOut
@@ -118,12 +121,10 @@ impl BMC {
 
             let timed_response = self.timed_sat_call(sat_formula, &start, timeout_duration);
             match timed_response {
-                TimedSatResult::NoTimeOut { response } => {
-                    match response {
-                        SatResponse::Sat { assignment } => return BMCResult::CTX { assignment, depth },
-                        SatResponse::UnSat => {}
-                    }
-                }, 
+                TimedSatResult::NoTimeOut { response } => match response {
+                    SatResponse::Sat { assignment } => return BMCResult::CTX { assignment, depth },
+                    SatResponse::UnSat => {}
+                },
                 TimedSatResult::TimeOut => {
                     let depth: i32 = depth.try_into().unwrap();
                     return BMCResult::NoCTX {
@@ -131,7 +132,6 @@ impl BMC {
                     };
                 }
             }
-            
         }
         BMCResult::NoCTX {
             depth_reached: search_depth_limit.try_into().unwrap(),

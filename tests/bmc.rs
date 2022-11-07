@@ -21,7 +21,10 @@ mod tests {
         formulas::literal::VariableType,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
     };
-    use std::{collections::HashMap, time::{Instant, Duration}};
+    use std::{
+        collections::HashMap,
+        time::{Duration, Instant},
+    };
 
     // ********************************************************************************************
     // macro
@@ -140,7 +143,11 @@ mod tests {
         let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
 
         let bmc = BMC::new(true);
-        let res = bmc.search(&fin_state, search_depth_limit, Duration::from_secs(timeout_in_seconds));
+        let res = bmc.search(
+            &fin_state,
+            search_depth_limit,
+            Duration::from_secs(timeout_in_seconds),
+        );
         match res {
             BMCResult::NoCTX { depth_reached } => {
                 if is_ctx_certain {
