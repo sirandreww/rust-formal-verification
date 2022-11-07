@@ -78,8 +78,8 @@ impl BMC {
             match response {
                 SatResponse::Sat { assignment } => {
                     return BMCResult::CTX {
-                        assignment: assignment,
-                        depth: depth,
+                        assignment,
+                        depth,
                     }
                 }
                 SatResponse::UnSat => {}

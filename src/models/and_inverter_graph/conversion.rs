@@ -9,7 +9,6 @@ use crate::models::and_inverter_graph::AndInverterGraph;
 // ************************************************************************************************
 
 impl AndInverterGraph {
-
     /// Function that converts an AndInverterGraph into '.aag' format as described in:
     /// The '.aag' file is in accordance to http://fmv.jku.at/aiger/
     ///

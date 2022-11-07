@@ -2,11 +2,9 @@
 // use
 // ************************************************************************************************
 
-use crate::models::and_inverter_graph::aig_node::{AIGNodeType};
+use crate::models::and_inverter_graph::aig_node::AIGNodeType;
 use crate::models::and_inverter_graph::AndInverterGraph;
-use std::{
-    collections::{HashMap},
-};
+use std::collections::HashMap;
 
 // ************************************************************************************************
 // AIG simulation result
@@ -49,7 +47,7 @@ impl AndInverterGraph {
 
     fn get_next_simulation_state(
         &self,
-        last_state: &Vec<bool>,
+        last_state: &[bool],
         current_input: &HashMap<usize, bool>,
     ) -> Vec<bool> {
         let mut result = Vec::new();
@@ -96,7 +94,7 @@ impl AndInverterGraph {
     // ********************************************************************************************
     // aig getting and gates
     // ********************************************************************************************
-    
+
     pub fn simulate(
         &self,
         inputs: &Vec<HashMap<usize, bool>>,
@@ -104,7 +102,7 @@ impl AndInverterGraph {
     ) -> AIGSimulationResult {
         // check inputs
         assert!(
-            inputs.len() > 0,
+            !inputs.is_empty(),
             "Inputs cannot be empty to start simulation."
         );
         for clk_inputs in inputs {
@@ -112,7 +110,7 @@ impl AndInverterGraph {
             assert_eq!(self.inputs.len(), self.number_of_inputs);
             // check that each clock has the correct var numbers.
             for input_var in self.inputs.iter() {
-                assert!(clk_inputs.contains_key(&input_var));
+                assert!(clk_inputs.contains_key(input_var));
             }
         }
         // check initial latches

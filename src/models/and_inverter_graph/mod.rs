@@ -2,14 +2,14 @@
 // use
 // ************************************************************************************************
 
-use crate::models::and_inverter_graph::aig_node::{AIGNode};
+use crate::models::and_inverter_graph::aig_node::AIGNode;
 
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
 /// Struct that describes memory layout of the AIG.
-/// 
+///
 /// implementations of many additional features can be found in sub-modules.
 pub struct AndInverterGraph {
     maximum_variable_index: usize,
@@ -39,9 +39,9 @@ pub struct AndInverterGraph {
 // rust submodule declaration, they get searched in their respective file  names
 // ************************************************************************************************
 
-pub mod getting;
 pub mod construction;
 pub mod conversion;
+pub mod getting;
 pub mod simulation;
 
 mod aig_node;
