@@ -3,7 +3,12 @@
 // ************************************************************************************************
 
 use crate::models::and_inverter_graph::aig_node::{AIGNode, AIGNodeType};
-use std::{collections::HashSet, fs};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+};
+
+use super::aig_node;
 
 // ************************************************************************************************
 // struct
@@ -31,6 +36,14 @@ pub struct AndInverterGraph {
     outputs: Vec<usize>,
     bad: Vec<usize>,
     constraints: Vec<usize>,
+}
+
+// ************************************************************************************************
+// AIG simulation result
+// ************************************************************************************************
+
+pub struct AIGSimulationResult {
+    states: Vec<Vec<bool>>,
 }
 
 // ************************************************************************************************
@@ -439,6 +452,56 @@ impl AndInverterGraph {
         aig
     }
 
+    fn get_pre_initial_simulation_state(
+        &self,
+        initial_input: &HashMap<usize, bool>,
+        initial_latches: &HashMap<usize, bool>,
+    ) -> Vec<bool> {
+        let mut result = vec![false; self.nodes.len()];
+        for (input, value) in initial_input.iter(){
+            result[input.to_owned()] = value.to_owned();
+        }
+        for (latch, value) in initial_latches.iter(){
+            let node = self.nodes[latch.to_owned()];
+            result[node.get_latch_input()] = value.to_owned();
+        }
+        assert_eq!(result.len(), self.nodes.len());
+        result
+    }
+
+    fn get_next_simulation_state(
+        &self,
+        last_state: &Vec<bool>,
+        current_input: &HashMap<usize, bool>,
+    ) -> Vec<bool> {
+        let mut result = Vec::new();
+        for aig_node in self.nodes.iter() {
+            let var_num = aig_node.get_literal() >> 1;
+            assert_eq!(result.len(), var_num);
+            match aig_node.get_type() {
+                AIGNodeType::ConstantZero => {
+                    assert_eq!(result.len(), 0);
+                    result.push(false);
+                },
+                AIGNodeType::Input => {
+                    result.push(current_input[&var_num]);
+                },
+                AIGNodeType::Latch => {
+                    let latch_in = aig_node.get_latch_input();
+                    result.push(if latch_in % 2 == 0 {last_state[&latch_in >> 1]} else {!last_state[&latch_in >> 1]});
+                },
+                AIGNodeType::And => {
+                    let rhs0 = aig_node.get_and_rhs0();
+                    let rhs1 = aig_node.get_and_rhs1();
+                    let rhs0_value = if rhs0 % 2 == 0 {result[rhs0 >> 1]} else {!result[rhs0 >> 1]};
+                    let rhs1_value = if rhs1 % 2 == 0 {result[rhs1 >> 1]} else {!result[rhs1 >> 1]};
+                },
+            }
+        }
+        assert_eq!(result.len(), self.nodes.len());
+        result
+    }
+
     // ********************************************************************************************
     // aig creator
     // ********************************************************************************************
@@ -589,14 +652,16 @@ impl AndInverterGraph {
     /// Function that gets a vector describing the latch nodes in the system.
     /// The output is a vector containing tuple with a length of 3,
     /// representing latch information :
-    /// (latch output literal, latch input literal, latch initial value)
-    ///                    ___________
-    ///                   |           |
-    ///  latch input ---> |   latch   | --> latch output
-    ///                   |___________|
-    ///                         ^
-    ///                         |
-    ///                latch initial value
+    /// ```
+    /// // (latch output literal, latch input literal, latch initial value)
+    /// //                   ___________
+    /// //                  |           |
+    /// // latch input ---> |   latch   | --> latch output
+    /// //                  |___________|
+    /// //                        ^
+    /// //                        |
+    /// //               latch initial value
+    /// ```
     /// # Arguments
     ///
     /// * `&self` - the AndInverterGraph desired.
@@ -767,5 +832,35 @@ impl AndInverterGraph {
             i += 1;
         }
         Vec::from_iter(and_gates)
+    }
+
+    // ********************************************************************************************
+    // aig getting and gates
+    // ********************************************************************************************
+
+    pub fn simulate(&self, inputs: &Vec<HashMap<usize, bool>>, initial_latches: &HashMap<usize, bool>,) -> AIGSimulationResult {
+        // check inputs
+        assert!(inputs.len() > 0, "Inputs cannot be empty to start simulation.");
+        for clk_inputs in inputs {
+            assert_eq!(clk_inputs.len(), self.number_of_inputs);
+            assert_eq!(self.inputs.len(), self.number_of_inputs);
+            // check that each clock has the correct var numbers.
+            for input_var in self.inputs.iter(){
+                assert!(clk_inputs.contains_key(&input_var));
+            }
+        }
+        let mut result = AIGSimulationResult {
+            states: Vec::new(),
+        };
+
+        let mut last_state = self.get_pre_initial_simulation_state(&inputs[0], initial_latches);
+        for clk_number in 0..inputs.len() {
+            let current_input = &inputs[clk_number];
+            let next_state = self.get_next_simulation_state(&last_state, current_input);
+            last_state = next_state.to_owned();
+            result.states.push(next_state);
+            
+        }
+        result
     }
 }

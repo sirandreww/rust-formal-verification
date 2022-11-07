@@ -17,14 +17,11 @@ mod tests {
 
     use crate::common;
     use rust_formal_verification::{
+        algorithms::{bmc::BMCResult, BMC},
         formulas::literal::VariableType,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::{SatResponse, SplrSolver},
     };
-    use std::{
-        collections::HashMap,
-        time::{Duration, Instant},
-    };
+    use std::{collections::HashMap, time::Instant};
 
     // ********************************************************************************************
     // macro
@@ -39,52 +36,55 @@ mod tests {
     }
 
     // ********************************************************************************************
-    // Enum
-    // ********************************************************************************************
-
-    enum BMCResult {
-        NoCTX {
-            depth_reached: VariableType,
-        },
-        CTX {
-            assignment: HashMap<VariableType, bool>,
-            depth: VariableType,
-        },
-    }
-
-    // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
 
-    fn bmc(fsts: &FiniteStateTransitionSystem) -> BMCResult {
-        let start = Instant::now();
-        for depth in 0.. {
-            let elapsed_time = start.elapsed();
-            if elapsed_time > Duration::from_secs(5) {
-                return BMCResult::NoCTX {
-                    depth_reached: depth,
+    fn extract_inputs_from_assignment(
+        assignment: &HashMap<VariableType, bool>,
+        fin_state: &FiniteStateTransitionSystem,
+    ) -> Vec<HashMap<usize, bool>> {
+        let mut result = Vec::new();
+        let input_literals = fin_state.get_input_literal_numbers();
+        let max_literal: VariableType = fin_state.get_max_literal_number().try_into().unwrap();
+        let assignment_length: VariableType = assignment.len().try_into().unwrap();
+        let number_of_clocks_in_assignment = (assignment_length + max_literal + 1) / (max_literal);
+        for _ in 0..(number_of_clocks_in_assignment - 1) {
+            let mut clk_inputs = HashMap::new(); // <usize, bool>
+            for input in input_literals.iter() {
+                let val = if assignment.contains_key(&input) {
+                    // doesn't matter
+                    false
+                } else {
+                    assignment.get(&input).unwrap().to_owned()
                 };
+                let input: usize = input.to_owned().try_into().unwrap();
+                clk_inputs.insert(input, val);
             }
+            result.push(clk_inputs);
+        }
+        result
+    }
 
-            let mut sat_formula = fsts.get_initial_relation();
-            for unroll_depth in 1..(depth + 1) {
-                sat_formula.append(&fsts.get_transition_relation_for_some_depth(unroll_depth));
+    fn bmc_test(aig_path: &str, expected_assignment: &HashMap<u32, bool>, expected_depth: u32) {
+        let aig = AndInverterGraph::from_aig_path(aig_path);
+        let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+
+        let bmc = BMC::new();
+        let res = bmc.search(5, &fin_state);
+        match res {
+            BMCResult::NoCTX { depth_reached: _ } => {
+                panic!();
             }
-            sat_formula.append(&fsts.get_unsafety_property_for_some_depth(depth));
+            BMCResult::CTX { assignment, depth } => {
+                assert_eq!(&assignment, expected_assignment);
+                assert_eq!(depth, expected_depth);
 
-            let solver = SplrSolver::default();
-            let response = solver.solve_cnf(&sat_formula);
-            match response {
-                SatResponse::Sat { assignment } => {
-                    return BMCResult::CTX {
-                        assignment: assignment,
-                        depth: depth,
-                    }
-                }
-                SatResponse::UnSat => {}
+                let inputs = extract_inputs_from_assignment(&assignment, &fin_state);
+                assert_eq!(inputs.len(), depth.try_into().unwrap());
+
+                let sim_result = aig.simulate(&inputs);
             }
         }
-        unreachable!();
     }
 
     // ********************************************************************************************
@@ -110,28 +110,16 @@ mod tests {
     //      |_________|
     #[test]
     fn bmc_on_simple_example_counter_with_bad_assertion() {
-        let aig =
-            AndInverterGraph::from_aig_path("tests/examples/ours/counter_with_bad_assertion.aig");
-        let fsts = FiniteStateTransitionSystem::from_aig(&aig);
-
-        let res = bmc(&fsts);
-        match res {
-            BMCResult::NoCTX { depth_reached: _ } => {
-                panic!();
-            }
-            BMCResult::CTX { assignment, depth } => {
-                assert_eq!(
-                    assignment,
-                    hashmap![
-                        1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
-                        6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
-                        11 =>false, 12 => true, 13 => false, 14 => false, 15 => false,
-                        16 => false, 17 => false, 18 => true
-                    ]
-                );
-                assert_eq!(depth, 3);
-            }
-        }
+        bmc_test(
+            "tests/examples/ours/counter_with_bad_assertion.aig",
+            &hashmap![
+                1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
+                6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
+                11 =>false, 12 => true, 13 => false, 14 => false, 15 => false,
+                16 => false, 17 => false, 18 => true
+            ],
+            3,
+        );
     }
 
     // *--------------------------------------------------------------*
@@ -153,44 +141,33 @@ mod tests {
     //      |_________|
     #[test]
     fn bmc_on_simple_example_counter_with_2_bad_assertion() {
-        let aig = AndInverterGraph::from_aig_path(
+        bmc_test(
             "tests/examples/ours/counter_with_2_bad_assertions.aig",
+            &hashmap![
+                1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
+                6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
+                11 =>false, 12 => true, 13 => false
+            ],
+            2,
         );
-        let fsts = FiniteStateTransitionSystem::from_aig(&aig);
-
-        let res = bmc(&fsts);
-        match res {
-            BMCResult::NoCTX { depth_reached: _ } => {
-                panic!();
-            }
-            BMCResult::CTX { assignment, depth } => {
-                assert_eq!(
-                    assignment,
-                    hashmap![
-                        1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
-                        6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
-                        11 =>false, 12 => true, 13 => false
-                    ]
-                );
-                assert_eq!(depth, 2);
-            }
-        }
     }
 
     #[test]
     fn bmc_on_hwmcc20_only_unconstrained_problems() {
         let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
         for aig_file_path in file_paths {
-            println!("{}",aig_file_path);
+            println!("{}", aig_file_path);
             let start = Instant::now();
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
-            let res = bmc(&fin_state);
+            let bmc = BMC::new();
+            let res = bmc.search(5, &fin_state);
             match res {
                 BMCResult::NoCTX { depth_reached } => {
                     println!(
                         "Seems Ok, ran till depth = {}\t, time = {}",
-                        depth_reached, start.elapsed().as_secs_f32()
+                        depth_reached,
+                        start.elapsed().as_secs_f32()
                     );
                 }
                 BMCResult::CTX {
@@ -199,7 +176,8 @@ mod tests {
                 } => {
                     println!(
                         "UNSAFE - CTX found at depth = {}, time = {}",
-                        depth, start.elapsed().as_secs_f32()
+                        depth,
+                        start.elapsed().as_secs_f32()
                     );
                 }
             }
