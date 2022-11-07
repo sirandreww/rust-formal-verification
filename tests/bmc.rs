@@ -65,6 +65,27 @@ mod tests {
         result
     }
 
+    fn extract_initial_latches_from_assignment(
+        assignment: &HashMap<VariableType, bool>,
+        fin_state: &FiniteStateTransitionSystem,
+    ) -> HashMap<usize, bool> {
+        let mut result = HashMap::new();
+        let state_literals = fin_state.get_state_literal_numbers();
+
+        for state in state_literals {
+            let val = if assignment.contains_key(&state) {
+                // doesn't matter
+                false
+            } else {
+                assignment.get(&state).unwrap().to_owned()
+            };
+            let input: usize = state.to_owned().try_into().unwrap();
+            result.insert(input, val);
+        }
+
+        result
+    }
+
     fn bmc_test(aig_path: &str, expected_assignment: &HashMap<u32, bool>, expected_depth: u32) {
         let aig = AndInverterGraph::from_aig_path(aig_path);
         let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
@@ -80,9 +101,11 @@ mod tests {
                 assert_eq!(depth, expected_depth);
 
                 let inputs = extract_inputs_from_assignment(&assignment, &fin_state);
+                let initial_latches =
+                    extract_initial_latches_from_assignment(&assignment, &fin_state);
                 assert_eq!(inputs.len(), depth.try_into().unwrap());
 
-                let sim_result = aig.simulate(&inputs);
+                let sim_result = aig.simulate(&inputs, &initial_latches);
             }
         }
     }
