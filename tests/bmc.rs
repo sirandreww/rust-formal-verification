@@ -19,7 +19,7 @@ mod tests {
     use rust_formal_verification::{
         algorithms::{bmc::BMCResult, BMC},
         formulas::literal::VariableType,
-        models::{AndInverterGraph, FiniteStateTransitionSystem},
+        models::{AndInverterGraph, FiniteStateTransitionSystem}, solvers::sat::Assignment,
     };
     use std::{
         collections::HashMap,
@@ -27,44 +27,20 @@ mod tests {
     };
 
     // ********************************************************************************************
-    // macro
-    // ********************************************************************************************
-
-    macro_rules! hashmap_option {
-        ($( $key: expr => $val: expr ),*) => {{
-             let mut map = ::std::collections::HashMap::new();
-             $( map.insert($key, $val); )*
-             Some(map)
-        }}
-    }
-
-    // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
 
-    fn ceil_division(a: VariableType, b: VariableType) -> VariableType {
-        (a + b - 1) / b
-    }
-
     fn extract_inputs_from_assignment(
-        assignment: &HashMap<VariableType, bool>,
+        assignment: &Assignment,
         fin_state: &FiniteStateTransitionSystem,
+        number_of_clocks_wanted: VariableType,
     ) -> Vec<HashMap<usize, bool>> {
         let mut result = Vec::new();
         let input_literals = fin_state.get_input_literal_numbers();
-        let max_literal: VariableType = fin_state.get_max_literal_number().try_into().unwrap();
-        let assignment_length: VariableType =
-            assignment.iter().map(|(k, _)| k).max().unwrap().to_owned();
-        let number_of_clocks_in_assignment = ceil_division(assignment_length, max_literal);
-        for _ in 0..number_of_clocks_in_assignment {
+        for _ in 0..number_of_clocks_wanted {
             let mut clk_inputs = HashMap::new(); // <usize, bool>
             for input in input_literals.iter() {
-                let val = if assignment.contains_key(input) {
-                    // doesn't matter
-                    false
-                } else {
-                    assignment.get(input).unwrap().to_owned()
-                };
+                let val = assignment.get_value_of_variable(input);
                 let input: usize = input.to_owned().try_into().unwrap();
                 clk_inputs.insert(input, val);
             }
@@ -74,19 +50,14 @@ mod tests {
     }
 
     fn extract_initial_latches_from_assignment(
-        assignment: &HashMap<VariableType, bool>,
+        assignment: &Assignment,
         fin_state: &FiniteStateTransitionSystem,
     ) -> HashMap<usize, bool> {
         let mut result = HashMap::new();
         let state_literals = fin_state.get_state_literal_numbers();
 
         for state in state_literals {
-            let val = if assignment.contains_key(&state) {
-                // doesn't matter
-                false
-            } else {
-                assignment.get(&state).unwrap().to_owned()
-            };
+            let val = assignment.get_value_of_variable(&state);
             let input: usize = state.to_owned().try_into().unwrap();
             result.insert(input, val);
         }
@@ -130,7 +101,7 @@ mod tests {
 
     fn bmc_test(
         aig_path: &str,
-        expected_assignment: &Option<HashMap<u32, bool>>,
+        expected_assignment: &Option<Assignment>,
         expected_depth: Option<u32>,
         timeout_in_seconds: u64,
         search_depth_limit: u32,
@@ -172,7 +143,7 @@ mod tests {
                     None => {}
                 };
 
-                let inputs = extract_inputs_from_assignment(&assignment, &fin_state);
+                let inputs = extract_inputs_from_assignment(&assignment, &fin_state, depth + 1);
                 let initial_latches =
                     extract_initial_latches_from_assignment(&assignment, &fin_state);
                 assert_eq!(inputs.len() - 1, depth.try_into().unwrap());
@@ -222,12 +193,22 @@ mod tests {
     fn bmc_on_simple_example_counter_with_bad_assertion() {
         bmc_test(
             "tests/examples/ours/counter_with_bad_assertion.aig",
-            &hashmap_option![
-                1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
-                6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
-                11 =>false, 12 => true, 13 => false, 14 => false, 15 => false,
-                16 => false, 17 => false, 18 => true
-            ],
+            &Some(
+                Assignment::from_dimacs_assignment(
+                    &[
+                    -1, -2, -3, 4, 5, 
+                    6, -7, -8, 9, -10,
+                    -11, 12, -13, -14, -15,
+                    -16, -17, 18
+                    ]
+                )
+            ),
+            // ![
+            //     1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
+            //     6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
+            //     11 =>false, 12 => true, 13 => false, 14 => false, 15 => false,
+            //     16 => false, 17 => false, 18 => true
+            // ],
             Some(3),
             5,
             10,
@@ -257,11 +238,15 @@ mod tests {
     fn bmc_on_simple_example_counter_with_2_bad_assertion() {
         bmc_test(
             "tests/examples/ours/counter_with_2_bad_assertions.aig",
-            &hashmap_option![
-                1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
-                6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
-                11 =>false, 12 => true, 13 => false
-            ],
+            &Some(
+                Assignment::from_dimacs_assignment(
+                    &[
+                    -1, -2, -3, 4, 5, 
+                    6, -7, -8, 9, -10,
+                    -11, 12, -13,
+                    ]
+                )
+            ),
             Some(2),
             5,
             10,
@@ -278,7 +263,15 @@ mod tests {
             let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
             for aig_file_path in file_paths {
                 if common::_true_with_probability(0.05) {
-                    let solved = bmc_test(&aig_file_path, &None, None, 10, 20, false, false);
+                    let solved = 
+                    bmc_test(
+                        &aig_file_path, 
+                        &None, 
+                        None, 
+                        10, 
+                        20, 
+                        false, false
+                    );
                     number_of_solved += if solved { 1 } else { 0 };
                 }
             }

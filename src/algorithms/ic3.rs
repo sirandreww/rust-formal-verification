@@ -5,7 +5,7 @@
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{SatResponse, SplrSolver},
+    solvers::sat::{SatResponse, SplrSolver, Assignment},
 };
 use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
@@ -133,13 +133,13 @@ impl IC3 {
 
     fn extract_predecessor_from_assignment(
         &self,
-        assignment: &HashMap<VariableType, bool>,
+        assignment: &Assignment,
     ) -> Cube {
         let mut literals = Vec::new();
         let latch_literals = self.fin_state.get_state_literal_numbers();
 
         for state_lit_num in latch_literals {
-            literals.push(Literal::new(state_lit_num).negate_if_true(!assignment[&state_lit_num]))
+            literals.push(Literal::new(state_lit_num).negate_if_true(!assignment.get_value_of_variable(&state_lit_num)))
         }
 
         Cube::new(&literals)
@@ -201,18 +201,19 @@ impl IC3 {
         let mut c_literals: Vec<Literal> = c.iter().map(|l| l.to_owned()).collect();
         c_literals.shuffle(&mut self.rng);
         let mut j = 0;
-        while j < c_literals.len() {
+        while j < c_literals.len().try_into().unwrap() {
             let removed = c_literals.swap_remove(j);
             let d = Clause::new(&c_literals);
             if self.is_clause_inductive_relative_to_fi(&d, i) {
-                // remove successful
+                // remove successful, j should remain the same
             } else {
                 // undo remove
                 c_literals.push(removed);
                 let last_index = c_literals.len() - 1;
                 c_literals.swap(j, last_index);
+                // move on to next literal
+                j += 1;
             }
-            j += 1;
         }
         Clause::new(&c_literals)
     }
@@ -299,6 +300,14 @@ impl IC3 {
         }
     }
 
+    fn print_progress(&self, k: usize){
+        println!(
+            "IC3 is on k = {}, clauses lengths = {:?}", 
+            k, 
+            self.clauses.iter().map(|c| c.len()).collect::<Vec<usize>>()
+        );
+    }
+
     fn strengthen(&mut self, k: usize) -> StrengthenResult {
         loop {
             match self.is_bad_reached_in_1_step_from_cnf(&self.get_fk(k)) {
@@ -355,6 +364,7 @@ impl IC3 {
         self.clauses.push(CNF::new());
         for k in 1.. {
             self.clauses.push(CNF::new());
+            self.print_progress(k);
             debug_assert_eq!(self.clauses.len(), (k + 2));
             match self.strengthen(k) {
                 StrengthenResult::Success => {}

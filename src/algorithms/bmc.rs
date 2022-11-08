@@ -3,7 +3,6 @@
 // ************************************************************************************************
 
 use std::{
-    collections::HashMap,
     thread,
     time::{Duration, Instant},
 };
@@ -11,7 +10,7 @@ use std::{
 use crate::{
     formulas::{literal::VariableType, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{SatResponse, SplrSolver},
+    solvers::sat::{SatResponse, SplrSolver, Assignment},
 };
 
 // ************************************************************************************************
@@ -23,7 +22,7 @@ pub enum BMCResult {
         depth_reached: i32,
     },
     CTX {
-        assignment: HashMap<VariableType, bool>,
+        assignment: Assignment,
         depth: VariableType,
     },
 }

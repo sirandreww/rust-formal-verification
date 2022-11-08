@@ -2,12 +2,13 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::literal::VariableType;
 use crate::formulas::CNF;
 use crate::solvers::sat::SatResponse;
 use splr::solver::SolverResult;
 use splr::{self, SolverError};
-use std::collections::HashMap;
+
+use super::Assignment;
+// use std::time;
 
 // ************************************************************************************************
 // struct
@@ -35,24 +36,18 @@ impl SplrSolver {
         result
     }
 
-    fn convert_result_to_hashmap(assignment: &Vec<i32>) -> HashMap<VariableType, bool> {
-        let mut result = HashMap::<VariableType, bool>::new();
-        for var in assignment {
-            let var_num: VariableType = var.abs().try_into().unwrap();
-            debug_assert!(var_num != 0);
-            result.insert(var_num, var > &0);
-        }
-        result
-    }
-
     pub fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
         let owned = Self::convert_cnf_to_vector_of_vectors(cnf_to_solve);
 
-        match splr::Certificate::try_from(owned) {
+        // let start_time = time::Instant::now();
+        // println!("Sat solver call - start!");
+        let sat_call_response = splr::Certificate::try_from(owned);
+        // println!("Sat solver call - end! Duration was {} seconds.", start_time.elapsed().as_secs_f32());
+        match sat_call_response {
             SolverResult::Ok(c) => match c {
                 splr::Certificate::UNSAT => SatResponse::UnSat {},
                 splr::Certificate::SAT(assignment) => SatResponse::Sat {
-                    assignment: Self::convert_result_to_hashmap(&assignment),
+                    assignment: Assignment::from_dimacs_assignment(&assignment),
                 },
             },
             SolverResult::Err(e) => match e {

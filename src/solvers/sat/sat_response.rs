@@ -2,8 +2,7 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::literal::VariableType;
-use std::collections::HashMap;
+use super::Assignment;
 
 // ************************************************************************************************
 // struct
@@ -11,7 +10,7 @@ use std::collections::HashMap;
 
 pub enum SatResponse {
     Sat {
-        assignment: HashMap<VariableType, bool>,
+        assignment: Assignment,
     },
     UnSat,
 }

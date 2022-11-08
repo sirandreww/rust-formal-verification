@@ -36,7 +36,7 @@ mod tests {
         let mut ic3_solver = IC3::new(fin_state);
         match ic3_solver.prove() {
             IC3Result::Proof { invariant } => {
-                println!("Safe, invariant = {}", invariant);
+                println!("Safe, checking invariant.");
                 check_invariant(fin_state, &invariant);
             }
             IC3Result::CTX { depth } => {
@@ -76,12 +76,12 @@ mod tests {
 
     #[test]
     fn ic3_on_hwmcc20_only_unconstrained_problems() {
-        let run_test = false;
+        let run_test = true;
         if run_test {
             let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
             for aig_file_path in file_paths {
-                println!("file_path = {}", aig_file_path);
                 if common::_true_with_probability(0.05) {
+                    println!("file_path = {}", aig_file_path);
                     let aig = AndInverterGraph::from_aig_path(&aig_file_path);
                     let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
                     test_ic3(&fin_state, &aig);
