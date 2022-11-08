@@ -109,7 +109,7 @@ mod tests {
     fn exhaustive_sat_test() {
         // in release mode this can be high
         // but otherwise it should be around 8.
-        let max_number_of_variables_in_cnf = 20;
+        let max_number_of_variables_in_cnf = 10;
         let mut varisat_total_time = 0_f32;
         let mut splr_total_time = 0_f32;
         let mut vec_of_number_of_sat = Vec::new();

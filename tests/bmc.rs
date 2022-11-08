@@ -245,7 +245,7 @@ mod tests {
 
     #[test]
     fn bmc_on_hwmcc20_only_unconstrained_problems() {
-        let run_test = true;
+        let run_test = false;
         let mut number_of_solved = 0;
         if run_test {
             let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
