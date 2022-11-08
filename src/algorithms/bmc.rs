@@ -10,7 +10,7 @@ use std::{
 use crate::{
     formulas::{literal::VariableType, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{SatResponse, SplrSolver, Assignment},
+    solvers::sat::{Assignment, SatResponse, SplrSolver},
 };
 
 // ************************************************************************************************

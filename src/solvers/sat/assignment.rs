@@ -11,7 +11,7 @@ use std::collections::HashSet;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Assignment {
-    set_of_variables :HashSet<VariableType>,
+    set_of_variables: HashSet<VariableType>,
     in_set_value: bool,
     out_of_set_value: bool,
 }
@@ -21,13 +21,16 @@ pub struct Assignment {
 // ************************************************************************************************
 
 impl Assignment {
-
     // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
 
-    fn new(set_of_variables : HashSet<VariableType>, in_set_value: bool) -> Self {
-        Self { set_of_variables, in_set_value, out_of_set_value: !in_set_value }
+    fn new(set_of_variables: HashSet<VariableType>, in_set_value: bool) -> Self {
+        Self {
+            set_of_variables,
+            in_set_value,
+            out_of_set_value: !in_set_value,
+        }
     }
 
     // ********************************************************************************************
@@ -59,7 +62,7 @@ impl Assignment {
     }
 
     pub fn get_value_of_variable(&self, variable: &VariableType) -> bool {
-        if self.set_of_variables.contains(variable){
+        if self.set_of_variables.contains(variable) {
             self.in_set_value
         } else {
             self.out_of_set_value

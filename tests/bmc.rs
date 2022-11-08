@@ -19,7 +19,8 @@ mod tests {
     use rust_formal_verification::{
         algorithms::{bmc::BMCResult, BMC},
         formulas::literal::VariableType,
-        models::{AndInverterGraph, FiniteStateTransitionSystem}, solvers::sat::Assignment,
+        models::{AndInverterGraph, FiniteStateTransitionSystem},
+        solvers::sat::Assignment,
     };
     use std::{
         collections::HashMap,
@@ -193,16 +194,9 @@ mod tests {
     fn bmc_on_simple_example_counter_with_bad_assertion() {
         bmc_test(
             "tests/examples/ours/counter_with_bad_assertion.aig",
-            &Some(
-                Assignment::from_dimacs_assignment(
-                    &[
-                    -1, -2, -3, 4, 5, 
-                    6, -7, -8, 9, -10,
-                    -11, 12, -13, -14, -15,
-                    -16, -17, 18
-                    ]
-                )
-            ),
+            &Some(Assignment::from_dimacs_assignment(&[
+                -1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13, -14, -15, -16, -17, 18,
+            ])),
             // ![
             //     1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
             //     6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
@@ -238,15 +232,9 @@ mod tests {
     fn bmc_on_simple_example_counter_with_2_bad_assertion() {
         bmc_test(
             "tests/examples/ours/counter_with_2_bad_assertions.aig",
-            &Some(
-                Assignment::from_dimacs_assignment(
-                    &[
-                    -1, -2, -3, 4, 5, 
-                    6, -7, -8, 9, -10,
-                    -11, 12, -13,
-                    ]
-                )
-            ),
+            &Some(Assignment::from_dimacs_assignment(&[
+                -1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13,
+            ])),
             Some(2),
             5,
             10,
@@ -263,15 +251,7 @@ mod tests {
             let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
             for aig_file_path in file_paths {
                 if common::_true_with_probability(0.05) {
-                    let solved = 
-                    bmc_test(
-                        &aig_file_path, 
-                        &None, 
-                        None, 
-                        10, 
-                        20, 
-                        false, false
-                    );
+                    let solved = bmc_test(&aig_file_path, &None, None, 10, 20, false, false);
                     number_of_solved += if solved { 1 } else { 0 };
                 }
             }

@@ -9,8 +9,6 @@ use super::Assignment;
 // ************************************************************************************************
 
 pub enum SatResponse {
-    Sat {
-        assignment: Assignment,
-    },
+    Sat { assignment: Assignment },
     UnSat,
 }

@@ -4,7 +4,7 @@
 
 use crate::formulas::CNF;
 use crate::solvers::sat::SatResponse;
-use varisat::{ ExtendFormula, Solver, Lit};
+use varisat::{ExtendFormula, Lit, Solver};
 
 use super::Assignment;
 // use std::time;
@@ -33,10 +33,12 @@ impl VarisatSolver {
         }
     }
 
-    fn varisat_model_to_dimacs_assignment(assignment: &Vec<varisat::Lit>) -> Vec<i32>{
-        assignment.iter().map(|l| l.to_dimacs().try_into().unwrap()).collect::<Vec<i32>>()
+    fn varisat_model_to_dimacs_assignment(assignment: &Vec<varisat::Lit>) -> Vec<i32> {
+        assignment
+            .iter()
+            .map(|l| l.to_dimacs().try_into().unwrap())
+            .collect::<Vec<i32>>()
     }
-
 
     pub fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
         let mut solver = Solver::new();
@@ -48,22 +50,16 @@ impl VarisatSolver {
         // println!("Sat solver call - end! Duration was {} seconds.", start_time.elapsed().as_secs_f32());
         match sat_call_response {
             Ok(is_sat) => match is_sat {
-                true => {
-                    SatResponse::Sat { 
-                        assignment: Assignment::from_dimacs_assignment(
-                            &Self::varisat_model_to_dimacs_assignment(
-                                &solver.model().unwrap()
-                            )
-                        )
-                    }
+                true => SatResponse::Sat {
+                    assignment: Assignment::from_dimacs_assignment(
+                        &Self::varisat_model_to_dimacs_assignment(&solver.model().unwrap()),
+                    ),
                 },
-                false => {
-                    SatResponse::UnSat {}
-                },
+                false => SatResponse::UnSat {},
             },
             Err(_) => {
                 panic!();
-            },
+            }
             // SolverResult::Ok(c) => match c {
             //     splr::Certificate::UNSAT => SatResponse::UnSat {},
             //     splr::Certificate::SAT(assignment) => SatResponse::Sat {

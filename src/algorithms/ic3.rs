@@ -5,7 +5,7 @@
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{SatResponse, SplrSolver, Assignment},
+    solvers::sat::{Assignment, SatResponse, SplrSolver},
 };
 use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
@@ -131,15 +131,15 @@ impl IC3 {
         }
     }
 
-    fn extract_predecessor_from_assignment(
-        &self,
-        assignment: &Assignment,
-    ) -> Cube {
+    fn extract_predecessor_from_assignment(&self, assignment: &Assignment) -> Cube {
         let mut literals = Vec::new();
         let latch_literals = self.fin_state.get_state_literal_numbers();
 
         for state_lit_num in latch_literals {
-            literals.push(Literal::new(state_lit_num).negate_if_true(!assignment.get_value_of_variable(&state_lit_num)))
+            literals.push(
+                Literal::new(state_lit_num)
+                    .negate_if_true(!assignment.get_value_of_variable(&state_lit_num)),
+            )
         }
 
         Cube::new(&literals)
@@ -300,10 +300,10 @@ impl IC3 {
         }
     }
 
-    fn print_progress(&self, k: usize){
+    fn print_progress(&self, k: usize) {
         println!(
-            "IC3 is on k = {}, clauses lengths = {:?}", 
-            k, 
+            "IC3 is on k = {}, clauses lengths = {:?}",
+            k,
             self.clauses.iter().map(|c| c.len()).collect::<Vec<usize>>()
         );
     }
