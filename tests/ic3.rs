@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn ic3_on_hwmcc20_only_unconstrained_problems() {
-        let run_test = true;
+        let run_test = false;
         if run_test {
             let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
             for aig_file_path in file_paths {
