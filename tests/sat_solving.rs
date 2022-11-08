@@ -183,16 +183,23 @@ mod tests {
             vec_of_number_of_unsat.push(number_of_unsat);
         }
         assert_eq!(vec_of_number_of_sat.len(), vec_of_number_of_unsat.len());
-        for (i, (s, us)) in vec_of_number_of_sat.iter().zip(vec_of_number_of_unsat.iter()).enumerate(){
-            println!("number_of_variables_in_cnf = {}, # sat = {}, #unsat = {}", i, s, us);
+        for (i, (s, us)) in vec_of_number_of_sat
+            .iter()
+            .zip(vec_of_number_of_unsat.iter())
+            .enumerate()
+        {
+            println!(
+                "number_of_variables_in_cnf = {}, # sat = {}, #unsat = {}",
+                i, s, us
+            );
         }
         println!(
             "splr_total_time {}, varisat_total_time = {}",
             splr_total_time, varisat_total_time,
         );
         println!(
-            "total sat = {}, total unsat = {}", 
-            vec_of_number_of_sat.iter().sum::<i64>(), 
+            "total sat = {}, total unsat = {}",
+            vec_of_number_of_sat.iter().sum::<i64>(),
             vec_of_number_of_unsat.iter().sum::<i64>()
         );
     }
