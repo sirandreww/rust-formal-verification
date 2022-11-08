@@ -33,7 +33,7 @@ impl VarisatSolver {
         }
     }
 
-    fn varisat_model_to_dimacs_assignment(assignment: &Vec<varisat::Lit>) -> Vec<i32> {
+    fn varisat_model_to_dimacs_assignment(assignment: &[varisat::Lit]) -> Vec<i32> {
         assignment
             .iter()
             .map(|l| l.to_dimacs().try_into().unwrap())
@@ -42,7 +42,7 @@ impl VarisatSolver {
 
     pub fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
         let mut solver = Solver::new();
-        Self::convert_cnf_to_varisat(&cnf_to_solve, &mut solver);
+        Self::convert_cnf_to_varisat(cnf_to_solve, &mut solver);
 
         // let start_time = time::Instant::now();
         // println!("Sat solver call - start!");

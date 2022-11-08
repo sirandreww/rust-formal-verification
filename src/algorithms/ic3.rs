@@ -201,7 +201,7 @@ impl IC3 {
         let mut c_literals: Vec<Literal> = c.iter().map(|l| l.to_owned()).collect();
         c_literals.shuffle(&mut self.rng);
         let mut j = 0;
-        while j < c_literals.len().try_into().unwrap() {
+        while j < c_literals.len() {
             let removed = c_literals.swap_remove(j);
             let d = Clause::new(&c_literals);
             if self.is_clause_inductive_relative_to_fi(&d, i) {
