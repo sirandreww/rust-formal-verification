@@ -7,7 +7,7 @@ use crate::solvers::sat::SatResponse;
 use splr::solver::SolverResult;
 use splr::{self, SolverError};
 
-use super::Assignment;
+use super::{Assignment, SatSolver};
 // use std::time;
 
 // ************************************************************************************************
@@ -18,7 +18,7 @@ use super::Assignment;
 pub struct SplrSolver {}
 
 // ************************************************************************************************
-// impl
+// impl SplrSolver
 // ************************************************************************************************
 
 impl SplrSolver {
@@ -57,5 +57,15 @@ impl SplrSolver {
                 }
             },
         }
+    }
+}
+
+// ************************************************************************************************
+// impl trait
+// ************************************************************************************************
+
+impl SatSolver for SplrSolver {
+    fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
+        self.solve_cnf(cnf_to_solve)
     }
 }

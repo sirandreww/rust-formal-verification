@@ -5,7 +5,7 @@
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{Assignment, SatResponse, SplrSolver},
+    solvers::sat::{Assignment, SatResponse, SatSolver},
 };
 use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
@@ -44,10 +44,10 @@ pub enum PushGeneralizeResult {
 // struct
 // ************************************************************************************************
 
-pub struct IC3 {
+pub struct IC3<T> {
     clauses: Vec<CNF>,
     fin_state: FiniteStateTransitionSystem,
-    solver: SplrSolver,
+    solver: T,
     rng: ThreadRng,
 }
 
@@ -55,12 +55,12 @@ pub struct IC3 {
 // impl
 // ************************************************************************************************
 
-impl IC3 {
+impl<T: SatSolver> IC3<T> {
     pub fn new(fin_state: &FiniteStateTransitionSystem) -> Self {
         Self {
             clauses: Vec::new(),
             fin_state: fin_state.to_owned(),
-            solver: SplrSolver::default(),
+            solver: T::default(),
             rng: thread_rng(),
         }
     }

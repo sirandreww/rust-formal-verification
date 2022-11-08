@@ -10,7 +10,7 @@ use std::{
 use crate::{
     formulas::{literal::VariableType, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{Assignment, SatResponse, SplrSolver},
+    solvers::sat::{Assignment, SatResponse, SatSolver},
 };
 
 // ************************************************************************************************
@@ -36,16 +36,16 @@ enum TimedSatResult {
 // struct
 // ************************************************************************************************
 
-pub struct BMC {
+pub struct BMC<T: SatSolver> {
     verbose: bool,
-    solver: SplrSolver,
+    solver: T,
 }
 
 // ************************************************************************************************
 // impl
 // ************************************************************************************************
 
-impl BMC {
+impl<T: SatSolver + std::marker::Send + 'static + std::marker::Sync + Clone> BMC<T> {
     // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
@@ -85,7 +85,7 @@ impl BMC {
 
     pub fn new(verbose: bool) -> Self {
         Self {
-            solver: SplrSolver::default(),
+            solver: T::default(),
             verbose,
         }
     }

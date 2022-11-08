@@ -3,10 +3,10 @@
 // ************************************************************************************************
 
 use crate::formulas::CNF;
-use crate::solvers::sat::SatResponse;
+use crate::solvers::sat::{Assignment, SatResponse, SatSolver};
 use varisat::{ExtendFormula, Lit, Solver};
 
-use super::Assignment;
+// use super::{Assignment, SatSolver};
 // use std::time;
 
 // ************************************************************************************************
@@ -60,18 +60,16 @@ impl VarisatSolver {
             Err(_) => {
                 panic!();
             }
-            // SolverResult::Ok(c) => match c {
-            //     splr::Certificate::UNSAT => SatResponse::UnSat {},
-            //     splr::Certificate::SAT(assignment) => SatResponse::Sat {
-            //         assignment: Assignment::from_dimacs_vector(&assignment),
-            //     },
-            // },
-            // SolverResult::Err(e) => match e {
-            //     SolverError::EmptyClause => SatResponse::UnSat {},
-            //     _ => {
-            //         unreachable!();
-            //     }
-            // },
         }
+    }
+}
+
+// ************************************************************************************************
+// impl trait
+// ************************************************************************************************
+
+impl SatSolver for VarisatSolver {
+    fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
+        self.solve_cnf(cnf_to_solve)
     }
 }

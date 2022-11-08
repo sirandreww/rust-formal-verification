@@ -31,7 +31,7 @@ mod tests {
     // helper functions
     // ********************************************************************************************
 
-    fn test_cnf_on_sat_solvers(cnf: &CNF) -> (f32, f32) {
+    fn test_cnf_on_sat_solvers(cnf: &CNF) -> (f32, f32, bool) {
         // println!("test_cnf_on_sat_solvers - cnf = {}", cnf);
 
         let splr_timer = time::Instant::now();
@@ -43,13 +43,12 @@ mod tests {
         let varisat_time = varisat_timer.elapsed().as_secs_f32();
 
         match (splr_response, varisat_response) {
-            (SatResponse::Sat { assignment: _ }, SatResponse::Sat { assignment: _ }) => {}
-            (SatResponse::UnSat, SatResponse::UnSat) => {}
+            (SatResponse::Sat { assignment: _ }, SatResponse::Sat { assignment: _ }) => {
+                (splr_time, varisat_time, true)
+            }
+            (SatResponse::UnSat, SatResponse::UnSat) => (splr_time, varisat_time, false),
             _ => panic!("Sat solvers disagree."),
         }
-
-        // println!("splr_time = {}, varisat_time = {}", splr_time, varisat_time);
-        (splr_time, varisat_time)
     }
 
     // ********************************************************************************************
@@ -109,12 +108,23 @@ mod tests {
     #[test]
     fn exhaustive_sat_test() {
         // in release mode this can be high
-        // but otherwise it should be around 15.
-        let max_number_of_variables_in_cnf = 10;
+        // but otherwise it should be around 8.
+        let max_number_of_variables_in_cnf = 20;
         let mut varisat_total_time = 0_f32;
         let mut splr_total_time = 0_f32;
+        let mut vec_of_number_of_sat = Vec::new();
+        let mut vec_of_number_of_unsat = Vec::new();
+
+        // play with this until number of sat and un-sat are close
+        let maximal_number_of_variables_in_cnf_to_allow_empty_clause = 2;
+        let probability_of_negation = 0.002;
+        let probability_of_adding_another_literal_to_cnf = 0.5;
+        let base = 2_i32;
+        let max_exponent = 11;
 
         for number_of_variables_in_cnf in 0..max_number_of_variables_in_cnf {
+            let mut number_of_sat = 0;
+            let mut number_of_unsat = 0;
             println!(
                 "number_of_variables_in_cnf = {}",
                 number_of_variables_in_cnf
@@ -130,7 +140,7 @@ mod tests {
             }
 
             // no more than ~2000 clauses per number_of_variables_in_cnf
-            let max_number_of_clauses = 2_i32.pow(min(number_of_variables_in_cnf, 11));
+            let max_number_of_clauses = base.pow(min(number_of_variables_in_cnf, max_exponent));
 
             // go over number of clauses.
             for number_of_clauses in 0..max_number_of_clauses {
@@ -142,31 +152,48 @@ mod tests {
                 for _ in 0..number_of_clauses {
                     let mut clause_literals = Vec::new();
 
-                    // allow empty clause for small problems.
-                    if number_of_variables_in_cnf > 2 {
-                        // at least one literal so as to not make the problem trivial.
-                        let lit = literals[rand::thread_rng().gen_range(0..literals.len())];
-                        clause_literals.push(lit);
-                    }
-
                     // add more with geometric distribution
-                    while common::_true_with_probability(0.5) {
-                        let lit = literals[rand::thread_rng().gen_range(0..literals.len())];
+                    while (
+                        (number_of_variables_in_cnf > maximal_number_of_variables_in_cnf_to_allow_empty_clause)
+                        && (clause_literals.is_empty())) // if is empty and we cannot allow empty clause
+                        || (common::_true_with_probability( // or we just want another variable
+                            probability_of_adding_another_literal_to_cnf,
+                        ))
+                    {
+                        let lit = literals[rand::thread_rng().gen_range(0..literals.len())]
+                            .negate_if_true(common::_true_with_probability(
+                                probability_of_negation,
+                            ));
                         clause_literals.push(lit);
                     }
 
                     cnf.add_clause(&Clause::new(&clause_literals));
                 }
 
-                let (splr, varisat) = self::test_cnf_on_sat_solvers(&cnf);
+                let (splr, varisat, is_sat) = self::test_cnf_on_sat_solvers(&cnf);
+                if is_sat {
+                    number_of_sat += 1;
+                } else {
+                    number_of_unsat += 1;
+                }
                 varisat_total_time += varisat;
                 splr_total_time += splr;
             }
+            vec_of_number_of_sat.push(number_of_sat);
+            vec_of_number_of_unsat.push(number_of_unsat);
         }
-
+        assert_eq!(vec_of_number_of_sat.len(), vec_of_number_of_unsat.len());
+        for (i, (s, us)) in vec_of_number_of_sat.iter().zip(vec_of_number_of_unsat.iter()).enumerate(){
+            println!("number_of_variables_in_cnf = {}, # sat = {}, #unsat = {}", i, s, us);
+        }
         println!(
             "splr_total_time {}, varisat_total_time = {}",
-            splr_total_time, varisat_total_time
+            splr_total_time, varisat_total_time,
+        );
+        println!(
+            "total sat = {}, total unsat = {}", 
+            vec_of_number_of_sat.iter().sum::<i64>(), 
+            vec_of_number_of_unsat.iter().sum::<i64>()
         );
     }
 }

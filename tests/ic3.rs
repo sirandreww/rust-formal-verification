@@ -19,6 +19,7 @@ mod tests {
         algorithms::{ic3::IC3Result, IC3},
         formulas::CNF,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
+        solvers::sat::SplrSolver,
     };
 
     use crate::common;
@@ -33,7 +34,7 @@ mod tests {
     }
 
     fn test_ic3(fin_state: &FiniteStateTransitionSystem, _aig: &AndInverterGraph) {
-        let mut ic3_solver = IC3::new(fin_state);
+        let mut ic3_solver = IC3::<SplrSolver>::new(fin_state);
         match ic3_solver.prove() {
             IC3Result::Proof { invariant } => {
                 println!("Safe, checking invariant.");
