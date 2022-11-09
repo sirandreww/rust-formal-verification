@@ -377,6 +377,7 @@ impl<T: SatSolver> IC3<T> {
             self.propagate_clauses(k);
             for i in 1..(k + 1) {
                 if self.clauses[i] == self.clauses[i + 1] {
+                    self.print_progress(k);
                     return IC3Result::Proof {
                         invariant: self.get_fk(i),
                     };

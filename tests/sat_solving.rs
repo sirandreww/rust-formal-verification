@@ -22,6 +22,7 @@ mod tests {
     use rust_formal_verification::solvers::sat::SatResponse;
     use rust_formal_verification::solvers::sat::SplrSolver;
     use rust_formal_verification::solvers::sat::VarisatSolver;
+    use rust_formal_verification::solvers::sat::CadicalSolver;
     use std::cmp::min;
     use std::time;
 
@@ -31,7 +32,7 @@ mod tests {
     // helper functions
     // ********************************************************************************************
 
-    fn test_cnf_on_sat_solvers(cnf: &CNF) -> (f32, f32, bool) {
+    fn test_cnf_on_sat_solvers(cnf: &CNF) -> (f32, f32, f32, bool) {
         // println!("test_cnf_on_sat_solvers - cnf = {}", cnf);
 
         let splr_timer = time::Instant::now();
@@ -42,11 +43,15 @@ mod tests {
         let varisat_response = VarisatSolver::default().solve_cnf(&cnf);
         let varisat_time = varisat_timer.elapsed().as_secs_f32();
 
-        match (splr_response, varisat_response) {
-            (SatResponse::Sat { assignment: _ }, SatResponse::Sat { assignment: _ }) => {
-                (splr_time, varisat_time, true)
+        let cadical_timer = time::Instant::now();
+        let cadical_response = CadicalSolver::default().solve_cnf(&cnf);
+        let cadical_time = cadical_timer.elapsed().as_secs_f32();
+
+        match (splr_response, varisat_response, cadical_response) {
+            (SatResponse::Sat { assignment: _ }, SatResponse::Sat { assignment: _ }, SatResponse::Sat { assignment: _ }) => {
+                (splr_time, varisat_time, cadical_time, true)
             }
-            (SatResponse::UnSat, SatResponse::UnSat) => (splr_time, varisat_time, false),
+            (SatResponse::UnSat, SatResponse::UnSat, SatResponse::UnSat) => (splr_time, varisat_time, cadical_time, false),
             _ => panic!("Sat solvers disagree."),
         }
     }
@@ -112,6 +117,7 @@ mod tests {
         let max_number_of_variables_in_cnf = 10;
         let mut varisat_total_time = 0_f32;
         let mut splr_total_time = 0_f32;
+        let mut cadical_total_time = 0_f32;
         let mut vec_of_number_of_sat = Vec::new();
         let mut vec_of_number_of_unsat = Vec::new();
 
@@ -170,7 +176,7 @@ mod tests {
                     cnf.add_clause(&Clause::new(&clause_literals));
                 }
 
-                let (splr, varisat, is_sat) = self::test_cnf_on_sat_solvers(&cnf);
+                let (splr, varisat, cadical, is_sat) = self::test_cnf_on_sat_solvers(&cnf);
                 if is_sat {
                     number_of_sat += 1;
                 } else {
@@ -178,6 +184,7 @@ mod tests {
                 }
                 varisat_total_time += varisat;
                 splr_total_time += splr;
+                cadical_total_time += cadical;
             }
             vec_of_number_of_sat.push(number_of_sat);
             vec_of_number_of_unsat.push(number_of_unsat);
@@ -194,8 +201,8 @@ mod tests {
             );
         }
         println!(
-            "splr_total_time {}, varisat_total_time = {}",
-            splr_total_time, varisat_total_time,
+            "splr_total_time {}, varisat_total_time = {}, cadical_total_time = {}",
+            splr_total_time, varisat_total_time, cadical_total_time
         );
         println!(
             "total sat = {}, total unsat = {}",

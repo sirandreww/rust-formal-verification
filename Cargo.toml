@@ -16,6 +16,7 @@ exclude = ["tests/examples/"]
 # SAT solvers
 splr = "0.16.3"
 varisat = "0.2.2"
+cadical = "0.1.13"
 # other crates
 rand = "0.8.5"
 priority-queue = "1.2.3"
