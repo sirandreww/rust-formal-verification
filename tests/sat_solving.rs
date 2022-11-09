@@ -19,10 +19,10 @@ mod tests {
     use rust_formal_verification::formulas::Clause;
     use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::CNF;
+    use rust_formal_verification::solvers::sat::CadicalSolver;
     use rust_formal_verification::solvers::sat::SatResponse;
     use rust_formal_verification::solvers::sat::SplrSolver;
     use rust_formal_verification::solvers::sat::VarisatSolver;
-    use rust_formal_verification::solvers::sat::CadicalSolver;
     use std::cmp::min;
     use std::time;
 
@@ -48,10 +48,14 @@ mod tests {
         let cadical_time = cadical_timer.elapsed().as_secs_f32();
 
         match (splr_response, varisat_response, cadical_response) {
-            (SatResponse::Sat { assignment: _ }, SatResponse::Sat { assignment: _ }, SatResponse::Sat { assignment: _ }) => {
-                (splr_time, varisat_time, cadical_time, true)
+            (
+                SatResponse::Sat { assignment: _ },
+                SatResponse::Sat { assignment: _ },
+                SatResponse::Sat { assignment: _ },
+            ) => (splr_time, varisat_time, cadical_time, true),
+            (SatResponse::UnSat, SatResponse::UnSat, SatResponse::UnSat) => {
+                (splr_time, varisat_time, cadical_time, false)
             }
-            (SatResponse::UnSat, SatResponse::UnSat, SatResponse::UnSat) => (splr_time, varisat_time, cadical_time, false),
             _ => panic!("Sat solvers disagree."),
         }
     }

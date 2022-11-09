@@ -38,28 +38,36 @@ impl CadicalSolver {
         let mut solver: cadical::Solver = Default::default();
 
         let dimacs_format = Self::convert_cnf_to_dimacs_into_solver(cnf_to_solve);
-        dimacs_format.iter().for_each(|clause| solver.add_clause(clause.iter().copied()));
+        dimacs_format
+            .iter()
+            .for_each(|clause| solver.add_clause(clause.iter().copied()));
         // let start_time = time::Instant::now();
         // println!("Sat solver call - start!");
         let sat_call_response = solver.solve();
         // println!("Sat solver call - end! Duration was {} seconds.", start_time.elapsed().as_secs_f32());
         match sat_call_response {
-            Some(c)=> match c {
+            Some(c) => match c {
                 false => SatResponse::UnSat {},
                 true => {
                     let dimacs_assignment = (1..(solver.max_variable() + 1))
-                    .map(|var_num| 
-                        match solver.value(var_num){
-                            Some(v) => if v {var_num} else {-var_num},
-                            None => var_num // doesn't matter which value
-                        }).collect::<Vec<i32>>();
+                        .map(|var_num| match solver.value(var_num) {
+                            Some(v) => {
+                                if v {
+                                    var_num
+                                } else {
+                                    -var_num
+                                }
+                            }
+                            None => var_num, // doesn't matter which value
+                        })
+                        .collect::<Vec<i32>>();
 
                     SatResponse::Sat {
-                    assignment: Assignment::from_dimacs_assignment(&dimacs_assignment)
+                        assignment: Assignment::from_dimacs_assignment(&dimacs_assignment),
+                    }
                 }
             },
-            },
-            None => unreachable!()
+            None => unreachable!(),
         }
     }
 }

@@ -3,10 +3,10 @@
 // ************************************************************************************************
 
 pub mod assignment;
+pub mod cadical_solver;
 pub mod sat_response;
 pub mod splr_solver;
 pub mod varisat_solver;
-pub mod cadical_solver;
 
 // ************************************************************************************************
 // re-exports of structs in these modules to simplify paths for other imports
@@ -14,10 +14,10 @@ pub mod cadical_solver;
 
 use crate::formulas::CNF;
 pub use assignment::Assignment;
+pub use cadical_solver::CadicalSolver;
 pub use sat_response::SatResponse;
 pub use splr_solver::SplrSolver;
 pub use varisat_solver::VarisatSolver;
-pub use cadical_solver::CadicalSolver;
 
 // ************************************************************************************************
 // Sat Solver trait

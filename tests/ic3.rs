@@ -19,7 +19,7 @@ mod tests {
         algorithms::{ic3::IC3Result, IC3},
         formulas::CNF,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::{SplrSolver, SatSolver, VarisatSolver, CadicalSolver, SatResponse},
+        solvers::sat::{CadicalSolver, SatResponse, SatSolver, SplrSolver, VarisatSolver},
     };
 
     use crate::common;
@@ -30,13 +30,13 @@ mod tests {
 
     fn assert_that_a_implies_b<T: SatSolver>(a: &CNF, b: &CNF, panic_msg: &str) {
         // a implies b iff a implies every clause in b
-        for c in b.iter(){
+        for c in b.iter() {
             let cube = !c.to_owned();
             let mut cnf_to_solve = cube.to_cnf();
             cnf_to_solve.append(&a);
             let solver = T::default();
-            match solver.solve_cnf(&cnf_to_solve){
-                SatResponse::Sat { assignment:_ } => panic!("{}", panic_msg),
+            match solver.solve_cnf(&cnf_to_solve) {
+                SatResponse::Sat { assignment: _ } => panic!("{}", panic_msg),
                 SatResponse::UnSat => {}
             }
         }
@@ -45,19 +45,27 @@ mod tests {
     fn check_invariant<T: SatSolver>(fin_state: &FiniteStateTransitionSystem, inv_candidate: &CNF) {
         // check INIT -> inv_candidate
         let init = fin_state.get_initial_relation();
-        assert_that_a_implies_b::<T>(&init, inv_candidate, "Invariant does not cover all of init.");
+        assert_that_a_implies_b::<T>(
+            &init,
+            inv_candidate,
+            "Invariant does not cover all of init.",
+        );
 
         // check inv_candidate && Tr -> inv_candidate'
         let mut a = fin_state.get_transition_relation_for_some_depth(1);
         a.append(inv_candidate);
         let b = fin_state.add_depth_to_property(inv_candidate, 1);
-        assert_that_a_implies_b::<T>(&a, &b, "Invariant doesn't cover all of the reachable states.");
+        assert_that_a_implies_b::<T>(
+            &a,
+            &b,
+            "Invariant doesn't cover all of the reachable states.",
+        );
 
         // check inv_candidate -> p
         assert_that_a_implies_b::<T>(
-            inv_candidate, 
-            &fin_state.get_safety_property_for_some_depth(0), 
-            "Invariant isn't always safe."
+            inv_candidate,
+            &fin_state.get_safety_property_for_some_depth(0),
+            "Invariant isn't always safe.",
         );
 
         println!("Invariant check passed!")
@@ -109,16 +117,34 @@ mod tests {
 
     #[test]
     fn ic3_on_hwmcc20_only_unconstrained_problems() {
+        let run_test = false;
+        if !run_test {
+            return;
+        }
+        let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
+        for aig_file_path in file_paths {
+            if common::_true_with_probability(0.05) {
+                println!("file_path = {}", aig_file_path);
+                let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+                let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+                test_ic3::<VarisatSolver>(&fin_state, &aig);
+            }
+        }
+    }
+
+    #[test]
+    fn ic3_on_first_few_hwmcc20_unconstrained_problems() {
         let run_test = true;
-        if run_test {
-            let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
-            for aig_file_path in file_paths {
-                if common::_true_with_probability(0.05) {
-                    println!("file_path = {}", aig_file_path);
-                    let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-                    let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
-                    test_ic3::<VarisatSolver>(&fin_state, &aig);
-                }
+        if !run_test {
+            return;
+        }
+        let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
+        for aig_file_path in &file_paths[0..5] {
+            if common::_true_with_probability(1.0) {
+                println!("file_path = {}", aig_file_path);
+                let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+                let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+                test_ic3::<VarisatSolver>(&fin_state, &aig);
             }
         }
     }
