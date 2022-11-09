@@ -13,7 +13,6 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::{
     cmp::{max, Reverse},
-    collections::HashMap,
 };
 
 // ********************************************************************************************
@@ -55,6 +54,8 @@ pub struct IC3<T> {
     p0: CNF,
     not_p0: CNF,
     not_p1: CNF,
+    latch_literals: Vec<u32>,
+    _input_literals: Vec<u32>
 }
 
 // ************************************************************************************************
@@ -77,19 +78,16 @@ impl<T: SatSolver> IC3<T> {
         clauses_fk
     }
 
-    fn _get_ctx_from_assignment(&self, assignment: &HashMap<VariableType, bool>) -> Vec<Vec<bool>> {
-        let mut result = Vec::new();
+    // fn _get_ctx_from_assignment(&self, assignment: &HashMap<VariableType, bool>) -> Vec<Vec<bool>> {
+    //     let mut result = Vec::new();
 
-        let mut latch_literals = self.fin_state.get_input_literal_numbers();
-        latch_literals.sort();
-
-        let mut clk = Vec::new();
-        for input_lit_num in latch_literals {
-            clk.push(assignment[&input_lit_num])
-        }
-        result.push(clk);
-        result
-    }
+    //     let mut clk = Vec::new();
+    //     for input_lit_num in self.input_literals.iter() {
+    //         clk.push(assignment[&input_lit_num])
+    //     }
+    //     result.push(clk);
+    //     result
+    // }
 
     fn is_bad_reached_in_0_steps(&self) -> SatResponse {
         let mut cnf = CNF::new();
@@ -135,11 +133,11 @@ impl<T: SatSolver> IC3<T> {
 
     fn extract_predecessor_from_assignment(&self, assignment: &Assignment) -> Cube {
         let mut literals = Vec::new();
-        let latch_literals = self.fin_state.get_state_literal_numbers();
+        
 
-        for state_lit_num in latch_literals {
+        for state_lit_num in &self.latch_literals {
             literals.push(
-                Literal::new(state_lit_num)
+                Literal::new(state_lit_num.to_owned())
                     .negate_if_true(!assignment.get_value_of_variable(&state_lit_num)),
             )
         }
@@ -364,6 +362,8 @@ impl<T: SatSolver> IC3<T> {
             p0: fin_state.get_safety_property_for_some_depth(0),
             not_p0: fin_state.get_unsafety_property_for_some_depth(0),
             not_p1: fin_state.get_unsafety_property_for_some_depth(1),
+            latch_literals: fin_state.get_state_literal_numbers(),
+            _input_literals: fin_state.get_input_literal_numbers(),
         }
     }
 

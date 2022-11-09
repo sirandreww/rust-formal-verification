@@ -102,12 +102,10 @@ mod tests {
         }
         let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
         for aig_file_path in &file_paths[0..5] {
-            if common::_true_with_probability(1.0) {
-                println!("file_path = {}", aig_file_path);
-                let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-                let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
-                test_ic3::<VarisatSolver>(&fin_state, &aig);
-            }
+            println!("file_path = {}", aig_file_path);
+            let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+            let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+            test_ic3::<VarisatSolver>(&fin_state, &aig);
         }
     }
 }
