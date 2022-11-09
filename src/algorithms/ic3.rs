@@ -49,6 +49,12 @@ pub struct IC3<T> {
     fin_state: FiniteStateTransitionSystem,
     solver: T,
     rng: ThreadRng,
+    // caching for speedup
+    initial: CNF,
+    transition: CNF,
+    p0: CNF,
+    not_p0: CNF,
+    not_p1: CNF,
 }
 
 // ************************************************************************************************
@@ -56,21 +62,17 @@ pub struct IC3<T> {
 // ************************************************************************************************
 
 impl<T: SatSolver> IC3<T> {
-    pub fn new(fin_state: &FiniteStateTransitionSystem) -> Self {
-        Self {
-            clauses: Vec::new(),
-            fin_state: fin_state.to_owned(),
-            solver: T::default(),
-            rng: thread_rng(),
-        }
-    }
+
+    // ********************************************************************************************
+    // helper functions
+    // ********************************************************************************************
 
     fn get_fk(&self, k: usize) -> CNF {
         let mut clauses_fk = self.clauses[k].to_owned();
         if k == 0 {
-            clauses_fk.append(&self.fin_state.get_initial_relation());
+            clauses_fk.append(&self.initial);
         } else {
-            clauses_fk.append(&self.fin_state.get_safety_property_for_some_depth(0));
+            clauses_fk.append(&self.p0);
         }
         clauses_fk
     }
@@ -91,17 +93,17 @@ impl<T: SatSolver> IC3<T> {
 
     fn is_bad_reached_in_0_steps(&self) -> SatResponse {
         let mut cnf = CNF::new();
-        cnf.append(&self.fin_state.get_initial_relation());
-        cnf.append(&self.fin_state.get_unsafety_property_for_some_depth(0));
+        cnf.append(&self.initial);
+        cnf.append(&self.not_p0);
         // println!("I ^ !P = {}", cnf);
         self.solver.solve_cnf(&cnf)
     }
 
     fn is_bad_reached_in_1_steps(&self) -> SatResponse {
         let mut cnf = CNF::new();
-        cnf.append(&self.fin_state.get_initial_relation());
-        cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
-        cnf.append(&self.fin_state.get_unsafety_property_for_some_depth(1));
+        cnf.append(&self.initial);
+        cnf.append(&self.transition);
+        cnf.append(&self.not_p1);
         // println!("I ^ T ^ !P' = {}", cnf);
         self.solver.solve_cnf(&cnf)
     }
@@ -112,7 +114,7 @@ impl<T: SatSolver> IC3<T> {
             for c in clauses_fi.iter() {
                 let mut cnf = CNF::new();
                 cnf.append(&self.get_fk(i));
-                cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
+                cnf.append(&self.transition);
                 cnf.append(
                     &self
                         .fin_state
@@ -148,8 +150,8 @@ impl<T: SatSolver> IC3<T> {
     fn is_bad_reached_in_1_step_from_cnf(&self, cnf: &CNF) -> SatResponse {
         let mut new_cnf = CNF::new();
         new_cnf.append(cnf);
-        new_cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
-        new_cnf.append(&self.fin_state.get_unsafety_property_for_some_depth(1));
+        new_cnf.append(&self.transition);
+        new_cnf.append(&self.not_p1);
         self.solver.solve_cnf(&new_cnf)
     }
 
@@ -157,7 +159,7 @@ impl<T: SatSolver> IC3<T> {
     fn is_fi_and_t_and_not_s_and_s_tag_sat(&self, i: usize, s: &Cube) -> bool {
         let mut new_cnf = CNF::new();
         new_cnf.append(&self.get_fk(i));
-        new_cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
+        new_cnf.append(&self.transition);
         new_cnf.add_clause(&!(s.to_owned()));
         new_cnf.append(&self.fin_state.add_depth_to_property(&s.to_cnf(), 1));
         match self.solver.solve_cnf(&new_cnf) {
@@ -169,7 +171,7 @@ impl<T: SatSolver> IC3<T> {
     fn is_clause_inductive_relative_to_fi(&self, d: &Clause, i: usize) -> bool {
         // return !(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’)
 
-        let mut first_cnf = self.fin_state.get_initial_relation();
+        let mut first_cnf = self.initial.to_owned();
         first_cnf.append(&(!d.to_owned()).to_cnf());
         match self.solver.solve_cnf(&first_cnf) {
             SatResponse::UnSat => {}
@@ -180,7 +182,7 @@ impl<T: SatSolver> IC3<T> {
 
         let mut second_cnf = self.get_fk(i);
         second_cnf.add_clause(d);
-        second_cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
+        second_cnf.append(&self.transition);
         second_cnf.append(
             &self
                 .fin_state
@@ -249,7 +251,7 @@ impl<T: SatSolver> IC3<T> {
     fn solve_fi_and_t_and_s_tag(&self, i: usize, s: &Cube) -> SatResponse {
         let mut new_cnf = CNF::new();
         new_cnf.append(&self.get_fk(i));
-        new_cnf.append(&self.fin_state.get_transition_relation_for_some_depth(1));
+        new_cnf.append(&self.transition);
         new_cnf.append(&self.fin_state.add_depth_to_property(&s.to_cnf(), 1));
         self.solver.solve_cnf(&new_cnf)
     }
@@ -345,6 +347,24 @@ impl<T: SatSolver> IC3<T> {
         }
 
         StrengthenResult::Success
+    }
+
+    // ********************************************************************************************
+    // API functions
+    // ********************************************************************************************
+
+    pub fn new(fin_state: &FiniteStateTransitionSystem) -> Self {
+        Self {
+            clauses: Vec::new(),
+            fin_state: fin_state.to_owned(),
+            solver: T::default(),
+            rng: thread_rng(),
+            initial: fin_state.get_initial_relation(),
+            transition: fin_state.get_transition_relation_for_some_depth(1),
+            p0: fin_state.get_safety_property_for_some_depth(0),
+            not_p0: fin_state.get_unsafety_property_for_some_depth(0),
+            not_p1: fin_state.get_unsafety_property_for_some_depth(1),
+        }
     }
 
     pub fn prove(&mut self) -> IC3Result {
