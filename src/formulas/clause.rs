@@ -8,6 +8,7 @@ use std::hash::Hash;
 use std::ops::Not;
 
 use super::Cube;
+use super::literal::VariableType;
 
 // ************************************************************************************************
 // struct
@@ -40,6 +41,13 @@ impl Clause {
     pub fn iter(&self) -> impl Iterator<Item = &Literal> {
         self.literals.iter()
     }
+
+    pub fn get_highest_variable_number(&self) -> VariableType{
+        match self.literals.last(){
+            Some(l) => l.get_number(),
+            None => 0,
+        }
+    }
 }
 
 // ************************************************************************************************
@@ -70,6 +78,6 @@ impl fmt::Display for Clause {
             .iter()
             .map(|lit| lit.to_string())
             .collect::<Vec<String>>();
-        write!(f, "({})", string_vec.join(" | "))
+        write!(f, "{} 0", string_vec.join(" "))
     }
 }

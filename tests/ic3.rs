@@ -105,7 +105,7 @@ mod tests {
             println!("file_path = {}", aig_file_path);
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
-            test_ic3::<VarisatSolver>(&fin_state, &aig);
+            test_ic3::<SplrSolver>(&fin_state, &aig);
         }
     }
 }

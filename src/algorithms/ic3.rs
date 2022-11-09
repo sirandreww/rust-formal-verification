@@ -15,6 +15,8 @@ use std::{
     cmp::{max, Reverse},
 };
 
+use super::formula_logic::does_a_imply_b;
+
 // ********************************************************************************************
 // Enum
 // ********************************************************************************************
@@ -63,6 +65,58 @@ pub struct IC3<T> {
 // ************************************************************************************************
 
 impl<T: SatSolver> IC3<T> {
+
+    // ********************************************************************************************
+    // assert
+    // ********************************************************************************************
+
+    fn does_a_hold(&self, k: usize) -> bool{
+        println!("checking A");
+        
+        for i in 0..self.clauses.len(){
+            let fi = self.get_fk(i);
+            if i == 0 {
+
+            }
+            // I => Fi
+            if !does_a_imply_b::<T>(&self.initial, &fi) {
+                panic!();
+            }
+
+            // Fi => P
+            if !does_a_imply_b::<T>(&fi, &self.p0) {
+                println!("fi => P fails!");
+                println!("Fi = {}", fi);
+                println!("P  = {}", self.p0);
+                panic!();
+            }
+
+            // for all i > 0 clauses(Fi+1) is subset of clauses(Fi)
+            if 0 < i && i < (self.clauses.len() - 1){
+                for clause in self.clauses[i+1].iter(){
+                    if !self.clauses[i].contains(clause) {
+                        panic!();
+                    }
+                }
+            }
+
+            // for all 0 <= i < k, Fi && T => Fi+1'
+            if i < k {
+                let mut fi_and_t = self.transition.to_owned();
+                fi_and_t.append(&fi);
+                if !does_a_imply_b::<T>(&fi_and_t, &self.fin_state.add_depth_to_property(&self.get_fk(i+1), 1)) {
+                    panic!();
+                }
+            }
+
+            if i > k {
+                assert!(self.clauses[i].is_empty())
+            }
+        }
+        println!("checking A Done.");
+
+        true
+    }
 
     // ********************************************************************************************
     // helper functions
@@ -373,6 +427,7 @@ impl<T: SatSolver> IC3<T> {
             SatResponse::Sat { assignment: _ } => return IC3Result::CTX { depth: 0 },
             SatResponse::UnSat => (),
         }
+        debug_assert!(does_a_imply_b::<T>(&self.initial, &self.p0));
 
         let init_and_tr_and_not_p_tag = self.is_bad_reached_in_1_steps();
         match init_and_tr_and_not_p_tag {
@@ -384,6 +439,7 @@ impl<T: SatSolver> IC3<T> {
         self.clauses.push(CNF::new());
         for k in 1.. {
             self.clauses.push(CNF::new());
+            debug_assert!(self.does_a_hold(k), "Bug in algorithm implementation found!!");
             self.print_progress(k);
             debug_assert_eq!(self.clauses.len(), (k + 2));
             match self.strengthen(k) {

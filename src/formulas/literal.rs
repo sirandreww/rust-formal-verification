@@ -74,9 +74,9 @@ impl Not for Literal {
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.is_negated() {
-            write!(f, "!x{}", self.get_number())
+            write!(f, "-{}", self.get_number())
         } else {
-            write!(f, "x{}", self.get_number())
+            write!(f, "{}", self.get_number())
         }
     }
 }

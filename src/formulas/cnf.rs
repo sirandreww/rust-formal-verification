@@ -3,7 +3,9 @@
 // ************************************************************************************************
 
 use crate::formulas::Clause;
-use std::{collections::HashSet, fmt};
+use std::{collections::HashSet, fmt, cmp::max};
+
+use super::literal::VariableType;
 
 // ************************************************************************************************
 // struct
@@ -11,6 +13,7 @@ use std::{collections::HashSet, fmt};
 
 #[derive(Clone)]
 pub struct CNF {
+    max_variable_number: VariableType,
     clauses: HashSet<Clause>,
 }
 
@@ -21,6 +24,7 @@ pub struct CNF {
 impl CNF {
     pub fn new() -> Self {
         Self {
+            max_variable_number: 0,
             clauses: HashSet::new(),
         }
     }
@@ -48,11 +52,15 @@ impl CNF {
     /// assert_eq!(cnf1.to_string(), "((x1 | x2 | x3) & (x1 | x2 | !x3) & (x1 | !x2 | x3) & (!x1 | x2 | x3))");
     /// ```
     pub fn add_clause(&mut self, new_clause: &Clause) {
-        // self.max_variable_number = max(
-        //     self.max_variable_number,
-        //     new_clause.get_highest_variable_number(),
-        // );
+        self.max_variable_number = max(
+            self.max_variable_number,
+            new_clause.get_highest_variable_number(),
+        );
         self.clauses.insert(new_clause.to_owned());
+    }
+
+    pub fn contains(&self, clause: &Clause) -> bool{
+        self.clauses.contains(clause)
     }
 
     /// Function that returns the number of clauses that are currently in the CNF.
@@ -163,6 +171,7 @@ impl CNF {
     /// assert_eq!(cnf1.len(), 4);
     /// ```
     pub fn append(&mut self, cnf: &CNF) {
+        self.max_variable_number = max(self.max_variable_number, cnf.max_variable_number);
         self.clauses.extend(cnf.clauses.to_owned());
     }
 }
@@ -206,6 +215,6 @@ impl fmt::Display for CNF {
             .map(|one_clause| one_clause.to_string())
             .collect::<Vec<String>>();
         // string_vec.sort();
-        write!(f, "({})", string_vec.join(" & "))
+        write!(f, "p cnf {} {}\n{}", self.max_variable_number, self.len(), string_vec.join("\n"))
     }
 }

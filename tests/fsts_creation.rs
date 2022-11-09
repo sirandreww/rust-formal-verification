@@ -15,7 +15,7 @@ mod tests {
     // use
     // ********************************************************************************************
 
-    use rust_formal_verification::models::{AndInverterGraph, FiniteStateTransitionSystem};
+    use rust_formal_verification::{models::{AndInverterGraph, FiniteStateTransitionSystem}, algorithms::formula_logic::is_a_and_b_satisfiable, solvers::sat::VarisatSolver};
     // use std::fs;
 
     use crate::common;
@@ -150,13 +150,25 @@ mod tests {
 
     #[test]
     fn read_all_aig_files_from_hwmcc20() {
+        let depth_to_test_for = 3;
+
         let file_paths = common::_get_paths_to_all_aig_and_corresponding_aag_files();
         for (aig_file_path, _) in file_paths {
             // make the test faster by only doing this with 5% of the files
             if common::_true_with_probability(0.05) {
                 println!("file_path = {}", aig_file_path);
                 let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-                let _fsts = FiniteStateTransitionSystem::from_aig(&aig);
+                let fsts = FiniteStateTransitionSystem::from_aig(&aig);
+                
+                // check that p and not !p cannot hold at the same time.
+                for depth in 0..depth_to_test_for{
+                    assert!(
+                        !is_a_and_b_satisfiable::<VarisatSolver>(
+                            &fsts.get_safety_property_for_some_depth(depth),
+                            &fsts.get_unsafety_property_for_some_depth(depth)
+                        )
+                    );
+                }
             }
         }
     }
