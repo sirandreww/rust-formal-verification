@@ -7,7 +7,7 @@ use std::fmt;
 use std::hash::Hash;
 use std::ops::Not;
 
-use super::Cube;
+use super::{Cube, CNF};
 use super::literal::VariableType;
 
 // ************************************************************************************************
@@ -47,6 +47,12 @@ impl Clause {
             Some(l) => l.get_number(),
             None => 0,
         }
+    }
+
+    pub fn to_cnf(&self) -> CNF {
+        let mut cnf = CNF::new();
+        cnf.add_clause(self);
+        cnf
     }
 }
 

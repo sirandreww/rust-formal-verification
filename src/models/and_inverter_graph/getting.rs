@@ -119,6 +119,27 @@ impl AndInverterGraph {
         self.constraints.clone()
     }
 
+    /// Function that gets a vector describing the output nodes in the system.
+    /// The output is a vector containing usize numbers, these are the literals
+    /// that are outputs of the AIG.
+    ///
+    /// # Arguments
+    ///
+    /// * `&self` - the AndInverterGraph desired.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_formal_verification::models::AndInverterGraph;
+    /// let file_path = "tests/examples/ours/counter.aig";
+    /// let aig = AndInverterGraph::from_aig_path(file_path);
+    /// let mut expected_result = Vec::<usize>::new();
+    /// expected_result.push(10);
+    /// assert_eq!(expected_result, aig.get_output_information());
+    /// ```
+    pub fn get_output_information(&self) -> Vec<usize> {
+        self.outputs.clone()
+    }
+
     // ********************************************************************************************
     // aig getting numbers
     // ********************************************************************************************
@@ -196,7 +217,7 @@ impl AndInverterGraph {
         desired_literals: &[usize],
     ) -> Vec<(usize, usize, usize)> {
         let mut and_gates: HashSet<(usize, usize, usize)> = HashSet::new();
-        assert!(and_gates.is_empty());
+        debug_assert!(and_gates.is_empty());
         let mut current_wanted_literals = desired_literals.to_owned();
         let mut i = 0;
         while i < current_wanted_literals.len() {

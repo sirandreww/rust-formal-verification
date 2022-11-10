@@ -97,6 +97,15 @@ impl<T: SatSolver + std::marker::Send + 'static + std::marker::Sync + Clone> BMC
         timeout_duration: Duration,
     ) -> BMCResult {
         let start = Instant::now();
+        // I
+        let initial = fin_state.get_initial_relation();
+        // !P
+        let mut not_p0 = fin_state.get_unsafety_property();
+        not_p0.append(&fin_state.get_state_and_property_connection_relation());
+        // Tr
+        let tr = fin_state.get_transition_relation();
+
+        // loop for wanted depth
         for depth in 0..(search_depth_limit + 1) {
             if self.verbose {
                 println!(
@@ -112,11 +121,11 @@ impl<T: SatSolver + std::marker::Send + 'static + std::marker::Sync + Clone> BMC
                 };
             }
 
-            let mut sat_formula = fin_state.get_initial_relation();
-            for unroll_depth in 1..(depth + 1) {
-                sat_formula.append(&fin_state.get_transition_relation_for_some_depth(unroll_depth));
+            let mut sat_formula = initial.to_owned();
+            for unroll_depth in 0..depth {
+                sat_formula.append(&fin_state.add_tags_to_relation(&tr, unroll_depth));
             }
-            sat_formula.append(&fin_state.get_unsafety_property_for_some_depth(depth));
+            sat_formula.append(&not_p0);
 
             let timed_response = self.timed_sat_call(sat_formula, &start, timeout_duration);
             match timed_response {

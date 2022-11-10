@@ -15,8 +15,6 @@ use std::{
     cmp::{max, Reverse},
 };
 
-use super::formula_logic::does_a_imply_b;
-
 // ********************************************************************************************
 // Enum
 // ********************************************************************************************
@@ -50,14 +48,14 @@ pub struct IC3<T> {
     fin_state: FiniteStateTransitionSystem,
     solver: T,
     rng: ThreadRng,
+    latch_literals: Vec<u32>,
+    _input_literals: Vec<u32>,
     // caching for speedup
     initial: CNF,
     transition: CNF,
     p0: CNF,
     not_p0: CNF,
     not_p1: CNF,
-    latch_literals: Vec<u32>,
-    _input_literals: Vec<u32>
 }
 
 // ************************************************************************************************
@@ -70,53 +68,53 @@ impl<T: SatSolver> IC3<T> {
     // assert
     // ********************************************************************************************
 
-    fn does_a_hold(&self, k: usize) -> bool{
-        println!("checking A");
+    // fn does_a_hold(&self, k: usize) -> bool{
+    //     println!("checking A");
         
-        for i in 0..self.clauses.len(){
-            let fi = self.get_fk(i);
-            if i == 0 {
+    //     for i in 0..self.clauses.len(){
+    //         let fi = self.get_fk(i);
+    //         if i == 0 {
 
-            }
-            // I => Fi
-            if !does_a_imply_b::<T>(&self.initial, &fi) {
-                panic!();
-            }
+    //         }
+    //         // I => Fi
+    //         if !does_a_imply_b::<T>(&self.initial, &fi) {
+    //             panic!();
+    //         }
 
-            // Fi => P
-            if !does_a_imply_b::<T>(&fi, &self.p0) {
-                println!("fi => P fails!");
-                println!("Fi = {}", fi);
-                println!("P  = {}", self.p0);
-                panic!();
-            }
+    //         // Fi => P
+    //         if !does_a_imply_b::<T>(&fi, &self.p0) {
+    //             println!("fi => P fails!");
+    //             println!("Fi = {}", fi);
+    //             println!("P  = {}", self.p0);
+    //             panic!();
+    //         }
 
-            // for all i > 0 clauses(Fi+1) is subset of clauses(Fi)
-            if 0 < i && i < (self.clauses.len() - 1){
-                for clause in self.clauses[i+1].iter(){
-                    if !self.clauses[i].contains(clause) {
-                        panic!();
-                    }
-                }
-            }
+    //         // for all i > 0 clauses(Fi+1) is subset of clauses(Fi)
+    //         if 0 < i && i < (self.clauses.len() - 1){
+    //             for clause in self.clauses[i+1].iter(){
+    //                 if !self.clauses[i].contains(clause) {
+    //                     panic!();
+    //                 }
+    //             }
+    //         }
 
-            // for all 0 <= i < k, Fi && T => Fi+1'
-            if i < k {
-                let mut fi_and_t = self.transition.to_owned();
-                fi_and_t.append(&fi);
-                if !does_a_imply_b::<T>(&fi_and_t, &self.fin_state.add_depth_to_property(&self.get_fk(i+1), 1)) {
-                    panic!();
-                }
-            }
+    //         // for all 0 <= i < k, Fi && T => Fi+1'
+    //         if i < k {
+    //             let mut fi_and_t = self.transition.to_owned();
+    //             fi_and_t.append(&fi);
+    //             if !does_a_imply_b::<T>(&fi_and_t, &self.fin_state.add_tags_to_relation(&self.get_fk(i+1), 1)) {
+    //                 panic!();
+    //             }
+    //         }
 
-            if i > k {
-                assert!(self.clauses[i].is_empty())
-            }
-        }
-        println!("checking A Done.");
+    //         if i > k {
+    //             assert!(self.clauses[i].is_empty())
+    //         }
+    //     }
+    //     println!("checking A Done.");
 
-        true
-    }
+    //     true
+    // }
 
     // ********************************************************************************************
     // helper functions
@@ -170,7 +168,7 @@ impl<T: SatSolver> IC3<T> {
                 cnf.append(
                     &self
                         .fin_state
-                        .add_depth_to_property(&(!(c.to_owned())).to_cnf(), 1),
+                        .add_tags_to_relation(&(!(c.to_owned())).to_cnf(), 1),
                 );
                 match self.solver.solve_cnf(&cnf) {
                     SatResponse::UnSat => {
@@ -213,7 +211,7 @@ impl<T: SatSolver> IC3<T> {
         new_cnf.append(&self.get_fk(i));
         new_cnf.append(&self.transition);
         new_cnf.add_clause(&!(s.to_owned()));
-        new_cnf.append(&self.fin_state.add_depth_to_property(&s.to_cnf(), 1));
+        new_cnf.append(&self.fin_state.add_tags_to_relation(&s.to_cnf(), 1));
         match self.solver.solve_cnf(&new_cnf) {
             SatResponse::UnSat => false,
             SatResponse::Sat { assignment: _ } => true,
@@ -238,7 +236,7 @@ impl<T: SatSolver> IC3<T> {
         second_cnf.append(
             &self
                 .fin_state
-                .add_depth_to_property(&(!d.to_owned()).to_cnf(), 1),
+                .add_tags_to_relation(&(!d.to_owned()).to_cnf(), 1),
         );
         match self.solver.solve_cnf(&second_cnf) {
             SatResponse::UnSat => true,
@@ -304,7 +302,7 @@ impl<T: SatSolver> IC3<T> {
         let mut new_cnf = CNF::new();
         new_cnf.append(&self.get_fk(i));
         new_cnf.append(&self.transition);
-        new_cnf.append(&self.fin_state.add_depth_to_property(&s.to_cnf(), 1));
+        new_cnf.append(&self.fin_state.add_tags_to_relation(&s.to_cnf(), 1));
         self.solver.solve_cnf(&new_cnf)
     }
 
@@ -406,16 +404,22 @@ impl<T: SatSolver> IC3<T> {
     // ********************************************************************************************
 
     pub fn new(fin_state: &FiniteStateTransitionSystem) -> Self {
+        let mut p0 = fin_state.get_state_and_property_connection_relation();
+        p0.append(&fin_state.get_safety_property());
+
+        let mut not_p0 = fin_state.get_state_and_property_connection_relation();
+        not_p0.append(&fin_state.get_unsafety_property());
+
         Self {
             clauses: Vec::new(),
             fin_state: fin_state.to_owned(),
             solver: T::default(),
             rng: thread_rng(),
             initial: fin_state.get_initial_relation(),
-            transition: fin_state.get_transition_relation_for_some_depth(1),
-            p0: fin_state.get_safety_property_for_some_depth(0),
-            not_p0: fin_state.get_unsafety_property_for_some_depth(0),
-            not_p1: fin_state.get_unsafety_property_for_some_depth(1),
+            transition: fin_state.get_transition_relation(),
+            p0: p0,
+            not_p0: not_p0.to_owned(),
+            not_p1: fin_state.add_tags_to_relation(&not_p0, 1),
             latch_literals: fin_state.get_state_literal_numbers(),
             _input_literals: fin_state.get_input_literal_numbers(),
         }
@@ -427,7 +431,7 @@ impl<T: SatSolver> IC3<T> {
             SatResponse::Sat { assignment: _ } => return IC3Result::CTX { depth: 0 },
             SatResponse::UnSat => (),
         }
-        debug_assert!(does_a_imply_b::<T>(&self.initial, &self.p0));
+        // debug_assert!(does_a_imply_b::<T>(&self.initial, &self.p0));
 
         let init_and_tr_and_not_p_tag = self.is_bad_reached_in_1_steps();
         match init_and_tr_and_not_p_tag {
@@ -439,7 +443,7 @@ impl<T: SatSolver> IC3<T> {
         self.clauses.push(CNF::new());
         for k in 1.. {
             self.clauses.push(CNF::new());
-            debug_assert!(self.does_a_hold(k), "Bug in algorithm implementation found!!");
+            // debug_assert!(self.does_a_hold(k), "Bug in algorithm implementation found!!");
             self.print_progress(k);
             debug_assert_eq!(self.clauses.len(), (k + 2));
             match self.strengthen(k) {

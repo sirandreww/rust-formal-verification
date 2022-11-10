@@ -28,15 +28,16 @@ mod tests {
         pub num_inputs: usize,
         pub num_latches: usize,
         pub num_variables: usize,
+        pub num_outputs: usize,
         pub num_bad: usize,
         pub num_constraints: usize,
     }
 
     fn print_table(table: &Vec<AigDetails>, max_size_of_file_path: usize) {
         println!("AIG files sorted");
-        let line = ("AIG file", "inputs", "latches", "wires", "bad", "const");
+        let line = ("AIG file", "inputs", "latches", "wires", "out", "bad", "const");
         println!(
-            "{}{}\t{}\t{}\t{}\t{}\t{}",
+            "{}{}\t,{}\t,{}\t,{}\t,{}\t,{}\t,{}",
             line.0,
             " ".to_string()
                 .repeat(max_size_of_file_path - line.0.chars().count()),
@@ -44,18 +45,20 @@ mod tests {
             line.2,
             line.3,
             line.4,
-            line.5
+            line.5,
+            line.6
         );
         let mut zero_const_files = Vec::new();
         for line in table {
             println!(
-                "{}{}\t{}\t{}\t{}\t{}\t{}",
+                "{}{}\t,{}\t,{}\t,{}\t,{}\t,{}\t,{}",
                 line.file_name,
                 " ".to_string()
                     .repeat(max_size_of_file_path - line.file_name.chars().count()),
                 line.num_inputs,
                 line.num_latches,
                 line.num_variables,
+                line.num_outputs,
                 line.num_bad,
                 line.num_constraints
             );
@@ -73,11 +76,13 @@ mod tests {
     #[test]
     fn read_all_aig_files_from_hwmcc20() {
         let file_paths = common::_get_paths_to_all_aig_and_corresponding_aag_files();
+        let probability_of_testing_each_file = 1.0;
+
         let mut table = Vec::new();
         let mut max_size_of_file_path = 0;
         for (aig_file_path, aag_file_path) in file_paths {
             // make the test faster by only doing this with 5% of the files
-            if common::_true_with_probability(0.05) {
+            if common::_true_with_probability(probability_of_testing_each_file) {
                 println!("file_path = {}", aig_file_path);
                 max_size_of_file_path = max(max_size_of_file_path, aig_file_path.chars().count());
                 let aig = AndInverterGraph::from_aig_path(&aig_file_path);
@@ -86,6 +91,7 @@ mod tests {
                     num_inputs: aig.get_input_information().len(),
                     num_latches: aig.get_latch_information().len(),
                     num_variables: aig.get_highest_variable_number(),
+                    num_outputs: aig.get_output_information().len(),
                     num_bad: aig.get_bad_information().len(),
                     num_constraints: aig.get_constraints_information().len(),
                 });

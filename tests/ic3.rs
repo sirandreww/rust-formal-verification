@@ -34,13 +34,13 @@ mod tests {
         assert!(does_a_imply_b::<T>(&init, inv_candidate), "Invariant does not cover all of init.");
 
         // check inv_candidate && Tr -> inv_candidate'
-        let mut a = fin_state.get_transition_relation_for_some_depth(1);
+        let mut a = fin_state.get_transition_relation();
         a.append(inv_candidate);
-        let b = fin_state.add_depth_to_property(inv_candidate, 1);
+        let b = fin_state.add_tags_to_relation(inv_candidate, 1);
         assert!(does_a_imply_b::<T>(&a, &b), "Invariant doesn't cover all of the reachable states.");
 
         // check inv_candidate -> p
-        assert!(does_a_imply_b::<T>(inv_candidate, &fin_state.get_safety_property_for_some_depth(0)), "Invariant isn't always safe.",);
+        assert!(does_a_imply_b::<T>(inv_candidate, &fin_state.get_safety_property()), "Invariant isn't always safe.",);
 
         println!("Invariant check passed!");
     }
@@ -101,7 +101,7 @@ mod tests {
             return;
         }
         let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
-        for aig_file_path in &file_paths[0..5] {
+        for aig_file_path in &file_paths[1..5] {
             println!("file_path = {}", aig_file_path);
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
