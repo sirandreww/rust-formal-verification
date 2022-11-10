@@ -8,7 +8,7 @@ use super::Assignment;
 // struct
 // ************************************************************************************************
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum SatResponse {
     Sat { assignment: Assignment },
     UnSat,

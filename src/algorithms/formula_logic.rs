@@ -61,7 +61,7 @@ pub fn does_a_imply_b<T: SatSolver>(a: &CNF, b: &CNF) -> bool {
     for c in b.iter() {
         let cube = !c.to_owned();
         let mut cnf_to_solve = cube.to_cnf();
-        cnf_to_solve.append(&a);
+        cnf_to_solve.append(a);
         let solver = T::default();
         match solver.solve_cnf(&cnf_to_solve) {
             SatResponse::Sat { assignment: _ } => {
@@ -75,14 +75,14 @@ pub fn does_a_imply_b<T: SatSolver>(a: &CNF, b: &CNF) -> bool {
 
 pub fn is_a_and_b_satisfiable<T: SatSolver>(a: &CNF, b: &CNF) -> bool {
     let mut cnf_to_solve = a.to_owned();
-    cnf_to_solve.append(&b);
+    cnf_to_solve.append(b);
     let solver = T::default();
     match solver.solve_cnf(&cnf_to_solve) {
         SatResponse::Sat { assignment: _ } => {
-            return true;
+            true
         }
         SatResponse::UnSat => {
-            return false;
+            false
         }
     }
 }
@@ -114,7 +114,7 @@ pub fn check_invariant<T: SatSolver>(fin_state: &FiniteStateTransitionSystem, in
     let mut bad = fin_state.get_unsafety_property();
     bad.append(&fin_state.get_state_to_properties_relation());
     assert!(
-        !is_a_and_b_satisfiable::<T>(&inv_candidate, &bad),
+        !is_a_and_b_satisfiable::<T>(inv_candidate, &bad),
         "Invariant isn't always safe.",
     );
 }

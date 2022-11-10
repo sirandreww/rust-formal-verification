@@ -186,7 +186,7 @@ impl<T: SatSolver> IC3<T> {
         for state_lit_num in &self.latch_literals {
             literals.push(
                 Literal::new(state_lit_num.to_owned())
-                    .negate_if_true(!assignment.get_value_of_variable(&state_lit_num)),
+                    .negate_if_true(!assignment.get_value_of_variable(state_lit_num)),
             )
         }
 
@@ -413,7 +413,7 @@ impl<T: SatSolver> IC3<T> {
             rng: thread_rng(),
             initial: fin_state.get_initial_relation(),
             transition: fin_state.get_transition_relation(),
-            p0: p0,
+            p0,
             not_p0: not_p0.to_owned(),
             not_p1: fin_state.add_tags_to_relation(&not_p0, 1),
             latch_literals: fin_state.get_state_literal_numbers(),
@@ -452,9 +452,10 @@ impl<T: SatSolver> IC3<T> {
             };
             self.propagate_clauses(k);
             for i in 1..(k + 1) {
+                // all clauses in i+1 should be in i.
                 debug_assert!(self.clauses[i + 1]
                     .iter()
-                    .all(|c| self.clauses[i].contains(&c)));
+                    .all(|c| self.clauses[i].contains(c)));
                 if self.clauses[i].len() == self.clauses[i + 1].len() {
                     // todo: compare just the lengths
                     self.print_progress(k);
