@@ -78,12 +78,8 @@ pub fn is_a_and_b_satisfiable<T: SatSolver>(a: &CNF, b: &CNF) -> bool {
     cnf_to_solve.append(b);
     let solver = T::default();
     match solver.solve_cnf(&cnf_to_solve) {
-        SatResponse::Sat { assignment: _ } => {
-            true
-        }
-        SatResponse::UnSat => {
-            false
-        }
+        SatResponse::Sat { assignment: _ } => true,
+        SatResponse::UnSat => false,
     }
 }
 
