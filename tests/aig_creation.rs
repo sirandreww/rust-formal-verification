@@ -76,7 +76,7 @@ mod tests {
     #[test]
     fn read_all_aig_files_from_hwmcc20() {
         let file_paths = common::_get_paths_to_all_aig_and_corresponding_aag_files();
-        let probability_of_testing_each_file = 1.0;
+        let probability_of_testing_each_file = 0.1;
 
         let mut table = Vec::new();
         let mut max_size_of_file_path = 0;

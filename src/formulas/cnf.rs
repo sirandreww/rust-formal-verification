@@ -49,7 +49,7 @@ impl CNF {
     /// cnf1.add_clause(&Clause::new(&vec![!l1, l2, l3]));
     /// cnf1.add_clause(&Clause::new(&vec![l1, !l2, l3]));
     /// cnf1.add_clause(&Clause::new(&vec![l1, l2, !l3]));
-    /// assert_eq!(cnf1.to_string(), "((x1 | x2 | x3) & (x1 | x2 | !x3) & (x1 | !x2 | x3) & (!x1 | x2 | x3))");
+    /// assert_eq!(cnf1.to_string(), "p cnf 3 4\n1 2 3 0\n1 2 -3 0\n1 -2 3 0\n-1 2 3 0");
     /// ```
     pub fn add_clause(&mut self, new_clause: &Clause) {
         self.max_variable_number = max(

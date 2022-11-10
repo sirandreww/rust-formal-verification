@@ -265,7 +265,7 @@ impl FiniteStateTransitionSystem {
     /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// let fsts = FiniteStateTransitionSystem::from_aig(&aig);
-    /// assert_eq!(fsts.get_initial_relation().to_string(), "((!x1) & (!x2) & (!x3))");
+    /// assert_eq!(fsts.get_initial_relation().to_string(), "p cnf 3 3\n-1 0\n-2 0\n-3 0");
     /// ```
     pub fn from_aig(aig: &AndInverterGraph) -> Self {
         let max_variable_number_as_usize = aig.get_highest_variable_number();
@@ -328,10 +328,10 @@ impl FiniteStateTransitionSystem {
     /// let aig = AndInverterGraph::from_aig_path(file_path);
     /// let fsts = FiniteStateTransitionSystem::from_aig(&aig);
     /// let mut tr_x_x_tag = CNF::default();
-    /// let tr_x_x_tag = fsts.get_transition_relation_for_some_depth(1);
+    /// let tr_x_x_tag = fsts.get_transition_relation();
     /// assert_eq!(
     ///     tr_x_x_tag.to_string(),
-    ///     "((x1 | !x7) & (!x1 | !x5) & (!x1 | x7) & (x2 | !x8) & (!x2 | !x4) & (!x2 | x8) & (!x3 | !x4) & (x4 | !x5) & (x5 | !x6) & (!x5 | x6) & (x1 | !x4 | x5) & (x2 | x3 | x4))"
+    ///     "p cnf 8 12\n1 -7 0\n-1 -5 0\n-1 7 0\n2 -8 0\n-2 -4 0\n-2 8 0\n-3 -4 0\n4 -5 0\n5 -6 0\n-5 6 0\n1 -4 5 0\n2 3 4 0"
     /// );
     /// ```
     pub fn get_transition_relation(&self) -> CNF {

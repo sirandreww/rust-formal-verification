@@ -240,11 +240,12 @@ mod tests {
     #[test]
     fn bmc_on_hwmcc20_only_unconstrained_problems() {
         let run_test = true;
+        let probability_of_test = 0.05;
         let mut number_of_solved = 0;
         if run_test {
             let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
             for aig_file_path in file_paths {
-                if common::_true_with_probability(0.05) {
+                if common::_true_with_probability(probability_of_test) {
                     let solved = bmc_test(&aig_file_path, &None, None, 10, 20, false, false);
                     number_of_solved += if solved { 1 } else { 0 };
                 }
