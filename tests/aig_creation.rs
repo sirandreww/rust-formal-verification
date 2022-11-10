@@ -35,7 +35,7 @@ mod tests {
 
     fn print_table(table: &Vec<AigDetails>, max_size_of_file_path: usize) {
         println!("AIG files sorted");
-        let line = ("AIG file", "inputs", "latches", "wires", "out", "bad", "const");
+        let line = ("AIG file", "input", "latch", "wires", "out", "bad", "const");
         println!(
             "{}{}\t,{}\t,{}\t,{}\t,{}\t,{}\t,{}",
             line.0,
@@ -66,7 +66,7 @@ mod tests {
                 zero_const_files.push(&line.file_name);
             }
         }
-        println!("{:?}", zero_const_files);
+        // println!("{:?}", zero_const_files);
     }
 
     // ********************************************************************************************

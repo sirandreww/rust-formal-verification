@@ -31,6 +31,8 @@ mod tests {
     fn check_invariant<T: SatSolver>(fin_state: &FiniteStateTransitionSystem, inv_candidate: &CNF) {
         // check INIT -> inv_candidate
         let init = fin_state.get_initial_relation();
+        println!("init = {}", init);
+        println!("inv_candidate = {}", inv_candidate);
         assert!(does_a_imply_b::<T>(&init, inv_candidate), "Invariant does not cover all of init.");
 
         // check inv_candidate && Tr -> inv_candidate'

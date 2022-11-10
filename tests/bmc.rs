@@ -197,12 +197,6 @@ mod tests {
             &Some(Assignment::from_dimacs_assignment(&[
                 -1, -2, -3, 4, 5, 6, -7, -8, 9, -10, -11, 12, -13, -14, -15, -16, -17, 18,
             ])),
-            // ![
-            //     1 => false, 2 => false, 3 => false, 4 => true, 5 => true,
-            //     6 => true, 7 => false, 8 => false, 9 => true, 10 => false,
-            //     11 =>false, 12 => true, 13 => false, 14 => false, 15 => false,
-            //     16 => false, 17 => false, 18 => true
-            // ],
             Some(3),
             5,
             10,
@@ -245,7 +239,7 @@ mod tests {
 
     #[test]
     fn bmc_on_hwmcc20_only_unconstrained_problems() {
-        let run_test = false;
+        let run_test = true;
         let mut number_of_solved = 0;
         if run_test {
             let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
