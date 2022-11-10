@@ -11,9 +11,7 @@ use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use std::{
-    cmp::{max, Reverse},
-};
+use std::cmp::{max, Reverse};
 
 // ********************************************************************************************
 // Enum
@@ -63,14 +61,13 @@ pub struct IC3<T> {
 // ************************************************************************************************
 
 impl<T: SatSolver> IC3<T> {
-
     // ********************************************************************************************
     // assert
     // ********************************************************************************************
 
     // fn does_a_hold(&self, k: usize) -> bool{
     //     println!("checking A");
-        
+
     //     for i in 0..self.clauses.len(){
     //         let fi = self.get_fk(i);
     //         if i == 0 {
@@ -185,7 +182,6 @@ impl<T: SatSolver> IC3<T> {
 
     fn extract_predecessor_from_assignment(&self, assignment: &Assignment) -> Cube {
         let mut literals = Vec::new();
-        
 
         for state_lit_num in &self.latch_literals {
             literals.push(
@@ -456,8 +452,11 @@ impl<T: SatSolver> IC3<T> {
             };
             self.propagate_clauses(k);
             for i in 1..(k + 1) {
-                debug_assert!(self.clauses[i + 1].iter().all(|c| self.clauses[i].contains(&c)));
-                if self.clauses[i].len() == self.clauses[i + 1].len() { // todo: compare just the lengths
+                debug_assert!(self.clauses[i + 1]
+                    .iter()
+                    .all(|c| self.clauses[i].contains(&c)));
+                if self.clauses[i].len() == self.clauses[i + 1].len() {
+                    // todo: compare just the lengths
                     self.print_progress(k);
                     return IC3Result::Proof {
                         invariant: self.get_fk(i),

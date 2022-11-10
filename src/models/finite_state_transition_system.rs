@@ -5,7 +5,7 @@
 use crate::formulas::literal::VariableType;
 use crate::formulas::{Clause, Literal, CNF};
 use crate::models::AndInverterGraph;
-use crate::solvers::sat::{VarisatSolver, SatResponse};
+use crate::solvers::sat::{SatResponse, VarisatSolver};
 
 // ************************************************************************************************
 // struct
@@ -34,7 +34,7 @@ impl FiniteStateTransitionSystem {
     fn new(
         initial_states: CNF,
         transition: CNF,
-        state_and_property_connection: CNF, 
+        state_and_property_connection: CNF,
         unsafety_property: Clause,
         max_literal_number: VariableType,
         state_literals: Vec<VariableType>,
@@ -174,9 +174,9 @@ impl FiniteStateTransitionSystem {
 
     fn create_state_and_property_connection(aig: &AndInverterGraph) -> CNF {
         let mut important_wires = Vec::new();
-        important_wires.append(& mut aig.get_bad_information());
-        important_wires.append(& mut aig.get_constraints_information());
-        important_wires.append(& mut aig.get_output_information());
+        important_wires.append(&mut aig.get_bad_information());
+        important_wires.append(&mut aig.get_constraints_information());
+        important_wires.append(&mut aig.get_output_information());
 
         Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(
             aig,
@@ -187,7 +187,6 @@ impl FiniteStateTransitionSystem {
     fn create_unsafety_property(aig: &AndInverterGraph) -> Clause {
         let bad_info = aig.get_bad_information();
         if !bad_info.is_empty() {
-            
             let mut unsafe_literals = Vec::new();
             for bad_literal in bad_info {
                 let b_lit = Self::get_literal_from_aig_literal(bad_literal);
@@ -352,6 +351,9 @@ impl FiniteStateTransitionSystem {
     }
 
     pub fn add_tags_to_relation(&self, relation: &CNF, number_of_tags: VariableType) -> CNF {
-        Self::bump_all_cnf_variables_by_some_number(relation, self.max_literal_number * number_of_tags)
+        Self::bump_all_cnf_variables_by_some_number(
+            relation,
+            self.max_literal_number * number_of_tags,
+        )
     }
 }

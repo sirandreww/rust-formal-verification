@@ -108,7 +108,6 @@ impl<T: SatSolver + std::marker::Send + 'static + std::marker::Sync + Clone> BMC
         let tr = fin_state.get_transition_relation();
         // println!("tr = {}", tr);
 
-
         // loop for wanted depth
         for depth in 0..(search_depth_limit + 1) {
             if self.verbose {

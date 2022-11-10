@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::formulas::Clause;
-use std::{collections::HashSet, fmt, cmp::max};
+use std::{cmp::max, collections::HashSet, fmt};
 
 use super::literal::VariableType;
 
@@ -59,7 +59,7 @@ impl CNF {
         self.clauses.insert(new_clause.to_owned());
     }
 
-    pub fn contains(&self, clause: &Clause) -> bool{
+    pub fn contains(&self, clause: &Clause) -> bool {
         self.clauses.contains(clause)
     }
 
@@ -215,6 +215,12 @@ impl fmt::Display for CNF {
             .map(|one_clause| one_clause.to_string())
             .collect::<Vec<String>>();
         // string_vec.sort();
-        write!(f, "p cnf {} {}\n{}", self.max_variable_number, self.len(), string_vec.join("\n"))
+        write!(
+            f,
+            "p cnf {} {}\n{}",
+            self.max_variable_number,
+            self.len(),
+            string_vec.join("\n")
+        )
     }
 }

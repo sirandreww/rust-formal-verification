@@ -7,8 +7,8 @@ use std::fmt;
 use std::hash::Hash;
 use std::ops::Not;
 
-use super::{Cube, CNF};
 use super::literal::VariableType;
+use super::{Cube, CNF};
 
 // ************************************************************************************************
 // struct
@@ -42,8 +42,8 @@ impl Clause {
         self.literals.iter()
     }
 
-    pub fn get_highest_variable_number(&self) -> VariableType{
-        match self.literals.last(){
+    pub fn get_highest_variable_number(&self) -> VariableType {
+        match self.literals.last() {
             Some(l) => l.get_number(),
             None => 0,
         }

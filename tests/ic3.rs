@@ -18,7 +18,7 @@ mod tests {
     use std::time;
 
     use rust_formal_verification::{
-        algorithms::{ic3::IC3Result, IC3, formula_logic::{check_invariant}},
+        algorithms::{formula_logic::check_invariant, ic3::IC3Result, IC3},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{CadicalSolver, SatSolver, SplrSolver, VarisatSolver},
     };

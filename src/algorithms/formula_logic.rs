@@ -3,8 +3,9 @@
 // ************************************************************************************************
 
 use crate::{
-    formulas::{CNF},
-    solvers::sat::{SatResponse, SatSolver}, models::FiniteStateTransitionSystem,
+    formulas::CNF,
+    models::FiniteStateTransitionSystem,
+    solvers::sat::{SatResponse, SatSolver},
 };
 
 // ************************************************************************************************
@@ -20,7 +21,7 @@ use crate::{
 // ************************************************************************************************
 
 /// Functions that returns true iff a -> b.
-/// 
+///
 /// # Arguments
 ///
 /// * `a` - CNF formula.
@@ -38,7 +39,7 @@ use crate::{
 /// let l4 = Literal::new(4);
 /// let l5 = Literal::new(5);
 /// let l6 = Literal::new(6);
-/// 
+///
 /// let mut all_literals_are_equal = CNF::default();
 /// all_literals_are_equal.add_clause(&Clause::new(&[l1, !l2]));
 /// all_literals_are_equal.add_clause(&Clause::new(&[l2, !l3]));
@@ -92,19 +93,28 @@ pub fn check_invariant<T: SatSolver>(fin_state: &FiniteStateTransitionSystem, in
     let mut init = fin_state.get_initial_relation();
     init.append(&fin_state.get_state_to_properties_relation());
     // println!("init = {}", init);
-    
-    assert!(does_a_imply_b::<T>(&init, inv_candidate), "Invariant does not cover all of init.");
+
+    assert!(
+        does_a_imply_b::<T>(&init, inv_candidate),
+        "Invariant does not cover all of init."
+    );
 
     // check inv_candidate && Tr -> inv_candidate'
     let mut a = fin_state.get_transition_relation();
     a.append(inv_candidate);
     a.append(&fin_state.get_state_to_properties_relation());
-    a.append( &fin_state.add_tags_to_relation(&fin_state.get_state_to_properties_relation(), 1) );
+    a.append(&fin_state.add_tags_to_relation(&fin_state.get_state_to_properties_relation(), 1));
     let b = fin_state.add_tags_to_relation(inv_candidate, 1);
-    assert!(does_a_imply_b::<T>(&a, &b), "Invariant doesn't cover all of the reachable states.");
+    assert!(
+        does_a_imply_b::<T>(&a, &b),
+        "Invariant doesn't cover all of the reachable states."
+    );
 
     // check inv_candidate ^ !p is un-sat
     let mut bad = fin_state.get_unsafety_property();
     bad.append(&fin_state.get_state_to_properties_relation());
-    assert!(!is_a_and_b_satisfiable::<T>(&inv_candidate, &bad), "Invariant isn't always safe.",);
+    assert!(
+        !is_a_and_b_satisfiable::<T>(&inv_candidate, &bad),
+        "Invariant isn't always safe.",
+    );
 }
