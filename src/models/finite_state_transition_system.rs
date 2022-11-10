@@ -339,7 +339,7 @@ impl FiniteStateTransitionSystem {
         self.transition.to_owned()
     }
 
-    pub fn get_state_and_property_connection_relation(&self) -> CNF {
+    pub fn get_state_to_properties_relation(&self) -> CNF {
         self.state_and_property_connection.to_owned()
     }
 

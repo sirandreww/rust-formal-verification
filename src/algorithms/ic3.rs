@@ -404,10 +404,10 @@ impl<T: SatSolver> IC3<T> {
     // ********************************************************************************************
 
     pub fn new(fin_state: &FiniteStateTransitionSystem) -> Self {
-        let mut p0 = fin_state.get_state_and_property_connection_relation();
+        let mut p0 = fin_state.get_state_to_properties_relation();
         p0.append(&fin_state.get_safety_property());
 
-        let mut not_p0 = fin_state.get_state_and_property_connection_relation();
+        let mut not_p0 = fin_state.get_state_to_properties_relation();
         not_p0.append(&fin_state.get_unsafety_property());
 
         Self {
@@ -456,7 +456,8 @@ impl<T: SatSolver> IC3<T> {
             };
             self.propagate_clauses(k);
             for i in 1..(k + 1) {
-                if self.clauses[i] == self.clauses[i + 1] {
+                debug_assert!(self.clauses[i + 1].iter().all(|c| self.clauses[i].contains(&c)));
+                if self.clauses[i].len() == self.clauses[i + 1].len() { // todo: compare just the lengths
                     self.print_progress(k);
                     return IC3Result::Proof {
                         invariant: self.get_fk(i),
