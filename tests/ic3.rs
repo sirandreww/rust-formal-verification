@@ -30,7 +30,7 @@ mod tests {
     // ********************************************************************************************
 
     fn test_ic3<T: SatSolver>(fin_state: &FiniteStateTransitionSystem, _aig: &AndInverterGraph) {
-        let mut ic3_solver = IC3::<T>::new(fin_state);
+        let mut ic3_solver = IC3::<T>::new(fin_state, true);
         let start_time = time::Instant::now();
         let prove_result = ic3_solver.prove();
         let duration = start_time.elapsed();
@@ -85,16 +85,16 @@ mod tests {
 
     #[test]
     fn ic3_on_first_few_hwmcc20_unconstrained_problems() {
-        let run_test = false;
+        let run_test = true;
         if !run_test {
             return;
         }
 
         let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
-        let number_of_tests_to_do = 5;
+        let easy_problems = vec![1, 2, 5, 8, 9, 10, 13];
 
-        for aig_file_path in &file_paths[0..number_of_tests_to_do] {
-            println!("file_path = {}", aig_file_path);
+        for (i, aig_file_path) in file_paths.iter().enumerate().filter(|(i, _)| easy_problems.contains(i)) {
+            println!("i = {}, file_path = {}", i, aig_file_path);
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
             // test_ic3::<SplrSolver>(&fin_state, &aig);

@@ -54,6 +54,8 @@ pub struct IC3<T> {
     p0: CNF,
     not_p0: CNF,
     not_p1: CNF,
+    // for printing
+    verbose:bool,
 }
 
 // ************************************************************************************************
@@ -399,7 +401,7 @@ impl<T: SatSolver> IC3<T> {
     // API functions
     // ********************************************************************************************
 
-    pub fn new(fin_state: &FiniteStateTransitionSystem) -> Self {
+    pub fn new(fin_state: &FiniteStateTransitionSystem, verbose:bool) -> Self {
         let mut p0 = fin_state.get_state_to_properties_relation();
         p0.append(&fin_state.get_safety_property());
 
@@ -418,6 +420,7 @@ impl<T: SatSolver> IC3<T> {
             not_p1: fin_state.add_tags_to_relation(&not_p0, 1),
             latch_literals: fin_state.get_state_literal_numbers(),
             _input_literals: fin_state.get_input_literal_numbers(),
+            verbose,
         }
     }
 
@@ -440,7 +443,9 @@ impl<T: SatSolver> IC3<T> {
         for k in 1.. {
             self.clauses.push(CNF::new());
             // debug_assert!(self.does_a_hold(k), "Bug in algorithm implementation found!!");
-            self.print_progress(k);
+            if self.verbose {
+                self.print_progress(k);
+            }
             debug_assert_eq!(self.clauses.len(), (k + 2));
             match self.strengthen(k) {
                 StrengthenResult::Success => {}
@@ -458,7 +463,9 @@ impl<T: SatSolver> IC3<T> {
                     .all(|c| self.clauses[i].contains(c)));
                 if self.clauses[i].len() == self.clauses[i + 1].len() {
                     // todo: compare just the lengths
-                    self.print_progress(k);
+                    if self.verbose {
+                        self.print_progress(k);
+                    }
                     return IC3Result::Proof {
                         invariant: self.get_fk(i),
                     };
