@@ -93,7 +93,11 @@ mod tests {
         let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
         let easy_problems = vec![1, 2, 5, 8, 9, 10, 13];
 
-        for (i, aig_file_path) in file_paths.iter().enumerate().filter(|(i, _)| easy_problems.contains(i)) {
+        for (i, aig_file_path) in file_paths
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| easy_problems.contains(i))
+        {
             println!("i = {}, file_path = {}", i, aig_file_path);
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig);

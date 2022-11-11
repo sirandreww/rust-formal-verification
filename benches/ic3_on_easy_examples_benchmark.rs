@@ -2,18 +2,16 @@
 // use declaration
 // ************************************************************************************************
 
-use::criterion::{
-    black_box,
-    criterion_group,
-    criterion_main,
-    Criterion
+use ::criterion::{black_box, criterion_group, criterion_main, Criterion};
+use rust_formal_verification::{
+    algorithms::IC3,
+    models::{AndInverterGraph, FiniteStateTransitionSystem},
+    solvers::sat::VarisatSolver,
 };
-use rust_formal_verification::{solvers::sat::{VarisatSolver}, models::{FiniteStateTransitionSystem, AndInverterGraph}, algorithms::{IC3}};
 
 // ************************************************************************************************
 // helper functions
 // ************************************************************************************************
-
 
 // ************************************************************************************************
 // benchmark
@@ -29,10 +27,8 @@ fn ic3_on_first_few_hwmcc20_unconstrained_problems(c: &mut Criterion) {
         ]
     );
 
-
-    c.bench_function(
-        "ic3 on short tests", 
-        |b| b.iter(|| {
+    c.bench_function("ic3 on short tests", |b| {
+        b.iter(|| {
             for aig_file_path in &file_paths {
                 let aig = AndInverterGraph::from_aig_path(&aig_file_path);
                 let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
@@ -40,7 +36,7 @@ fn ic3_on_first_few_hwmcc20_unconstrained_problems(c: &mut Criterion) {
                 ic3_solver.prove();
             }
         })
-    );
+    });
 }
 
 // ************************************************************************************************

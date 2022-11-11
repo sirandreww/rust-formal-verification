@@ -55,7 +55,7 @@ pub struct IC3<T> {
     not_p0: CNF,
     not_p1: CNF,
     // for printing
-    verbose:bool,
+    verbose: bool,
 }
 
 // ************************************************************************************************
@@ -401,7 +401,7 @@ impl<T: SatSolver> IC3<T> {
     // API functions
     // ********************************************************************************************
 
-    pub fn new(fin_state: &FiniteStateTransitionSystem, verbose:bool) -> Self {
+    pub fn new(fin_state: &FiniteStateTransitionSystem, verbose: bool) -> Self {
         let mut p0 = fin_state.get_state_to_properties_relation();
         p0.append(&fin_state.get_safety_property());
 
