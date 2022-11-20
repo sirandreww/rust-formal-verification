@@ -52,7 +52,7 @@ def unfold_aigs():
             path_to_out_file = '/'.join(out_file_parsed[:-1])
             print(path_to_out_file)
             Path(path_to_out_file).mkdir(parents=True, exist_ok=True)
-            run_cmd(f'./abc -c "read {file_path}; zero ; fold ; write_aiger {out_file}"')
+            run_cmd(f'./abc -c "read {file_path}; zero ; fold2 ; write_aiger {out_file}"')
             # return
 
 """
