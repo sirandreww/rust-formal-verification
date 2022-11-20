@@ -44,7 +44,7 @@ impl FiniteStateTransitionSystem {
     /// use rust_formal_verification::formulas::CNF;
     /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
-    /// let fsts = FiniteStateTransitionSystem::from_aig(&aig);
+    /// let fsts = FiniteStateTransitionSystem::from_aig(&aig, false);
     /// let mut tr_x_x_tag = CNF::default();
     /// let tr_x_x_tag = fsts.get_transition_relation();
     /// assert_eq!(
