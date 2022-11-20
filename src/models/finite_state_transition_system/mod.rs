@@ -27,14 +27,10 @@ pub struct FiniteStateTransitionSystem {
 // ************************************************************************************************
 
 pub mod construction;
-// pub mod conversion;
 pub mod getting;
-// pub mod simulation;
-
-// mod aig_node;
+pub mod features;
 
 // ************************************************************************************************
 // re-exports of structs in these modules to simplify paths for other imports
 // ************************************************************************************************
 
-// pub use simulation::AIGSimulationResult;
