@@ -37,9 +37,6 @@ impl FiniteStateTransitionSystem {
     /// # Arguments
     ///
     /// * `self: &FiniteStateTransitionSystem` - the FiniteStateTransitionSystem desired.
-    /// * `depth: u32` - the number of tags desire, for example for Tr(X, X') this would be 1
-    ///                  for Tr(X', X'') this would be 2 and so on.
-    /// * `cnf_to_add_to: &mut CNF` - cnf that the result would be added to for performance reasons.
     ///
     /// # Examples
     /// ```
