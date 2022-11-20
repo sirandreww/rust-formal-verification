@@ -15,7 +15,7 @@ use crate::formulas::{literal::VariableType, Clause, CNF};
 pub struct FiniteStateTransitionSystem {
     initial_states: CNF,
     transition: CNF,
-    state_and_property_connection: CNF,
+    state_to_safety_translation: CNF,
     unsafety_property: Clause,
     max_literal_number: VariableType,
     state_literals: Vec<VariableType>,

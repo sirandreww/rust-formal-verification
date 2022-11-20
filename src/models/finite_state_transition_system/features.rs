@@ -2,8 +2,10 @@
 // use
 // ************************************************************************************************
 
+use crate::algorithms::formula_logic::{does_a_imply_b, is_a_and_b_satisfiable};
 use crate::formulas::literal::VariableType;
 use crate::formulas::{Clause, Literal, CNF};
+use crate::solvers::sat::SatSolver;
 
 use super::FiniteStateTransitionSystem;
 
@@ -52,5 +54,37 @@ impl FiniteStateTransitionSystem {
             relation,
             self.max_literal_number * number_of_tags,
         )
+    }
+
+    pub fn check_invariant<T: SatSolver>(&self, inv_candidate: &CNF) {
+        // println!("inv_candidate = {}", inv_candidate);
+        // check INIT -> inv_candidate
+        let mut init = self.get_initial_relation();
+        init.append(&self.get_state_to_safety_translation());
+        // println!("init = {}", init);
+
+        assert!(
+            does_a_imply_b::<T>(&init, inv_candidate),
+            "Invariant does not cover all of init."
+        );
+
+        // check inv_candidate && Tr -> inv_candidate'
+        let mut a = self.get_transition_relation();
+        a.append(inv_candidate);
+        a.append(&self.get_state_to_safety_translation());
+        a.append(&self.add_tags_to_relation(&self.get_state_to_safety_translation(), 1));
+        let b = self.add_tags_to_relation(inv_candidate, 1);
+        assert!(
+            does_a_imply_b::<T>(&a, &b),
+            "Invariant doesn't cover all of the reachable states."
+        );
+
+        // check inv_candidate ^ !p is un-sat
+        let mut bad = self.get_unsafety_property();
+        bad.append(&self.get_state_to_safety_translation());
+        assert!(
+            !is_a_and_b_satisfiable::<T>(inv_candidate, &bad),
+            "Invariant isn't always safe.",
+        );
     }
 }

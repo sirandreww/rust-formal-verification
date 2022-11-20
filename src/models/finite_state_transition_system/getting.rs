@@ -56,8 +56,8 @@ impl FiniteStateTransitionSystem {
         self.transition.to_owned()
     }
 
-    pub fn get_state_to_properties_relation(&self) -> CNF {
-        self.state_and_property_connection.to_owned()
+    pub fn get_state_to_safety_translation(&self) -> CNF {
+        self.state_to_safety_translation.to_owned()
     }
 
     pub fn get_safety_property(&self) -> CNF {

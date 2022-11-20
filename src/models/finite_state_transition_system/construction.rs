@@ -21,7 +21,7 @@ impl FiniteStateTransitionSystem {
     fn new(
         initial_states: CNF,
         transition: CNF,
-        state_and_property_connection: CNF,
+        state_to_safety_translation: CNF,
         unsafety_property: Clause,
         max_literal_number: VariableType,
         state_literals: Vec<VariableType>,
@@ -30,7 +30,7 @@ impl FiniteStateTransitionSystem {
         Self {
             initial_states,
             transition,
-            state_and_property_connection,
+            state_to_safety_translation,
             unsafety_property,
             max_literal_number,
             state_literals,
@@ -142,11 +142,20 @@ impl FiniteStateTransitionSystem {
         latches_to_wires
     }
 
-    fn create_state_and_property_connection(aig: &AndInverterGraph) -> CNF {
+    fn create_state_to_safety_translation(
+        aig: &AndInverterGraph,
+        assume_output_is_bad: bool,
+    ) -> CNF {
         let mut important_wires = Vec::new();
         important_wires.append(&mut aig.get_bad_information());
+
+        // this should be empty because constrained problem are not supported as of now.
         important_wires.append(&mut aig.get_constraints_information());
-        important_wires.append(&mut aig.get_output_information());
+
+        // this is here because sometimes we consider output to be bad
+        if assume_output_is_bad {
+            important_wires.append(&mut aig.get_output_information());
+        }
 
         Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(
             aig,
@@ -154,8 +163,14 @@ impl FiniteStateTransitionSystem {
         )
     }
 
-    fn create_unsafety_property(aig: &AndInverterGraph) -> Clause {
-        let bad_info = aig.get_bad_information();
+    fn create_unsafety_property(aig: &AndInverterGraph, assume_output_is_bad: bool) -> Clause {
+        // take all bad into consideration
+        let mut bad_info = aig.get_bad_information();
+        if assume_output_is_bad {
+            bad_info.append(&mut aig.get_output_information());
+        }
+
+        // split to 2 cases, depending on if empty or not.
         if !bad_info.is_empty() {
             let mut unsafe_literals = Vec::new();
             for bad_literal in bad_info {
@@ -166,8 +181,10 @@ impl FiniteStateTransitionSystem {
         } else {
             // the empty clause is un-sat when turned into cnf
             let result = Clause::new(&[]);
-            let not_p = result.to_cnf();
-            debug_assert!(VarisatSolver::default().solve_cnf(&not_p) == SatResponse::UnSat);
+            debug_assert!(
+                VarisatSolver::default().solve_cnf(&result.to_cnf()) == SatResponse::UnSat
+            );
+            // debug_assert!(VarisatSolver::default().solve_cnf(&(!result.to_owned()).to_cnf()) == SatResponse::Sat { assignment: Assignment::from_dimacs_assignment });
             // let p = (!result).to_cnf();
             result
         }
@@ -207,30 +224,35 @@ impl FiniteStateTransitionSystem {
     /// use rust_formal_verification::models::{AndInverterGraph, FiniteStateTransitionSystem};
     /// let file_path = "tests/examples/ours/counter.aig";
     /// let aig = AndInverterGraph::from_aig_path(file_path);
-    /// let fsts = FiniteStateTransitionSystem::from_aig(&aig);
+    /// let fsts = FiniteStateTransitionSystem::from_aig(&aig, false);
     /// assert_eq!(fsts.get_initial_relation().to_string(), "p cnf 3 3\n-1 0\n-2 0\n-3 0");
     /// ```
-    pub fn from_aig(aig: &AndInverterGraph) -> Self {
+    pub fn from_aig(aig: &AndInverterGraph, assume_output_is_bad: bool) -> Self {
+        // perform some checks first
         let max_variable_number_as_usize = aig.get_highest_variable_number();
         assert!(
             max_variable_number_as_usize < (u32::MAX >> 1).try_into().unwrap(),
             "AIG has variables with numbers that are too high (too many variables)."
         );
-        if !aig.get_constraints_information().is_empty() {
-            // eprintln!("Warning: Making 'FiniteStateTransitionSystem' from aig with constraints, constraints are not yet supported, they will simply be ignored.");
-            println!("Warning: Making 'FiniteStateTransitionSystem' from aig with constraints, constraints are not yet supported, they will simply be ignored.");
-        }
+        assert!(
+            aig.get_constraints_information().is_empty(),
+            "Making 'FiniteStateTransitionSystem' from aig with constraints is not supported.\nTry folding the AIG with another tool First"
+        );
+
+        // make formulas
         let max_literal_number: VariableType = max_variable_number_as_usize.try_into().unwrap();
         let (input_literals, state_literals) = Self::create_input_and_state_literal_numbers(aig);
         let initial_states: CNF = Self::create_initial_cnf(aig);
         let transition: CNF = Self::create_transition_cnf(aig, max_literal_number);
-        // let safety_property: CNF = Self::create_safety_property(aig);
-        let state_and_property_connection: CNF = Self::create_state_and_property_connection(aig);
-        let unsafety_property: Clause = Self::create_unsafety_property(aig);
+        let state_to_safety_translation: CNF =
+            Self::create_state_to_safety_translation(aig, assume_output_is_bad);
+        let unsafety_property: Clause = Self::create_unsafety_property(aig, assume_output_is_bad);
+
+        // create object
         Self::new(
             initial_states,
             transition,
-            state_and_property_connection,
+            state_to_safety_translation,
             unsafety_property,
             max_literal_number,
             state_literals,

@@ -31,7 +31,7 @@ fn ic3_on_first_few_hwmcc20_unconstrained_problems(c: &mut Criterion) {
         b.iter(|| {
             for aig_file_path in &file_paths {
                 let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-                let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+                let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
                 let mut ic3_solver = IC3::<VarisatSolver>::new(&fin_state, false);
                 ic3_solver.prove();
             }

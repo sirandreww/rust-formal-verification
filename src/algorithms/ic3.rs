@@ -402,10 +402,10 @@ impl<T: SatSolver> IC3<T> {
     // ********************************************************************************************
 
     pub fn new(fin_state: &FiniteStateTransitionSystem, verbose: bool) -> Self {
-        let mut p0 = fin_state.get_state_to_properties_relation();
+        let mut p0 = fin_state.get_state_to_safety_translation();
         p0.append(&fin_state.get_safety_property());
 
-        let mut not_p0 = fin_state.get_state_to_properties_relation();
+        let mut not_p0 = fin_state.get_state_to_safety_translation();
         not_p0.append(&fin_state.get_unsafety_property());
 
         Self {

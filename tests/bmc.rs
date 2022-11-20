@@ -112,7 +112,7 @@ mod tests {
         println!("{}", aig_path);
         let start = Instant::now();
         let aig = AndInverterGraph::from_aig_path(aig_path);
-        let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+        let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
 
         let bmc = BMC::<SplrSolver>::new(true);
         let res = bmc.search(
