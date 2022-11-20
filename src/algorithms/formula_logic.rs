@@ -4,7 +4,6 @@
 
 use crate::{
     formulas::CNF,
-    models::FiniteStateTransitionSystem,
     solvers::sat::{SatResponse, SatSolver},
 };
 
