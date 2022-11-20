@@ -27,10 +27,9 @@ pub struct FiniteStateTransitionSystem {
 // ************************************************************************************************
 
 pub mod construction;
-pub mod getting;
 pub mod features;
+pub mod getting;
 
 // ************************************************************************************************
 // re-exports of structs in these modules to simplify paths for other imports
 // ************************************************************************************************
-
