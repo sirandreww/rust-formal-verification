@@ -344,7 +344,8 @@ impl AndInverterGraph {
             if line_as_string == "c" {
                 // comment segment started, we can read this till the end and return
                 let rest_of_comments = &lines[index..].join(&b'\n');
-                let comment_section_as_is = std::str::from_utf8(&rest_of_comments).unwrap().to_string();
+                let comment_section_as_is =
+                    std::str::from_utf8(&rest_of_comments).unwrap().to_string();
                 self.comments = comment_section_as_is.replace(&char::from(0).to_string(), "");
                 break;
             } else {
