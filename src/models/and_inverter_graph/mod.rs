@@ -33,6 +33,9 @@ pub struct AndInverterGraph {
     outputs: Vec<usize>,
     bad: Vec<usize>,
     constraints: Vec<usize>,
+
+    // comments
+    comments: String,
 }
 
 // ************************************************************************************************
