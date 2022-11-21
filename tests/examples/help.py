@@ -21,8 +21,8 @@ def get_all_file_paths_in_dir_recursively(rootdir: str):
             result += [file_path]
     return result
 
-def is_path_aig(file_path):
-    return file_path[-4:] == ".aig"
+def is_path_aig_and_not_folded(file_path):
+    return (file_path[-4:] == ".aig") and ("_folded" not in file_path)
 
 def run_cmd(cmd: str):
     print(cmd)
@@ -37,7 +37,7 @@ functions
 
 def convert_aigs_to_aag():
     for file_path in get_all_file_paths_in_dir_recursively("./"):
-        if is_path_aig(file_path=file_path):
+        if is_path_aig_and_not_folded(file_path=file_path):
             run_cmd(f"./aigtoaig {file_path} {file_path[:-4]}.aag")
             
             
@@ -46,12 +46,10 @@ def find_unsafe_tests():
 
 def unfold_aigs():
     for file_path in get_all_file_paths_in_dir_recursively("./hwmcc20/"):
-        if is_path_aig(file_path=file_path):
-            out_file = f"{file_path[:2]}folded_{file_path[2:-4]}_folded.aig"
-            out_file_parsed = out_file.split("/")
-            path_to_out_file = '/'.join(out_file_parsed[:-1])
-            print(path_to_out_file)
-            Path(path_to_out_file).mkdir(parents=True, exist_ok=True)
+        if is_path_aig_and_not_folded(file_path=file_path):
+            assert(file_path[-4:] == ".aig")
+            out_file = f"{file_path[:-4]}_folded.aig"
+            print(out_file)
             run_cmd(f'./abc -c "read {file_path}; zero ; fold2 ; write_aiger {out_file}"')
             # return
 
@@ -62,4 +60,4 @@ call depending on need
 """
 
 if __name__ == "__main__":
-    unfold_aigs()
+    convert_aigs_to_aag()
