@@ -99,7 +99,7 @@ impl AndInverterGraph {
         result.append(&mut symbol_table);
         result.append(&mut vec![self.comments.to_owned()]);
         let mut final_res = result.join("\n");
-        if final_res.ends_with("\n") {
+        if final_res.ends_with('\n') {
             // do nothing
         } else {
             // add new line at aag end.
