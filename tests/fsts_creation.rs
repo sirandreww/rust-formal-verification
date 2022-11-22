@@ -157,7 +157,8 @@ mod tests {
 
                 // from_aig only supports unconstrained problems since constraint ones can be folded into unconstrained ones.
                 if aig.get_constraints_information().is_empty() {
-                    let fsts = FiniteStateTransitionSystem::from_aig(&aig, false);
+                    let assume_output_is_bad = aig_file_path.contains("_fold");
+                    let fsts = FiniteStateTransitionSystem::from_aig(&aig, assume_output_is_bad);
                     // check that p and not !p cannot hold at the same time for some depths.
                     for depth in 0..depth_to_test_for {
                         assert!(!is_a_and_b_satisfiable::<VarisatSolver>(
