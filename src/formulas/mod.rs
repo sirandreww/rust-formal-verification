@@ -1,7 +1,9 @@
+/// This module houses the most basic representation of formulas for the library.
+/// This includes how a literal is formed, how clauses and cubes are represented, and finally
+/// how a cnf is represented.
 // ************************************************************************************************
 // rust submodule declaration, they get searched in their respective file  names
 // ************************************************************************************************
-
 pub mod clause; // requires file in this directory with the name 'clause.rs'
 pub mod cnf; // requires file in this directory with the name 'cnf.rs'
 pub mod cube;

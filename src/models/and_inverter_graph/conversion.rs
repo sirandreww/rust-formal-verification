@@ -97,8 +97,14 @@ impl AndInverterGraph {
             result.push(format!("{lhs} {rhs0} {rhs1}"));
         }
         result.append(&mut symbol_table);
+        result.append(&mut vec![self.comments.to_owned()]);
         let mut final_res = result.join("\n");
-        final_res.push('\n');
+        if final_res.ends_with('\n') {
+            // do nothing
+        } else {
+            // add new line at aag end.
+            final_res.push('\n');
+        }
         final_res
     }
 }

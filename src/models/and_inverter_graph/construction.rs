@@ -54,6 +54,7 @@ impl AndInverterGraph {
             ands: Vec::new(),
             bad: Vec::new(),
             constraints: Vec::new(),
+            comments: String::from(""),
             // justice: Vec::new(),
             // fairness: Vec::new(),
         }
@@ -337,11 +338,15 @@ impl AndInverterGraph {
         // position_of_end_of_and_segment_plus_one == position where symbol table might begin
         let lines: &[Vec<u8>] =
             &Self::split_vector_by_newline(&bytes[position_of_end_of_and_segment_plus_one..]);
-        for line_as_vector_of_chars in lines.iter() {
+        for (index, line_as_vector_of_chars) in lines.iter().enumerate() {
             let line_as_string = std::str::from_utf8(line_as_vector_of_chars).unwrap();
 
             if line_as_string == "c" {
-                // comment segment started, we can stop reading
+                // comment segment started, we can read this till the end and return
+                let rest_of_comments = &lines[index..].join(&b'\n');
+                let comment_section_as_is =
+                    std::str::from_utf8(rest_of_comments).unwrap().to_string();
+                self.comments = comment_section_as_is.replace(&char::from(0).to_string(), "");
                 break;
             } else {
                 let parsed_line: Vec<&str> = line_as_string.split(' ').collect();

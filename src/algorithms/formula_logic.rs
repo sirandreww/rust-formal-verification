@@ -4,7 +4,6 @@
 
 use crate::{
     formulas::CNF,
-    models::FiniteStateTransitionSystem,
     solvers::sat::{SatResponse, SatSolver},
 };
 
@@ -81,36 +80,4 @@ pub fn is_a_and_b_satisfiable<T: SatSolver>(a: &CNF, b: &CNF) -> bool {
         SatResponse::Sat { assignment: _ } => true,
         SatResponse::UnSat => false,
     }
-}
-
-pub fn check_invariant<T: SatSolver>(fin_state: &FiniteStateTransitionSystem, inv_candidate: &CNF) {
-    // println!("inv_candidate = {}", inv_candidate);
-    // check INIT -> inv_candidate
-    let mut init = fin_state.get_initial_relation();
-    init.append(&fin_state.get_state_to_properties_relation());
-    // println!("init = {}", init);
-
-    assert!(
-        does_a_imply_b::<T>(&init, inv_candidate),
-        "Invariant does not cover all of init."
-    );
-
-    // check inv_candidate && Tr -> inv_candidate'
-    let mut a = fin_state.get_transition_relation();
-    a.append(inv_candidate);
-    a.append(&fin_state.get_state_to_properties_relation());
-    a.append(&fin_state.add_tags_to_relation(&fin_state.get_state_to_properties_relation(), 1));
-    let b = fin_state.add_tags_to_relation(inv_candidate, 1);
-    assert!(
-        does_a_imply_b::<T>(&a, &b),
-        "Invariant doesn't cover all of the reachable states."
-    );
-
-    // check inv_candidate ^ !p is un-sat
-    let mut bad = fin_state.get_unsafety_property();
-    bad.append(&fin_state.get_state_to_properties_relation());
-    assert!(
-        !is_a_and_b_satisfiable::<T>(inv_candidate, &bad),
-        "Invariant isn't always safe.",
-    );
 }

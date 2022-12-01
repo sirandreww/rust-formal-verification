@@ -24,6 +24,9 @@ def get_all_file_paths_in_dir_recursively(rootdir: str):
 def is_path_aig(file_path):
     return file_path[-4:] == ".aig"
 
+def is_path_aig_and_not_folded(file_path):
+    return is_path_aig(file_path) and ("fold" not in file_path)
+
 def run_cmd(cmd: str):
     print(cmd)
     assert os.system(cmd) == 0
@@ -39,21 +42,19 @@ def convert_aigs_to_aag():
     for file_path in get_all_file_paths_in_dir_recursively("./"):
         if is_path_aig(file_path=file_path):
             run_cmd(f"./aigtoaig {file_path} {file_path[:-4]}.aag")
-            
-            
+
 def find_unsafe_tests():
     pass
 
-def unfold_aigs():
+def zero_then_fold_aigs():
     for file_path in get_all_file_paths_in_dir_recursively("./hwmcc20/"):
-        if is_path_aig(file_path=file_path):
-            out_file = f"{file_path[:2]}folded_{file_path[2:-4]}_folded.aig"
-            out_file_parsed = out_file.split("/")
-            path_to_out_file = '/'.join(out_file_parsed[:-1])
-            print(path_to_out_file)
-            Path(path_to_out_file).mkdir(parents=True, exist_ok=True)
-            run_cmd(f'./abc -c "read {file_path}; zero ; fold ; write_aiger {out_file}"')
-            # return
+        if is_path_aig_and_not_folded(file_path=file_path):
+            assert(file_path[-4:] == ".aig")
+            out_file = f"{file_path[:-4]}_zero_then_fold2.aig"
+            print(out_file)
+            run_cmd(f'./abc -c "read {file_path}; zero ; fold2 ; write_aiger {out_file}"')
+    # make aag files for these new aig files
+    convert_aigs_to_aag()
 
 """
 ***************************************************************************************************
@@ -62,4 +63,4 @@ call depending on need
 """
 
 if __name__ == "__main__":
-    unfold_aigs()
+    zero_then_fold_aigs()

@@ -52,7 +52,7 @@ mod tests {
     #[test]
     fn create_fsts_from_simple_example_counter() {
         let aig = AndInverterGraph::from_aig_path("tests/examples/ours/counter.aig");
-        let fsts = FiniteStateTransitionSystem::from_aig(&aig);
+        let fsts = FiniteStateTransitionSystem::from_aig(&aig, false);
 
         assert_eq!(
             fsts.get_initial_relation().to_string(),
@@ -90,7 +90,7 @@ mod tests {
     fn create_fsts_from_simple_example_counter_with_bad_assertion() {
         let aig =
             AndInverterGraph::from_aig_path("tests/examples/ours/counter_with_bad_assertion.aig");
-        let fsts = FiniteStateTransitionSystem::from_aig(&aig);
+        let fsts = FiniteStateTransitionSystem::from_aig(&aig, false);
 
         assert_eq!(
             fsts.get_initial_relation().to_string(),
@@ -126,7 +126,7 @@ mod tests {
         let aig = AndInverterGraph::from_aig_path(
             "tests/examples/ours/counter_with_2_bad_assertions.aig",
         );
-        let fsts = FiniteStateTransitionSystem::from_aig(&aig);
+        let fsts = FiniteStateTransitionSystem::from_aig(&aig, false);
 
         assert_eq!(
             fsts.get_initial_relation().to_string(),
@@ -154,14 +154,18 @@ mod tests {
             if common::_true_with_probability(probability_of_testing_file) {
                 println!("file_path = {}", aig_file_path);
                 let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-                let fsts = FiniteStateTransitionSystem::from_aig(&aig);
 
-                // check that p and not !p cannot hold at the same time.
-                for depth in 0..depth_to_test_for {
-                    assert!(!is_a_and_b_satisfiable::<VarisatSolver>(
-                        &fsts.add_tags_to_relation(&fsts.get_safety_property(), depth),
-                        &fsts.add_tags_to_relation(&fsts.get_unsafety_property(), depth)
-                    ));
+                // from_aig only supports unconstrained problems since constraint ones can be folded into unconstrained ones.
+                if aig.get_constraints_information().is_empty() {
+                    let assume_output_is_bad = aig_file_path.contains("_fold");
+                    let fsts = FiniteStateTransitionSystem::from_aig(&aig, assume_output_is_bad);
+                    // check that p and not !p cannot hold at the same time for some depths.
+                    for depth in 0..depth_to_test_for {
+                        assert!(!is_a_and_b_satisfiable::<VarisatSolver>(
+                            &fsts.add_tags_to_relation(&fsts.get_safety_property(), depth),
+                            &fsts.add_tags_to_relation(&fsts.get_unsafety_property(), depth)
+                        ));
+                    }
                 }
             }
         }

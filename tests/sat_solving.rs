@@ -116,9 +116,6 @@ mod tests {
 
     #[test]
     fn exhaustive_sat_test() {
-        // in release mode this can be high
-        // but otherwise it should be around 8.
-        let max_number_of_variables_in_cnf = 10;
         let mut varisat_total_time = 0_f32;
         let mut splr_total_time = 0_f32;
         let mut cadical_total_time = 0_f32;
@@ -126,6 +123,10 @@ mod tests {
         let mut vec_of_number_of_unsat = Vec::new();
 
         // play with this until number of sat and un-sat are close
+
+        // in release mode this can be high
+        // but otherwise it should be around 8.
+        let max_number_of_variables_in_cnf = 10;
         let maximal_number_of_variables_in_cnf_to_allow_empty_clause = 2;
         let probability_of_negation = 0.002;
         let probability_of_adding_another_literal_to_cnf = 0.5;

@@ -102,7 +102,7 @@ impl<T: SatSolver + std::marker::Send + 'static + std::marker::Sync + Clone> BMC
         // println!("initial = {}", initial);
         // !P
         let mut not_p0 = fin_state.get_unsafety_property();
-        not_p0.append(&fin_state.get_state_to_properties_relation());
+        not_p0.append(&fin_state.get_state_to_safety_translation());
         // println!("not_p0 = {}", not_p0);
         // Tr
         let tr = fin_state.get_transition_relation();

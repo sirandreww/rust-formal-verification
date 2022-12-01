@@ -18,7 +18,7 @@ mod tests {
     use std::time;
 
     use rust_formal_verification::{
-        algorithms::{formula_logic::check_invariant, ic3::IC3Result, IC3},
+        algorithms::{ic3::IC3Result, IC3},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{CadicalSolver, SatSolver, SplrSolver, VarisatSolver},
     };
@@ -38,7 +38,7 @@ mod tests {
         match prove_result {
             IC3Result::Proof { invariant } => {
                 println!("Safe, checking invariant.");
-                check_invariant::<T>(fin_state, &invariant);
+                fin_state.check_invariant::<T>(&invariant);
                 println!("Invariant check passed!");
             }
             IC3Result::CTX { depth } => {
@@ -59,7 +59,7 @@ mod tests {
             println!("file_path = {}", aig_file_path);
 
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-            let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+            let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
             test_ic3::<SplrSolver>(&fin_state, &aig);
             test_ic3::<VarisatSolver>(&fin_state, &aig);
             test_ic3::<CadicalSolver>(&fin_state, &aig);
@@ -77,7 +77,7 @@ mod tests {
             if common::_true_with_probability(0.05) {
                 println!("file_path = {}", aig_file_path);
                 let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-                let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+                let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
                 test_ic3::<VarisatSolver>(&fin_state, &aig);
             }
         }
@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn ic3_on_first_few_hwmcc20_unconstrained_problems() {
-        let run_test = true;
+        let run_test = false;
         if !run_test {
             return;
         }
@@ -100,7 +100,7 @@ mod tests {
         {
             println!("i = {}, file_path = {}", i, aig_file_path);
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-            let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
+            let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
             // test_ic3::<SplrSolver>(&fin_state, &aig);
             test_ic3::<VarisatSolver>(&fin_state, &aig);
             // test_ic3::<CadicalSolver>(&fin_state, &aig);
