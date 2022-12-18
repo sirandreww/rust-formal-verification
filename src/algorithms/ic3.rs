@@ -1,18 +1,18 @@
 //! This algorithm is an exact implementation of what is described in "SAT-Based Model Checking without Unrolling".
-//! 
-//! Bradley, A.R. (2011). SAT-Based Model Checking without Unrolling. 
+//!
+//! Bradley, A.R. (2011). SAT-Based Model Checking without Unrolling.
 //! In: Jhala, R., Schmidt, D. (eds) Verification, Model Checking, and Abstract Interpretation.
-//! VMCAI 2011. Lecture Notes in Computer Science, vol 6538. Springer, Berlin, 
+//! VMCAI 2011. Lecture Notes in Computer Science, vol 6538. Springer, Berlin,
 //! Heidelberg. https://doi.org/10.1007/978-3-642-18275-4_7
-//! 
-//! Abstract: A new form of SAT-based symbolic model checking is described. 
-//! Instead of unrolling the transition relation, it incrementally generates clauses that are 
-//! inductive relative to (and augment) stepwise approximate reachability information. 
-//! In this way, the algorithm gradually refines the property, eventually producing either an 
-//! inductive strengthening of the property or a counterexample trace. Our experimental studies 
-//! show that induction is a powerful tool for generalizing the unreachability of given error 
-//! states: it can refine away many states at once, and it is effective at focusing the proof 
-//! search on aspects of the transition system relevant to the property. Furthermore, the 
+//!
+//! Abstract: A new form of SAT-based symbolic model checking is described.
+//! Instead of unrolling the transition relation, it incrementally generates clauses that are
+//! inductive relative to (and augment) stepwise approximate reachability information.
+//! In this way, the algorithm gradually refines the property, eventually producing either an
+//! inductive strengthening of the property or a counterexample trace. Our experimental studies
+//! show that induction is a powerful tool for generalizing the unreachability of given error
+//! states: it can refine away many states at once, and it is effective at focusing the proof
+//! search on aspects of the transition system relevant to the property. Furthermore, the
 //! incremental structure of the algorithm lends itself to a parallel implementation.
 
 // ************************************************************************************************

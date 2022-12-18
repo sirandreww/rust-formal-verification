@@ -11,14 +11,14 @@
 //!
 //! ```
 //! use rust_formal_verification::models::{AndInverterGraph, FiniteStateTransitionSystem};
-//! 
+//!
 //! // read aig file:
 //! let file_path = "tests/examples/ours/counter.aig";
 //! let aig = AndInverterGraph::from_aig_path(file_path);
-//! 
+//!
 //! // create boolean logic formulas that represent aig:
 //! let fsts = FiniteStateTransitionSystem::from_aig(&aig, false);
-//! 
+//!
 //! // the formulas can then be read and turned to strings in DIMACS format.
 //! assert_eq!(fsts.get_initial_relation().to_string(), "p cnf 3 3\n-1 0\n-2 0\n-3 0");
 //! ```
