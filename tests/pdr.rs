@@ -1,160 +1,109 @@
-// // ************************************************************************************************
-// // mod declaration
-// // ************************************************************************************************
+// ************************************************************************************************
+// mod declaration
+// ************************************************************************************************
 
-// mod common;
+mod common;
 
-// // ************************************************************************************************
-// // test mod declaration
-// // ************************************************************************************************
+// ************************************************************************************************
+// test mod declaration
+// ************************************************************************************************
 
-// #[cfg(test)]
-// mod tests {
+#[cfg(test)]
+mod tests {
 
-//     // ********************************************************************************************
-//     // use
-//     // ********************************************************************************************
+    // ********************************************************************************************
+    // use
+    // ********************************************************************************************
 
-//     use rust_formal_verification::{
-//         formulas::CNF,
-//         models::{AndInverterGraph, FiniteStateTransitionSystem},
-//         solvers::sat::{SatResponse, SplrSolver},
-//     };
+    use std::time;
 
-//     use crate::common;
+    use rust_formal_verification::{
+        algorithms::{pdr::PDRResult, PDR},
+        models::{AndInverterGraph, FiniteStateTransitionSystem},
+        solvers::sat::{CadicalSolver, SatSolver, SplrSolver, VarisatSolver},
+    };
 
-//     // ********************************************************************************************
-//     // Enum
-//     // ********************************************************************************************
+    use crate::common;
 
-//     enum PdrResult {
-//         Proof { invariant: CNF },
-//         CTX { assignment: Vec<i32> },
-//     }
+    // ********************************************************************************************
+    // helper functions
+    // ********************************************************************************************
 
-//     // fn get_bad_cube(fin_state: &FiniteStateTransitionSystem, blocked_cubes_of_each_frame: Vec<Vec<Cube>>, unreachable_cubes: Vec<Cube> ) {
+    fn test_pdr<T: SatSolver>(fin_state: &FiniteStateTransitionSystem, _aig: &AndInverterGraph) {
+        let mut pdr_solver = PDR::<T>::new(fin_state, true);
+        let start_time = time::Instant::now();
+        let prove_result = pdr_solver.prove();
+        let duration = start_time.elapsed();
+        println!("Elapsed time = {}", duration.as_secs_f32());
+        match prove_result {
+            PDRResult::Proof { invariant } => {
+                println!("Safe, checking invariant.");
+                fin_state.check_invariant::<T>(&invariant);
+                println!("Invariant check passed!");
+            }
+            PDRResult::CTX { depth } => {
+                // do nothing for now
+                println!("Unsafe, depth = {}", depth);
+            }
+        }
+    }
 
-//     // }
+    // ********************************************************************************************
+    // tests
+    // ********************************************************************************************
 
-//     fn is_bad_reached_in_0_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
-//         let mut cnf = CNF::new();
-//         cnf.append(&fin_state.get_initial_relation());
-//         cnf.append(&fin_state.get_unsafety_property_for_some_depth(0));
+    #[test]
+    fn pdr_on_our_examples() {
+        let file_paths = common::_get_paths_to_all_our_example_aig_files();
+        for aig_file_path in file_paths {
+            println!("file_path = {}", aig_file_path);
 
-//         let solver = SplrSolver::default();
-//         solver.solve_cnf(&cnf)
-//     }
+            let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+            let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
+            test_pdr::<SplrSolver>(&fin_state, &aig);
+            test_pdr::<VarisatSolver>(&fin_state, &aig);
+            test_pdr::<CadicalSolver>(&fin_state, &aig);
+        }
+    }
 
-//     fn is_bad_reached_in_1_steps(fin_state: &FiniteStateTransitionSystem) -> SatResponse {
-//         let mut cnf = CNF::new();
-//         cnf.append(&fin_state.get_initial_relation());
-//         cnf.append(&fin_state.get_transition_relation_for_some_depth(1));
-//         cnf.append(&fin_state.get_unsafety_property_for_some_depth(1));
+    #[test]
+    fn pdr_on_hwmcc20_only_unconstrained_problems() {
+        let run_test = false;
+        if !run_test {
+            return;
+        }
+        let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
+        for aig_file_path in file_paths {
+            if common::_true_with_probability(0.05) {
+                println!("file_path = {}", aig_file_path);
+                let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+                let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
+                test_pdr::<VarisatSolver>(&fin_state, &aig);
+            }
+        }
+    }
 
-//         let solver = SplrSolver::default();
-//         solver.solve_cnf(&cnf)
-//     }
+    #[test]
+    fn pdr_on_first_few_hwmcc20_unconstrained_problems() {
+        let run_test = false;
+        if !run_test {
+            return;
+        }
 
-//     fn is_bad_reached_in_1_step_from_cnf(
-//         cnf: &CNF,
-//         fin_state: &FiniteStateTransitionSystem,
-//     ) -> SatResponse {
-//         let mut new_cnf = CNF::new();
-//         new_cnf.append(&cnf.to_owned());
-//         new_cnf.append(&fin_state.get_transition_relation_for_some_depth(1));
-//         new_cnf.append(&fin_state.get_unsafety_property_for_some_depth(1));
+        let file_paths = common::_get_paths_to_hwmcc20_unconstrained();
+        let easy_problems = vec![1, 2, 5, 8, 9, 10, 13];
 
-//         let solver = SplrSolver::default();
-//         solver.solve_cnf(cnf)
-//     }
-
-//     // fn shrink_cube_using_trinary_sim(cube: Cube) -> Cube {
-
-//     // }
-
-//     // fn block(cube_to_block: Cube, frame_to_block_in: i32){
-
-//     // }
-
-//     // fn extract_state_from_assignment(fin_state: &FiniteStateTransitionSystem, assignment: Vec<i32>) -> Vec<bool> {
-//     //     fin_state.convert_assignment_to_input_and_state(assignment);
-
-//     // }
-
-//     // fn generalize(cube: Cube, i :i32) -> Clause {
-//     //     let mut clause = !cube;
-//     //     // let mut potential_clause_update = !cube;
-//     //     // clause.
-//     //     // for(j=1; j<=k; j++) {
-//     //     //     d = c \ {lj};
-//     //     //     if (!(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’))
-//     //     //     c = d;
-//     //     // }
-//     //     return clause;
-//     // }
-
-//     // ********************************************************************************************
-//     // helper functions
-//     // ********************************************************************************************
-
-//     fn property_directed_reachability(
-//         fin_state: &FiniteStateTransitionSystem,
-//         _aig: &AndInverterGraph,
-//     ) -> PdrResult {
-//         let init_and_not_p = is_bad_reached_in_0_steps(fin_state);
-//         match init_and_not_p {
-//             SatResponse::Sat { assignment } => return PdrResult::CTX { assignment },
-//             SatResponse::UnSat => (),
-//         }
-
-//         let init_and_tr_and_not_p_tag = is_bad_reached_in_1_steps(fin_state);
-//         match init_and_tr_and_not_p_tag {
-//             SatResponse::Sat { assignment } => return PdrResult::CTX { assignment },
-//             SatResponse::UnSat => (),
-//         }
-
-//         let mut F = vec![
-//             fin_state.get_initial_relation(),
-//             fin_state.get_safety_property_for_some_depth(0)
-//         ];
-
-//         for k in 1..{
-//             loop {
-//                 match is_bad_reached_in_1_step_from_cnf(F.last().unwrap(), fin_state) {
-//                     SatResponse::Sat { assignment } => {
-//                         // trinary sim here
-//                         let bad_state = fin_state.assignment_to_state_cnf(assignment);
-//                         block(bad_state, k-1);
-//                     },
-//                     SatResponse::UnSat => {
-//                         break;
-//                     },
-//                 }
-
-//                 F.push();
-//             }
-//             // push p to back of F
-//             F.push(fin_state.get_safety_property_for_some_depth(0));
-//         }
-//     }
-
-//     // fn property_directed_reachability(fin_state: &FiniteStateTransitionSystem) -> PdrResult{
-//     //     let unreachable_cubes = Vec::new();
-//     // }
-
-//     // ********************************************************************************************
-//     // tests
-//     // ********************************************************************************************
-
-//     #[test]
-//     fn pdr_on_2020_examples() {
-//         let file_paths = common::get_paths_to_all_aig_for_2020();
-//         for aig_file_path in file_paths {
-//             println!("file_path = {}", aig_file_path);
-
-//             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-//             let fin_state = FiniteStateTransitionSystem::from_aig(&aig);
-//             property_directed_reachability(&fin_state, &aig);
-//         }
-//     }
-// }
+        for (i, aig_file_path) in file_paths
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| easy_problems.contains(i))
+        {
+            println!("i = {}, file_path = {}", i, aig_file_path);
+            let aig = AndInverterGraph::from_aig_path(&aig_file_path);
+            let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
+            // test_ic3::<SplrSolver>(&fin_state, &aig);
+            test_pdr::<VarisatSolver>(&fin_state, &aig);
+            // test_ic3::<CadicalSolver>(&fin_state, &aig);
+        }
+    }
+}

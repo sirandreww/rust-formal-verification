@@ -1,17 +1,41 @@
-// ********************************************************************************************
+//! This algorithm is an exact implementation of what is described in "Efficient implementation of property directed reachability".
+//! 
+//! N. Een, A. Mishchenko and R. Brayton,
+//! "Efficient implementation of property directed reachability,"
+//! 2011 Formal Methods in Computer-Aided Design (FMCAD), 2011, pp. 125-134.
+//! 
+//! Abstract: Last spring, in March 2010, Aaron Bradley published the first truly new bit-level 
+//! symbolic model checking algorithm since Ken McMillan's interpolation based model checking 
+//! procedure introduced in 2003. 
+//! Our experience with the algorithm suggests that it is stronger than interpolation on industrial
+//! problems, and that it is an important algorithm to study further. 
+//! In this paper, we present a simplified and faster implementation of Bradley's procedure, and 
+//! discuss our successful and unsuccessful attempts to improve it.
+//! URL: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6148886&isnumber=6148882
+//! 
+//! The implementation of the original 2010 bit-level symbolic model checking algorithm is
+//! available under ic3.
+
+// ************************************************************************************************
 // use
-// ********************************************************************************************
+// ************************************************************************************************
 
 use std::{ cmp::min, collections::BinaryHeap};
+use crate::{
+    formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
+    models::FiniteStateTransitionSystem,
+    solvers::sat::{Assignment, SatResponse, SatSolver},
+};
+use priority_queue::PriorityQueue;
+use rand::rngs::ThreadRng;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+use std::cmp::{max, Reverse};
 
-use rand::{rngs::ThreadRng, thread_rng};
 
-use crate::{models::FiniteStateTransitionSystem, solvers::sat::SatSolver, formulas::{CNF, literal::VariableType, Cube}};
-
-
-// ********************************************************************************************
+// ************************************************************************************************
 // Enum
-// ********************************************************************************************
+// ************************************************************************************************
 
 pub enum PDRResult {
     Proof { invariant: CNF },
@@ -29,29 +53,23 @@ pub struct TCube {
     frame: Frame
 }
 
-impl Ord for TCube {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        todo!()
-    }
-}
-
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
 
 pub struct PDR<T: SatSolver> {
-    f: Vec<Vec<CNF>>,
+    f: Vec<Vec<Cube>>,
     fin_state: FiniteStateTransitionSystem,
     solver: T,
     rng: ThreadRng,
     latch_literals: Vec<u32>,
     _input_literals: Vec<u32>,
     // caching for speedup
-    initial: CNF,
-    transition: CNF,
-    p0: CNF,
-    not_p0: CNF,
-    not_p1: CNF,
+    initial: CNF,       // I
+    transition: CNF,    // T
+    p0: CNF,            // P
+    not_p0: CNF,        // !P
+    not_p1: CNF,        // !P'
     // for printing
     verbose: bool,
 }
@@ -63,290 +81,60 @@ pub struct PDR<T: SatSolver> {
 impl<T: SatSolver> PDR<T> {
 
     // ********************************************************************************************
-    // helper functions
+    // helper functions - getting R_i by the definition in the paper
     // ********************************************************************************************
 
-    // fn get_fk(&self, k: usize) -> CNF {
-    //     let mut clauses_fk = self.clauses[k].to_owned();
-    //     if k == 0 {
-    //         clauses_fk.append(&self.initial);
-    //     } else {
-    //         clauses_fk.append(&self.p0);
-    //     }
-    //     clauses_fk
-    // }
 
-    // fn _get_ctx_from_assignment(&self, assignment: &HashMap<VariableType, bool>) -> Vec<Vec<bool>> {
-    //     let mut result = Vec::new();
+    fn get_r_i(&self, k: usize) -> CNF {
+        if i == 0 {
+            return self.initial.to_owned();
+        } else {
+            let mut r_i = CNF::new();
+            for i in k..self.len(){
+                let clauses = self.f[i];
+                for clause in clauses{
+                    r_i.add_clause(clause)
+                }
+            }
+            return r_i;
+        }
+    }
 
-    //     let mut clk = Vec::new();
-    //     for input_lit_num in self.input_literals.iter() {
-    //         clk.push(assignment[&input_lit_num])
-    //     }
-    //     result.push(clk);
-    //     result
-    // }
+    // ********************************************************************************************
+    // helper functions - getting bad cube
+    // ********************************************************************************************
 
-    // fn is_bad_reached_in_0_steps(&self) -> SatResponse {
-    //     let mut cnf = CNF::new();
-    //     cnf.append(&self.initial);
-    //     cnf.append(&self.not_p0);
-    //     // println!("I ^ !P = {}", cnf);
-    //     self.solver.solve_cnf(&cnf)
-    // }
 
-    // fn is_bad_reached_in_1_steps(&self) -> SatResponse {
-    //     let mut cnf = CNF::new();
-    //     cnf.append(&self.initial);
-    //     cnf.append(&self.transition);
-    //     cnf.append(&self.not_p1);
-    //     // println!("I ^ T ^ !P' = {}", cnf);
-    //     self.solver.solve_cnf(&cnf)
-    // }
+    fn extract_predecessor_from_assignment(&self, assignment: &Assignment) -> Cube {
+        let mut literals = Vec::new();
 
-    // fn propagate_clauses(&mut self, k: usize) {
-    //     for i in 1..(k + 1) {
-    //         let clauses_fi = self.clauses[i].to_owned();
-    //         for c in clauses_fi.iter() {
-    //             let mut cnf = CNF::new();
-    //             cnf.append(&self.get_fk(i));
-    //             cnf.append(&self.transition);
-    //             cnf.append(
-    //                 &self
-    //                     .fin_state
-    //                     .add_tags_to_relation(&(!(c.to_owned())).to_cnf(), 1),
-    //             );
-    //             match self.solver.solve_cnf(&cnf) {
-    //                 SatResponse::UnSat => {
-    //                     // can propagate this property :)
-    //                     self.clauses[i + 1].add_clause(c);
-    //                 }
-    //                 SatResponse::Sat { assignment: _ } => {
-    //                     // can't propagate this clause :(
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+        for state_lit_num in &self.latch_literals {
+            literals.push(
+                Literal::new(state_lit_num.to_owned())
+                    .negate_if_true(!assignment.get_value_of_variable(state_lit_num)),
+            )
+        }
 
-    // fn extract_predecessor_from_assignment(&self, assignment: &Assignment) -> Cube {
-    //     let mut literals = Vec::new();
-
-    //     for state_lit_num in &self.latch_literals {
-    //         literals.push(
-    //             Literal::new(state_lit_num.to_owned())
-    //                 .negate_if_true(!assignment.get_value_of_variable(state_lit_num)),
-    //         )
-    //     }
-
-    //     Cube::new(&literals)
-    // }
-
-    // fn is_bad_reached_in_1_step_from_cnf(&self, cnf: &CNF) -> SatResponse {
-    //     let mut new_cnf = CNF::new();
-    //     new_cnf.append(cnf);
-    //     new_cnf.append(&self.transition);
-    //     new_cnf.append(&self.not_p1);
-    //     self.solver.solve_cnf(&new_cnf)
-    // }
-
-    // calculates sat(Fi ^ T ^ !s ^ s')
-    // fn is_fi_and_t_and_not_s_and_s_tag_sat(&self, i: usize, s: &Cube) -> bool {
-    //     let mut new_cnf = CNF::new();
-    //     new_cnf.append(&self.get_fk(i));
-    //     new_cnf.append(&self.transition);
-    //     new_cnf.add_clause(&!(s.to_owned()));
-    //     new_cnf.append(&self.fin_state.add_tags_to_relation(&s.to_cnf(), 1));
-    //     match self.solver.solve_cnf(&new_cnf) {
-    //         SatResponse::UnSat => false,
-    //         SatResponse::Sat { assignment: _ } => true,
-    //     }
-    // }
-
-    // fn is_clause_inductive_relative_to_fi(&self, d: &Clause, i: usize) -> bool {
-    //     // return !(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’)
-
-    //     let mut first_cnf = self.initial.to_owned();
-    //     first_cnf.append(&(!d.to_owned()).to_cnf());
-    //     match self.solver.solve_cnf(&first_cnf) {
-    //         SatResponse::UnSat => {}
-    //         SatResponse::Sat { assignment: _ } => {
-    //             return false;
-    //         }
-    //     }
-
-    //     let mut second_cnf = self.get_fk(i);
-    //     second_cnf.add_clause(d);
-    //     second_cnf.append(&self.transition);
-    //     second_cnf.append(
-    //         &self
-    //             .fin_state
-    //             .add_tags_to_relation(&(!d.to_owned()).to_cnf(), 1),
-    //     );
-    //     match self.solver.solve_cnf(&second_cnf) {
-    //         SatResponse::UnSat => true,
-    //         SatResponse::Sat { assignment: _ } => false,
-    //     }
-    // }
-
-    // fn get_subclause_of_not_s_that_is_inductive_relative_to_fi(
-    //     &mut self,
-    //     s: &Cube,
-    //     i: usize,
-    // ) -> Clause {
-    //     let c = !(s.to_owned());
-    //     let mut c_literals: Vec<Literal> = c.iter().map(|l| l.to_owned()).collect();
-    //     c_literals.shuffle(&mut self.rng);
-    //     let mut j = 0;
-    //     while j < c_literals.len() {
-    //         let removed = c_literals.swap_remove(j);
-    //         let d = Clause::new(&c_literals);
-    //         if self.is_clause_inductive_relative_to_fi(&d, i) {
-    //             // remove successful, j should remain the same
-    //         } else {
-    //             // undo remove
-    //             c_literals.push(removed);
-    //             let last_index = c_literals.len() - 1;
-    //             c_literals.swap(j, last_index);
-    //             // move on to next literal
-    //             j += 1;
-    //         }
-    //     }
-    //     Clause::new(&c_literals)
-    // }
-
-    // fn generate_clause(&mut self, s: &Cube, i: usize, _k: usize) {
-    //     let c = self.get_subclause_of_not_s_that_is_inductive_relative_to_fi(s, i);
-    //     for j in 1..(i + 2) {
-    //         self.clauses[j].add_clause(&c);
-    //     }
-    // }
-
-    // fn inductively_generalize(
-    //     &mut self,
-    //     s: &Cube,
-    //     min: isize,
-    //     k: usize,
-    // ) -> InductivelyGeneralizeResult {
-    //     if min < 0 && self.is_fi_and_t_and_not_s_and_s_tag_sat(0, s) {
-    //         return InductivelyGeneralizeResult::Failure;
-    //     }
-
-    //     for i in max(1, min + 1).try_into().unwrap()..(k + 1) {
-    //         if self.is_fi_and_t_and_not_s_and_s_tag_sat(i, s) {
-    //             self.generate_clause(s, i - 1, k);
-    //             return InductivelyGeneralizeResult::Success { n: i - 1 };
-    //         }
-    //     }
-    //     self.generate_clause(s, k, k);
-    //     InductivelyGeneralizeResult::Success { n: k }
-    // }
-
-    // // calculates sat(Fi ^ T ^ s')
-    // fn solve_fi_and_t_and_s_tag(&self, i: usize, s: &Cube) -> SatResponse {
-    //     let mut new_cnf = CNF::new();
-    //     new_cnf.append(&self.get_fk(i));
-    //     new_cnf.append(&self.transition);
-    //     new_cnf.append(&self.fin_state.add_tags_to_relation(&s.to_cnf(), 1));
-    //     self.solver.solve_cnf(&new_cnf)
-    // }
-
-    // fn push_generalization(
-    //     &mut self,
-    //     states: &PriorityQueue<Cube, Reverse<usize>>,
-    //     k: usize,
-    // ) -> PushGeneralizeResult {
-    //     let mut states = states.to_owned();
-    //     loop {
-    //         let (s, reversed_n) = states.pop().unwrap();
-    //         let n = reversed_n.0;
-    //         if n > k {
-    //             return PushGeneralizeResult::Success;
-    //         }
-    //         match self.solve_fi_and_t_and_s_tag(n, &s) {
-    //             SatResponse::Sat { assignment } => {
-    //                 // we have to block p in order to block n.
-    //                 let p = self.extract_predecessor_from_assignment(&assignment);
-    //                 // println!("Should block p = {} from F{}", p, n - 1);
-    //                 match self.inductively_generalize(
-    //                     &p,
-    //                     <usize as TryInto<isize>>::try_into(n).unwrap() - 2,
-    //                     k,
-    //                 ) {
-    //                     InductivelyGeneralizeResult::Failure => {
-    //                         return PushGeneralizeResult::Failure;
-    //                     }
-    //                     InductivelyGeneralizeResult::Success { n: m } => {
-    //                         states.push(s, reversed_n);
-    //                         states.push(p, Reverse(m + 1));
-    //                     }
-    //                 }
-    //             }
-    //             SatResponse::UnSat => {
-    //                 // n can be blocked
-    //                 match self.inductively_generalize(&s, n.try_into().unwrap(), k) {
-    //                     InductivelyGeneralizeResult::Failure => {
-    //                         return PushGeneralizeResult::Failure;
-    //                     }
-    //                     InductivelyGeneralizeResult::Success { n: m } => {
-    //                         states.push(s.to_owned(), Reverse(m + 1));
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
-    // fn print_progress(&self, k: usize) {
-    //     println!(
-    //         "IC3 is on k = {}, clauses lengths = {:?}",
-    //         k,
-    //         self.clauses.iter().map(|c| c.len()).collect::<Vec<usize>>()
-    //     );
-    // }
-
-    // fn strengthen(&mut self, k: usize) -> StrengthenResult {
-    //     loop {
-    //         match self.is_bad_reached_in_1_step_from_cnf(&self.get_fk(k)) {
-    //             SatResponse::UnSat => {
-    //                 break;
-    //             }
-    //             SatResponse::Sat { assignment } => {
-    //                 let s = self.extract_predecessor_from_assignment(&assignment);
-    //                 // println!("Should block s = {} from F{}", s, k - 1);
-    //                 match self.inductively_generalize(
-    //                     &s,
-    //                     <usize as TryInto<isize>>::try_into(k).unwrap() - 2,
-    //                     k,
-    //                 ) {
-    //                     InductivelyGeneralizeResult::Failure => {
-    //                         return StrengthenResult::Failure {
-    //                             depth: k.try_into().unwrap(),
-    //                         };
-    //                     }
-    //                     InductivelyGeneralizeResult::Success { n } => {
-    //                         let mut queue = PriorityQueue::<Cube, Reverse<usize>>::new();
-    //                         queue.push(s, Reverse(n + 1));
-    //                         match self.push_generalization(&queue, k) {
-    //                             PushGeneralizeResult::Failure => {
-    //                                 return StrengthenResult::Failure {
-    //                                     depth: k.try_into().unwrap(),
-    //                                 };
-    //                             }
-    //                             PushGeneralizeResult::Success => {}
-    //                         };
-    //                     }
-    //                 };
-    //             }
-    //         }
-    //     }
-
-    //     StrengthenResult::Success
-    // }
+        Cube::new(&literals)
+    }
 
     fn get_bad_cube(&self) -> Option<Cube>{
-
+        // get cube that satisfies R_N && !P
+        let mut new_cnf = CNF::new();
+        new_cnf.append(&self.get_r_i(self.depth()));
+        new_cnf.append(&self.not_p0);
+        match self.solver.solve_cnf(&new_cnf) {
+            crate::solvers::sat::SatResponse::Sat { assignment } => {
+                let s = self.extract_predecessor_from_assignment(&assignment);
+            },
+            crate::solvers::sat::SatResponse::UnSat => todo!(),
+        }
     }
+
+    // ********************************************************************************************
+    // helper functions - functions in paper
+    // ********************************************************************************************
+
 
     fn depth(&self) -> usize {
         self.f.len() - 2
@@ -361,7 +149,8 @@ impl<T: SatSolver> PDR<T> {
     fn cond_assign(s: &mut TCube, t: TCube) -> bool {
         match t.frame {
             Frame::NULL => {
-                s = t;
+                // s = t;
+                todo!();
                 true
             },
             _ => {false}
@@ -391,7 +180,7 @@ impl<T: SatSolver> PDR<T> {
         }
     }
 
-    fn rec_block_cube(s0: &TCube) -> bool {
+    fn rec_block_cube(&self, s0: TCube) -> bool {
         let q = BinaryHeap::<TCube>::new();
         q.push(s0);
         while q.len() > 0 {
@@ -403,7 +192,18 @@ impl<T: SatSolver> PDR<T> {
                 _ => {unreachable!();}
             }
         }
+        true
+    }
 
+    fn propagate_blocked_cubes(&self) -> bool {
+        // for k in 1..self.depth(){
+            
+        // }
+        true
+    }
+
+    fn get_invariant(&self) -> CNF {
+        CNF::new()
     }
 
     // ********************************************************************************************
@@ -411,10 +211,10 @@ impl<T: SatSolver> PDR<T> {
     // ********************************************************************************************
 
     pub fn new(fin_state: &FiniteStateTransitionSystem, verbose: bool) -> Self {
-        let mut p0 = fin_state.get_state_to_properties_relation();
+        let mut p0 = fin_state.get_state_to_safety_translation();
         p0.append(&fin_state.get_safety_property());
 
-        let mut not_p0 = fin_state.get_state_to_properties_relation();
+        let mut not_p0 = fin_state.get_state_to_safety_translation();
         not_p0.append(&fin_state.get_unsafety_property());
 
         Self {

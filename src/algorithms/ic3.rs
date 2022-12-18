@@ -1,6 +1,23 @@
-// ********************************************************************************************
+//! This algorithm is an exact implementation of what is described in "SAT-Based Model Checking without Unrolling".
+//! 
+//! Bradley, A.R. (2011). SAT-Based Model Checking without Unrolling. 
+//! In: Jhala, R., Schmidt, D. (eds) Verification, Model Checking, and Abstract Interpretation.
+//! VMCAI 2011. Lecture Notes in Computer Science, vol 6538. Springer, Berlin, 
+//! Heidelberg. https://doi.org/10.1007/978-3-642-18275-4_7
+//! 
+//! Abstract: A new form of SAT-based symbolic model checking is described. 
+//! Instead of unrolling the transition relation, it incrementally generates clauses that are 
+//! inductive relative to (and augment) stepwise approximate reachability information. 
+//! In this way, the algorithm gradually refines the property, eventually producing either an 
+//! inductive strengthening of the property or a counterexample trace. Our experimental studies 
+//! show that induction is a powerful tool for generalizing the unreachability of given error 
+//! states: it can refine away many states at once, and it is effective at focusing the proof 
+//! search on aspects of the transition system relevant to the property. Furthermore, the 
+//! incremental structure of the algorithm lends itself to a parallel implementation.
+
+// ************************************************************************************************
 // use
-// ********************************************************************************************
+// ************************************************************************************************
 
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
@@ -13,9 +30,9 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::{max, Reverse};
 
-// ********************************************************************************************
+// ************************************************************************************************
 // Enum
-// ********************************************************************************************
+// ************************************************************************************************
 
 pub enum IC3Result {
     Proof { invariant: CNF },
@@ -67,54 +84,6 @@ impl<T: SatSolver> IC3<T> {
     // assert
     // ********************************************************************************************
 
-    // fn does_a_hold(&self, k: usize) -> bool{
-    //     println!("checking A");
-
-    //     for i in 0..self.clauses.len(){
-    //         let fi = self.get_fk(i);
-    //         if i == 0 {
-
-    //         }
-    //         // I => Fi
-    //         if !does_a_imply_b::<T>(&self.initial, &fi) {
-    //             panic!();
-    //         }
-
-    //         // Fi => P
-    //         if !does_a_imply_b::<T>(&fi, &self.p0) {
-    //             println!("fi => P fails!");
-    //             println!("Fi = {}", fi);
-    //             println!("P  = {}", self.p0);
-    //             panic!();
-    //         }
-
-    //         // for all i > 0 clauses(Fi+1) is subset of clauses(Fi)
-    //         if 0 < i && i < (self.clauses.len() - 1){
-    //             for clause in self.clauses[i+1].iter(){
-    //                 if !self.clauses[i].contains(clause) {
-    //                     panic!();
-    //                 }
-    //             }
-    //         }
-
-    //         // for all 0 <= i < k, Fi && T => Fi+1'
-    //         if i < k {
-    //             let mut fi_and_t = self.transition.to_owned();
-    //             fi_and_t.append(&fi);
-    //             if !does_a_imply_b::<T>(&fi_and_t, &self.fin_state.add_tags_to_relation(&self.get_fk(i+1), 1)) {
-    //                 panic!();
-    //             }
-    //         }
-
-    //         if i > k {
-    //             assert!(self.clauses[i].is_empty())
-    //         }
-    //     }
-    //     println!("checking A Done.");
-
-    //     true
-    // }
-
     // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
@@ -128,17 +97,6 @@ impl<T: SatSolver> IC3<T> {
         }
         clauses_fk
     }
-
-    // fn _get_ctx_from_assignment(&self, assignment: &HashMap<VariableType, bool>) -> Vec<Vec<bool>> {
-    //     let mut result = Vec::new();
-
-    //     let mut clk = Vec::new();
-    //     for input_lit_num in self.input_literals.iter() {
-    //         clk.push(assignment[&input_lit_num])
-    //     }
-    //     result.push(clk);
-    //     result
-    // }
 
     fn is_bad_reached_in_0_steps(&self) -> SatResponse {
         let mut cnf = CNF::new();
