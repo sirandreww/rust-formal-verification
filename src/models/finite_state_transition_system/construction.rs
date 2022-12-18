@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::formulas::literal::VariableType;
-use crate::formulas::{Clause, Literal, CNF};
+use crate::formulas::{Clause, Literal, CNF, Cube};
 use crate::models::AndInverterGraph;
 use crate::solvers::sat::{SatResponse, VarisatSolver};
 
@@ -19,7 +19,7 @@ impl FiniteStateTransitionSystem {
     // ********************************************************************************************
 
     fn new(
-        initial_states: CNF,
+        initial_states: Cube,
         transition: CNF,
         state_to_safety_translation: CNF,
         unsafety_property: Clause,
@@ -84,8 +84,8 @@ impl FiniteStateTransitionSystem {
         cnf
     }
 
-    fn create_initial_cnf(aig: &AndInverterGraph) -> CNF {
-        let mut cnf = CNF::new();
+    fn create_initial_cnf(aig: &AndInverterGraph) -> Cube {
+        let mut cube_literals = Vec::<Literal>::new();
 
         let latch_info = aig.get_latch_information();
         for (latch_literal, _, latch_reset) in latch_info {
@@ -93,15 +93,16 @@ impl FiniteStateTransitionSystem {
             if latch_reset != latch_literal {
                 let lit = Self::get_literal_from_aig_literal(latch_literal);
                 if latch_reset == 0 {
-                    cnf.add_clause(&Clause::new(&[!lit]));
+                    cube_literals.push(!lit);
                 } else if latch_reset == 1 {
-                    cnf.add_clause(&Clause::new(&[lit]));
+                    cube_literals.push(lit);
                 } else {
                     unreachable!();
                 }
             }
         }
-        cnf
+        
+        Cube::new(&cube_literals)
     }
 
     fn create_transition_cnf(aig: &AndInverterGraph, max_variable_number: VariableType) -> CNF {
@@ -242,7 +243,7 @@ impl FiniteStateTransitionSystem {
         // make formulas
         let max_literal_number: VariableType = max_variable_number_as_usize.try_into().unwrap();
         let (input_literals, state_literals) = Self::create_input_and_state_literal_numbers(aig);
-        let initial_states: CNF = Self::create_initial_cnf(aig);
+        let initial_states: Cube = Self::create_initial_cnf(aig);
         let transition: CNF = Self::create_transition_cnf(aig, max_literal_number);
         let state_to_safety_translation: CNF =
             Self::create_state_to_safety_translation(aig, assume_output_is_bad);

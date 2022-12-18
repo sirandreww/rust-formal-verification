@@ -2,7 +2,7 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::{literal::VariableType, Clause, CNF};
+use crate::formulas::{literal::VariableType, Clause, CNF, Cube};
 
 // ************************************************************************************************
 // struct
@@ -13,7 +13,7 @@ use crate::formulas::{literal::VariableType, Clause, CNF};
 /// implementations of many additional features can be found in sub-modules.
 #[derive(Clone)]
 pub struct FiniteStateTransitionSystem {
-    initial_states: CNF,
+    initial_states: Cube,
     transition: CNF,
     state_to_safety_translation: CNF,
     unsafety_property: Clause,

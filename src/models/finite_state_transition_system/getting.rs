@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::formulas::literal::VariableType;
-use crate::formulas::CNF;
+use crate::formulas::{CNF, Cube};
 
 use super::FiniteStateTransitionSystem;
 
@@ -28,7 +28,7 @@ impl FiniteStateTransitionSystem {
         self.input_literals.to_owned()
     }
 
-    pub fn get_initial_relation(&self) -> CNF {
+    pub fn get_initial_relation(&self) -> Cube {
         self.initial_states.to_owned()
     }
 

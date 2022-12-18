@@ -59,7 +59,7 @@ impl FiniteStateTransitionSystem {
     pub fn check_invariant<T: SatSolver>(&self, inv_candidate: &CNF) {
         // println!("inv_candidate = {}", inv_candidate);
         // check INIT -> inv_candidate
-        let mut init = self.get_initial_relation();
+        let mut init = self.get_initial_relation().to_cnf();
         init.append(&self.get_state_to_safety_translation());
         // println!("init = {}", init);
 

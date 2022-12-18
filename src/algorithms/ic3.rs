@@ -29,6 +29,7 @@ use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::{max, Reverse};
+use std::time;
 
 // ************************************************************************************************
 // Enum
@@ -59,20 +60,26 @@ pub enum PushGeneralizeResult {
 // ************************************************************************************************
 
 pub struct IC3<T> {
+    // for the algorithm
     clauses: Vec<CNF>,
     fin_state: FiniteStateTransitionSystem,
     solver: T,
     rng: ThreadRng,
     latch_literals: Vec<u32>,
     _input_literals: Vec<u32>,
+
     // caching for speedup
     initial: CNF,
     transition: CNF,
     p0: CNF,
     not_p0: CNF,
     not_p1: CNF,
+
     // for printing
     verbose: bool,
+    number_of_sat_calls: u32,
+    time_in_sat_calls: time::Duration,
+    start_time: time::Instant,
 }
 
 // ************************************************************************************************
@@ -81,8 +88,16 @@ pub struct IC3<T> {
 
 impl<T: SatSolver> IC3<T> {
     // ********************************************************************************************
-    // assert
+    // sat calls
     // ********************************************************************************************
+
+    fn sat_call(&mut self, cnf_to_solve: &CNF) -> SatResponse{
+        self.number_of_sat_calls += 1;
+        let start_time = time::Instant::now();
+        let result = self.solver.solve_cnf(cnf_to_solve);
+        self.time_in_sat_calls += start_time.elapsed();
+        result
+    }
 
     // ********************************************************************************************
     // helper functions
@@ -98,21 +113,21 @@ impl<T: SatSolver> IC3<T> {
         clauses_fk
     }
 
-    fn is_bad_reached_in_0_steps(&self) -> SatResponse {
+    fn is_bad_reached_in_0_steps(&mut self) -> SatResponse {
         let mut cnf = CNF::new();
         cnf.append(&self.initial);
         cnf.append(&self.not_p0);
         // println!("I ^ !P = {}", cnf);
-        self.solver.solve_cnf(&cnf)
+        self.sat_call(&cnf)
     }
 
-    fn is_bad_reached_in_1_steps(&self) -> SatResponse {
+    fn is_bad_reached_in_1_steps(&mut self) -> SatResponse {
         let mut cnf = CNF::new();
         cnf.append(&self.initial);
         cnf.append(&self.transition);
         cnf.append(&self.not_p1);
         // println!("I ^ T ^ !P' = {}", cnf);
-        self.solver.solve_cnf(&cnf)
+        self.sat_call(&cnf)
     }
 
     fn propagate_clauses(&mut self, k: usize) {
@@ -127,7 +142,7 @@ impl<T: SatSolver> IC3<T> {
                         .fin_state
                         .add_tags_to_relation(&(!(c.to_owned())).to_cnf(), 1),
                 );
-                match self.solver.solve_cnf(&cnf) {
+                match self.sat_call(&cnf) {
                     SatResponse::UnSat => {
                         // can propagate this property :)
                         self.clauses[i + 1].add_clause(c);
@@ -153,33 +168,33 @@ impl<T: SatSolver> IC3<T> {
         Cube::new(&literals)
     }
 
-    fn is_bad_reached_in_1_step_from_cnf(&self, cnf: &CNF) -> SatResponse {
+    fn is_bad_reached_in_1_step_from_cnf(&mut self, cnf: &CNF) -> SatResponse {
         let mut new_cnf = CNF::new();
         new_cnf.append(cnf);
         new_cnf.append(&self.transition);
         new_cnf.append(&self.not_p1);
-        self.solver.solve_cnf(&new_cnf)
+        self.sat_call(&new_cnf)
     }
 
     // calculates sat(Fi ^ T ^ !s ^ s')
-    fn is_fi_and_t_and_not_s_and_s_tag_sat(&self, i: usize, s: &Cube) -> bool {
+    fn is_fi_and_t_and_not_s_and_s_tag_sat(&mut self, i: usize, s: &Cube) -> bool {
         let mut new_cnf = CNF::new();
         new_cnf.append(&self.get_fk(i));
         new_cnf.append(&self.transition);
         new_cnf.add_clause(&!(s.to_owned()));
         new_cnf.append(&self.fin_state.add_tags_to_relation(&s.to_cnf(), 1));
-        match self.solver.solve_cnf(&new_cnf) {
+        match self.sat_call(&new_cnf) {
             SatResponse::UnSat => false,
             SatResponse::Sat { assignment: _ } => true,
         }
     }
 
-    fn is_clause_inductive_relative_to_fi(&self, d: &Clause, i: usize) -> bool {
+    fn is_clause_inductive_relative_to_fi(&mut self, d: &Clause, i: usize) -> bool {
         // return !(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’)
 
         let mut first_cnf = self.initial.to_owned();
         first_cnf.append(&(!d.to_owned()).to_cnf());
-        match self.solver.solve_cnf(&first_cnf) {
+        match self.sat_call(&first_cnf) {
             SatResponse::UnSat => {}
             SatResponse::Sat { assignment: _ } => {
                 return false;
@@ -194,7 +209,7 @@ impl<T: SatSolver> IC3<T> {
                 .fin_state
                 .add_tags_to_relation(&(!d.to_owned()).to_cnf(), 1),
         );
-        match self.solver.solve_cnf(&second_cnf) {
+        match self.sat_call(&second_cnf) {
             SatResponse::UnSat => true,
             SatResponse::Sat { assignment: _ } => false,
         }
@@ -254,12 +269,12 @@ impl<T: SatSolver> IC3<T> {
     }
 
     // calculates sat(Fi ^ T ^ s')
-    fn solve_fi_and_t_and_s_tag(&self, i: usize, s: &Cube) -> SatResponse {
+    fn solve_fi_and_t_and_s_tag(&mut self, i: usize, s: &Cube) -> SatResponse {
         let mut new_cnf = CNF::new();
         new_cnf.append(&self.get_fk(i));
         new_cnf.append(&self.transition);
         new_cnf.append(&self.fin_state.add_tags_to_relation(&s.to_cnf(), 1));
-        self.solver.solve_cnf(&new_cnf)
+        self.sat_call(&new_cnf)
     }
 
     fn push_generalization(
@@ -308,12 +323,14 @@ impl<T: SatSolver> IC3<T> {
         }
     }
 
-    fn print_progress(&self, k: usize) {
-        println!(
-            "IC3 is on k = {}, clauses lengths = {:?}",
-            k,
-            self.clauses.iter().map(|c| c.len()).collect::<Vec<usize>>()
-        );
+    fn print_progress_if_verbose(&self, k: usize) {
+        if self.verbose {
+            let clauses = self.clauses.iter().map(|c| c.len()).rev().take(10).collect::<Vec<usize>>();
+            println!("IC3 is on k = {}, clauses lengths = {:?}", k, clauses);
+            println!("Number of SAT calls = {}", self.number_of_sat_calls);
+            println!("Time since start = {}", self.start_time.elapsed().as_secs_f32());
+            println!("Time in SAT calls = {}", self.time_in_sat_calls.as_secs_f32());
+        }
     }
 
     fn strengthen(&mut self, k: usize) -> StrengthenResult {
@@ -371,7 +388,7 @@ impl<T: SatSolver> IC3<T> {
             fin_state: fin_state.to_owned(),
             solver: T::default(),
             rng: thread_rng(),
-            initial: fin_state.get_initial_relation(),
+            initial: fin_state.get_initial_relation().to_cnf(),
             transition: fin_state.get_transition_relation(),
             p0,
             not_p0: not_p0.to_owned(),
@@ -379,10 +396,16 @@ impl<T: SatSolver> IC3<T> {
             latch_literals: fin_state.get_state_literal_numbers(),
             _input_literals: fin_state.get_input_literal_numbers(),
             verbose,
+            number_of_sat_calls: 0,
+            time_in_sat_calls: time::Duration::from_secs(0),
+            start_time: time::Instant::now(),
         }
     }
 
     pub fn prove(&mut self) -> IC3Result {
+        // update start time.
+        self.start_time = time::Instant::now();
+
         let init_and_not_p = self.is_bad_reached_in_0_steps();
         match init_and_not_p {
             SatResponse::Sat { assignment: _ } => return IC3Result::CTX { depth: 0 },
@@ -401,9 +424,7 @@ impl<T: SatSolver> IC3<T> {
         for k in 1.. {
             self.clauses.push(CNF::new());
             // debug_assert!(self.does_a_hold(k), "Bug in algorithm implementation found!!");
-            if self.verbose {
-                self.print_progress(k);
-            }
+            self.print_progress_if_verbose(k);
             debug_assert_eq!(self.clauses.len(), (k + 2));
             match self.strengthen(k) {
                 StrengthenResult::Success => {}
@@ -421,9 +442,7 @@ impl<T: SatSolver> IC3<T> {
                     .all(|c| self.clauses[i].contains(c)));
                 if self.clauses[i].len() == self.clauses[i + 1].len() {
                     // todo: compare just the lengths
-                    if self.verbose {
-                        self.print_progress(k);
-                    }
+                    self.print_progress_if_verbose(k);
                     return IC3Result::Proof {
                         invariant: self.get_fk(i),
                     };

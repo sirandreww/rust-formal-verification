@@ -124,7 +124,7 @@ impl<T: SatSolver + std::marker::Send + 'static + std::marker::Sync + Clone> BMC
                 };
             }
 
-            let mut sat_formula = initial.to_owned();
+            let mut sat_formula = initial.to_owned().to_cnf();
             for unroll_depth in 0..depth {
                 sat_formula.append(&fin_state.add_tags_to_relation(&tr, unroll_depth));
             }

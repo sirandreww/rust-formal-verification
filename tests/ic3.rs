@@ -84,7 +84,7 @@ mod tests {
     }
 
     #[test]
-    fn ic3_on_first_few_hwmcc20_unconstrained_problems() {
+    fn ic3_on_few_hwmcc20_folded_problems() {
         let run_test = true;
         if !run_test {
             return;
@@ -92,7 +92,7 @@ mod tests {
 
         let file_paths = vec![
             "tests/examples/hwmcc20/2019/beem/brp2.3.prop1-back-serstep_zero_then_fold2.aig",
-            "tests/examples/hwmcc20/2019/mann/data-integrity/unsafe/circular_pointer_top_w8_d16_e0_zero_then_fold2.aig"
+            // "tests/examples/hwmcc20/2019/mann/data-integrity/unsafe/circular_pointer_top_w8_d16_e0_zero_then_fold2.aig"
         ];
 
         for (i, aig_file_path) in file_paths
@@ -101,7 +101,7 @@ mod tests {
         {
             println!("i = {}/{}, file_path = {}", i, file_paths.len(), aig_file_path);
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
-            let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
+            let fin_state = FiniteStateTransitionSystem::from_aig(&aig, true);
             // test_ic3::<SplrSolver>(&fin_state, &aig);
             test_ic3::<VarisatSolver>(&fin_state, &aig);
             // test_ic3::<CadicalSolver>(&fin_state, &aig);
