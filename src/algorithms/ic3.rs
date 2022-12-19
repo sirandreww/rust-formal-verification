@@ -91,7 +91,7 @@ impl<T: StatelessSatSolver> IC3<T> {
     // sat calls
     // ********************************************************************************************
 
-    fn sat_call(&mut self, cnf_to_solve: &CNF) -> SatResponse{
+    fn sat_call(&mut self, cnf_to_solve: &CNF) -> SatResponse {
         self.number_of_sat_calls += 1;
         let start_time = time::Instant::now();
         let result = self.solver.solve_cnf(cnf_to_solve);
@@ -325,11 +325,23 @@ impl<T: StatelessSatSolver> IC3<T> {
 
     fn print_progress_if_verbose(&self, k: usize) {
         if self.verbose {
-            let clauses = self.clauses.iter().map(|c| c.len()).rev().take(10).collect::<Vec<usize>>();
+            let clauses = self
+                .clauses
+                .iter()
+                .map(|c| c.len())
+                .rev()
+                .take(10)
+                .collect::<Vec<usize>>();
             println!("IC3 is on k = {}, clauses lengths = {:?}", k, clauses);
             println!("Number of SAT calls = {}", self.number_of_sat_calls);
-            println!("Time since start = {}", self.start_time.elapsed().as_secs_f32());
-            println!("Time in SAT calls = {}", self.time_in_sat_calls.as_secs_f32());
+            println!(
+                "Time since start = {}",
+                self.start_time.elapsed().as_secs_f32()
+            );
+            println!(
+                "Time in SAT calls = {}",
+                self.time_in_sat_calls.as_secs_f32()
+            );
         }
     }
 

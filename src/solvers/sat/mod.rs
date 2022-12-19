@@ -4,9 +4,8 @@
 
 pub mod assignment;
 pub mod sat_response;
-pub mod stateless;
 pub mod stateful;
-
+pub mod stateless;
 
 // ************************************************************************************************
 // re-exports of structs in these modules to simplify paths for other imports

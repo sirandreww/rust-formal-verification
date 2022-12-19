@@ -20,7 +20,10 @@ mod tests {
     use rust_formal_verification::{
         algorithms::{ic3::IC3Result, IC3},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::{CadicalSolver, StatelessSatSolver, SplrSolver, VarisatSolver},
+        solvers::sat::{
+            stateless::{CadicalSolver, SplrSolver, VarisatSolver},
+            StatelessSatSolver,
+        },
     };
 
     use crate::common;
@@ -29,7 +32,10 @@ mod tests {
     // helper functions
     // ********************************************************************************************
 
-    fn test_ic3<T: StatelessSatSolver>(fin_state: &FiniteStateTransitionSystem, _aig: &AndInverterGraph) {
+    fn test_ic3<T: StatelessSatSolver>(
+        fin_state: &FiniteStateTransitionSystem,
+        _aig: &AndInverterGraph,
+    ) {
         let mut ic3_solver = IC3::<T>::new(fin_state, true);
         let start_time = time::Instant::now();
         let prove_result = ic3_solver.prove();
@@ -95,11 +101,13 @@ mod tests {
             // "tests/examples/hwmcc20/2019/mann/data-integrity/unsafe/circular_pointer_top_w8_d16_e0_zero_then_fold2.aig"
         ];
 
-        for (i, aig_file_path) in file_paths
-            .iter()
-            .enumerate()
-        {
-            println!("i = {}/{}, file_path = {}", i, file_paths.len(), aig_file_path);
+        for (i, aig_file_path) in file_paths.iter().enumerate() {
+            println!(
+                "i = {}/{}, file_path = {}",
+                i,
+                file_paths.len(),
+                aig_file_path
+            );
             let aig = AndInverterGraph::from_aig_path(&aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig, true);
             // test_ic3::<SplrSolver>(&fin_state, &aig);

@@ -3,9 +3,9 @@
 // ************************************************************************************************
 
 use crate::formulas::literal::VariableType;
-use crate::formulas::{Clause, Literal, CNF, Cube};
+use crate::formulas::{Clause, Cube, Literal, CNF};
 use crate::models::AndInverterGraph;
-use crate::solvers::sat::{SatResponse, stateless::VarisatSolver};
+use crate::solvers::sat::{stateless::VarisatSolver, SatResponse};
 
 use super::FiniteStateTransitionSystem;
 
@@ -101,7 +101,7 @@ impl FiniteStateTransitionSystem {
                 }
             }
         }
-        
+
         Cube::new(&cube_literals)
     }
 

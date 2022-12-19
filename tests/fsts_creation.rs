@@ -18,7 +18,7 @@ mod tests {
     use rust_formal_verification::{
         algorithms::formula_logic::is_a_and_b_satisfiable,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::VarisatSolver,
+        solvers::sat::stateless::VarisatSolver,
     };
     // use std::fs;
 

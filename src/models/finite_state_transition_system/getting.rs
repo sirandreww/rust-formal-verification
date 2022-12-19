@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::formulas::literal::VariableType;
-use crate::formulas::{CNF, Cube};
+use crate::formulas::{Cube, CNF};
 
 use super::FiniteStateTransitionSystem;
 

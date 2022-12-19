@@ -10,14 +10,14 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::{CNF, Cube};
 use super::SatResponse;
+use crate::formulas::{Cube, CNF};
 
 // ************************************************************************************************
 // Sat Solver trait
 // ************************************************************************************************
 
-pub trait StatefulSatSolver : Default {
+pub trait StatefulSatSolver: Default {
     type Lit;
     fn add_cnf(&mut self, cnf: &CNF);
     fn solve(&mut self) -> SatResponse;

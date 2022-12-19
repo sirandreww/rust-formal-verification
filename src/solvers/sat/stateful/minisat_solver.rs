@@ -1,30 +1,33 @@
 // ************************************************************************************************
-// rust submodule declaration, they get searched in their respective file  names
-// ************************************************************************************************
-
-pub mod cadical_solver;
-pub mod splr_solver;
-pub mod varisat_solver;
-
-// ************************************************************************************************
-// re-exports of structs in these modules to simplify paths for other imports
-// ************************************************************************************************
-
-pub use super::sat_response::SatResponse;
-pub use cadical_solver::CadicalSolver;
-pub use splr_solver::SplrSolver;
-pub use varisat_solver::VarisatSolver;
-
-// ************************************************************************************************
 // use
 // ************************************************************************************************
 
 use crate::formulas::CNF;
+use crate::solvers::sat::SatResponse;
+use splr::solver::SolverResult;
+use splr::{self, SolverError};
+use super::{super::Assignment, StatelessSatSolver};
 
 // ************************************************************************************************
-// Sat Solver trait
+// struct
 // ************************************************************************************************
 
-pub trait StatelessSatSolver: Default {
-    fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse;
+#[derive(Default, Clone, Copy)]
+pub struct MiniSatSolver {}
+
+// ************************************************************************************************
+// impl SplrSolver
+// ************************************************************************************************
+
+impl MiniSatSolver {
+}
+
+// ************************************************************************************************
+// impl trait
+// ************************************************************************************************
+
+impl StatefulSatSolver for SplrSolver {
+    fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
+        self.solve_cnf(cnf_to_solve)
+    }
 }

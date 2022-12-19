@@ -2,7 +2,7 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::{literal::VariableType, Clause, CNF, Cube};
+use crate::formulas::{literal::VariableType, Clause, Cube, CNF};
 
 // ************************************************************************************************
 // struct

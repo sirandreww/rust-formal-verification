@@ -20,7 +20,7 @@ mod tests {
         algorithms::{bmc::BMCResult, BMC},
         formulas::literal::VariableType,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::{Assignment, SplrSolver},
+        solvers::sat::{stateless::SplrSolver, Assignment},
     };
     use std::{
         collections::HashMap,
