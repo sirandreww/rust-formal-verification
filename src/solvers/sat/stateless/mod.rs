@@ -10,7 +10,6 @@ pub mod varisat_solver;
 // re-exports of structs in these modules to simplify paths for other imports
 // ************************************************************************************************
 
-pub use super::sat_response::SatResponse;
 pub use cadical_solver::CadicalSolver;
 pub use splr_solver::SplrSolver;
 pub use varisat_solver::VarisatSolver;
@@ -19,6 +18,7 @@ pub use varisat_solver::VarisatSolver;
 // use
 // ************************************************************************************************
 
+use super::SatResponse;
 use crate::formulas::CNF;
 
 // ************************************************************************************************

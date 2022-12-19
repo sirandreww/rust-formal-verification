@@ -63,6 +63,10 @@ impl CNF {
         self.clauses.contains(clause)
     }
 
+    pub fn get_max_variable_number(&self) -> VariableType {
+        self.max_variable_number
+    }
+
     /// Function that returns the number of clauses that are currently in the CNF.
     ///
     /// # Arguments
