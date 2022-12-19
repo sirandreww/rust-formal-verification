@@ -20,7 +20,7 @@ mod tests {
     use rust_formal_verification::{
         algorithms::{ic3::IC3Result, IC3},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::{CadicalSolver, SatSolver, SplrSolver, VarisatSolver},
+        solvers::sat::{CadicalSolver, StatelessSatSolver, SplrSolver, VarisatSolver},
     };
 
     use crate::common;
@@ -29,7 +29,7 @@ mod tests {
     // helper functions
     // ********************************************************************************************
 
-    fn test_ic3<T: SatSolver>(fin_state: &FiniteStateTransitionSystem, _aig: &AndInverterGraph) {
+    fn test_ic3<T: StatelessSatSolver>(fin_state: &FiniteStateTransitionSystem, _aig: &AndInverterGraph) {
         let mut ic3_solver = IC3::<T>::new(fin_state, true);
         let start_time = time::Instant::now();
         let prove_result = ic3_solver.prove();

@@ -4,7 +4,7 @@
 
 use crate::{
     formulas::CNF,
-    solvers::sat::{SatResponse, SatSolver},
+    solvers::sat::{SatResponse, StatelessSatSolver},
 };
 
 // ************************************************************************************************
@@ -53,7 +53,7 @@ use crate::{
 ///
 /// assert!(does_a_imply_b::<VarisatSolver>(&all_literals_are_equal, &one_and_4_are_equal));
 /// ```
-pub fn does_a_imply_b<T: SatSolver>(a: &CNF, b: &CNF) -> bool {
+pub fn does_a_imply_b<T: StatelessSatSolver>(a: &CNF, b: &CNF) -> bool {
     // a implies b iff a implies every clause in b
     // println!("a = {}", a);
     // println!("b = {}", b);
@@ -72,7 +72,7 @@ pub fn does_a_imply_b<T: SatSolver>(a: &CNF, b: &CNF) -> bool {
     true
 }
 
-pub fn is_a_and_b_satisfiable<T: SatSolver>(a: &CNF, b: &CNF) -> bool {
+pub fn is_a_and_b_satisfiable<T: StatelessSatSolver>(a: &CNF, b: &CNF) -> bool {
     let mut cnf_to_solve = a.to_owned();
     cnf_to_solve.append(b);
     let solver = T::default();

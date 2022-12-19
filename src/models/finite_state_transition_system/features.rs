@@ -5,7 +5,7 @@
 use crate::algorithms::formula_logic::{does_a_imply_b, is_a_and_b_satisfiable};
 use crate::formulas::literal::VariableType;
 use crate::formulas::{Clause, Literal, CNF};
-use crate::solvers::sat::SatSolver;
+use crate::solvers::sat::StatelessSatSolver;
 
 use super::FiniteStateTransitionSystem;
 
@@ -56,7 +56,7 @@ impl FiniteStateTransitionSystem {
         )
     }
 
-    pub fn check_invariant<T: SatSolver>(&self, inv_candidate: &CNF) {
+    pub fn check_invariant<T: StatelessSatSolver>(&self, inv_candidate: &CNF) {
         // println!("inv_candidate = {}", inv_candidate);
         // check INIT -> inv_candidate
         let mut init = self.get_initial_relation().to_cnf();

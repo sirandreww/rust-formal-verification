@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::formulas::CNF;
-use crate::solvers::sat::{Assignment, SatResponse, SatSolver};
+use crate::solvers::sat::{Assignment, SatResponse, StatelessSatSolver};
 use varisat::{ExtendFormula, Lit, Solver};
 
 // use super::{Assignment, SatSolver};
@@ -68,7 +68,7 @@ impl VarisatSolver {
 // impl trait
 // ************************************************************************************************
 
-impl SatSolver for VarisatSolver {
+impl StatelessSatSolver for VarisatSolver {
     fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
         self.solve_cnf(cnf_to_solve)
     }

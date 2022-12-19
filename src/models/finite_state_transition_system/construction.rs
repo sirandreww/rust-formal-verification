@@ -5,7 +5,7 @@
 use crate::formulas::literal::VariableType;
 use crate::formulas::{Clause, Literal, CNF, Cube};
 use crate::models::AndInverterGraph;
-use crate::solvers::sat::{SatResponse, VarisatSolver};
+use crate::solvers::sat::{SatResponse, stateless::VarisatSolver};
 
 use super::FiniteStateTransitionSystem;
 

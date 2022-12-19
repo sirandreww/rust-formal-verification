@@ -5,7 +5,7 @@
 use crate::formulas::CNF;
 use crate::solvers::sat::SatResponse;
 
-use super::{Assignment, SatSolver};
+use super::{super::Assignment, StatelessSatSolver};
 // use std::time;
 
 // ************************************************************************************************
@@ -76,7 +76,7 @@ impl CadicalSolver {
 // impl trait
 // ************************************************************************************************
 
-impl SatSolver for CadicalSolver {
+impl StatelessSatSolver for CadicalSolver {
     fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
         self.solve_cnf(cnf_to_solve)
     }

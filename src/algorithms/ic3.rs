@@ -22,7 +22,7 @@
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{Assignment, SatResponse, SatSolver},
+    solvers::sat::{Assignment, SatResponse, StatelessSatSolver},
 };
 use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
@@ -86,7 +86,7 @@ pub struct IC3<T> {
 // impl
 // ************************************************************************************************
 
-impl<T: SatSolver> IC3<T> {
+impl<T: StatelessSatSolver> IC3<T> {
     // ********************************************************************************************
     // sat calls
     // ********************************************************************************************
