@@ -5,6 +5,7 @@
 pub mod bmc; // requires file in this directory with the name 'bmc.rs'
 pub mod formula_logic;
 pub mod ic3;
+pub mod ic3_v2;
 pub mod pdr;
 
 // ************************************************************************************************
