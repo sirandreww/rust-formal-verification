@@ -160,6 +160,14 @@ impl MiniSatSolver {
         temporary_extra_cube: Option<&Cube>,
         temporary_extra_clause: Option<&Clause>,
     ) -> SatResponse {
+        // just in case temporary contain odd literals.
+        if let Some(cube) = temporary_extra_cube {
+            self.extend_mini_sat_literals_if_needed(&cube.to_cnf());
+        }
+        if let Some(clause) = temporary_extra_clause {
+            self.extend_mini_sat_literals_if_needed(&clause.to_cnf());
+        }
+
         match temporary_extra_clause {
             None => self.solve_with_just_cube_assumptions(temporary_extra_cube),
             Some(extra_clause) => {

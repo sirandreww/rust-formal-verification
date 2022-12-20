@@ -196,7 +196,11 @@ impl<T: StatefulSatSolver> IC3V2<T> {
 
     fn is_bad_reached_in_1_steps(&mut self) -> SatResponse {
         // I ^ T ^ !P'
-        self.sat_call(SolverVariant::FiAndT(0), None, None)
+        let mut cnf = CNF::new();
+        cnf.append(&self.initial);
+        cnf.append(&self.transition);
+        cnf.append(&self.not_p1);
+        self.sat_call(SolverVariant::Custom(cnf), None, None)
     }
 
     fn is_cube_reachable_in_1_step_from_fi(&mut self, i: usize, cube: &Cube) -> SatResponse {
@@ -466,11 +470,14 @@ impl<T: StatefulSatSolver> IC3V2<T> {
         let mut not_p0 = fin_state.get_state_to_safety_translation();
         not_p0.append(&fin_state.get_unsafety_property());
 
+        let mut initial_solver = T::default();
+        initial_solver.add_cnf(&fin_state.get_initial_relation().to_cnf());
+
         Self {
             clauses: Vec::new(),
             fin_state: fin_state.to_owned(),
             fi_and_t_solvers: Vec::new(),
-            initial_solver: T::default(),
+            initial_solver: initial_solver,
             fi_and_t_and_not_p_tag_solvers: Vec::new(),
             rng: thread_rng(),
             initial: fin_state.get_initial_relation().to_cnf(),
