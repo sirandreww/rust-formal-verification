@@ -2,7 +2,8 @@
 // use
 // ************************************************************************************************
 
-use crate::formulas::{literal::VariableType, Clause, Cube, CNF};
+use crate::formulas::{literal::VariableType, Clause, Cube, Literal, CNF};
+use std::collections::HashSet;
 
 // ************************************************************************************************
 // struct
@@ -13,6 +14,7 @@ use crate::formulas::{literal::VariableType, Clause, Cube, CNF};
 /// implementations of many additional features can be found in sub-modules.
 #[derive(Clone)]
 pub struct FiniteStateTransitionSystem {
+    initial_literals: HashSet<Literal>,
     initial_states: Cube,
     transition: CNF,
     state_to_safety_translation: CNF,

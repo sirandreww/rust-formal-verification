@@ -15,7 +15,7 @@ pub use minisat_solver::MiniSatSolver;
 // ************************************************************************************************
 
 use super::SatResponse;
-use crate::formulas::{Cube, CNF};
+use crate::formulas::{Clause, Cube, CNF};
 
 // ************************************************************************************************
 // Sat Solver trait
@@ -23,6 +23,9 @@ use crate::formulas::{Cube, CNF};
 
 pub trait StatefulSatSolver: Default {
     fn add_cnf(&mut self, cnf: &CNF);
-    fn solve(&mut self) -> SatResponse;
-    fn solve_under_assumptions(&mut self, assumptions: &Cube) -> SatResponse;
+    fn solve(
+        &mut self,
+        temporary_extra_cube: Option<&Cube>,
+        temporary_extra_clause: Option<&Clause>,
+    ) -> SatResponse;
 }

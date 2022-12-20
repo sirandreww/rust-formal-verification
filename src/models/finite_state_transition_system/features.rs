@@ -4,7 +4,7 @@
 
 use crate::algorithms::formula_logic::{does_a_imply_b, is_a_and_b_satisfiable};
 use crate::formulas::literal::VariableType;
-use crate::formulas::{Clause, Literal, CNF};
+use crate::formulas::{Clause, Cube, Literal, CNF};
 use crate::solvers::sat::StatelessSatSolver;
 
 use super::FiniteStateTransitionSystem;
@@ -18,6 +18,22 @@ impl FiniteStateTransitionSystem {
     // helper functions
     // ********************************************************************************************
 
+    fn bump_all_clause_variables_by_some_number(
+        original_clause: &Clause,
+        number_to_bump: VariableType,
+    ) -> Clause {
+        let mut literals = Vec::new();
+        for literal in original_clause.iter() {
+            assert_ne!(literal.get_number(), 0);
+            let mut new_number = literal.get_number();
+            new_number += number_to_bump;
+            let is_negated = literal.is_negated();
+            let new_lit = Literal::new(new_number).negate_if_true(is_negated);
+            literals.push(new_lit);
+        }
+        Clause::new(&literals)
+    }
+
     fn bump_all_cnf_variables_by_some_number(
         original_cnf: &CNF,
         number_to_bump: VariableType,
@@ -28,17 +44,8 @@ impl FiniteStateTransitionSystem {
         } else {
             let mut cnf_to_add_to = CNF::new();
             for clause in original_cnf.iter() {
-                let mut literals = Vec::new();
-                for literal in clause.iter() {
-                    assert_ne!(literal.get_number(), 0);
-                    let mut new_number = literal.get_number();
-                    new_number += number_to_bump;
-                    let is_negated = literal.is_negated();
-                    let new_lit = Literal::new(new_number).negate_if_true(is_negated);
-                    literals.push(new_lit);
-                }
-
-                let new_clause = Clause::new(&literals);
+                let new_clause =
+                    Self::bump_all_clause_variables_by_some_number(clause, number_to_bump);
                 cnf_to_add_to.add_clause(&new_clause);
             }
             cnf_to_add_to
@@ -54,6 +61,29 @@ impl FiniteStateTransitionSystem {
             relation,
             self.max_literal_number * number_of_tags,
         )
+    }
+
+    pub fn add_tags_to_cube(&self, cube: &Cube, number_of_tags: VariableType) -> Cube {
+        if number_of_tags == 0 {
+            // this makes the function faster for the simple case
+            cube.to_owned()
+        } else {
+            let bumped_as_clause = Self::bump_all_clause_variables_by_some_number(
+                &(!(cube.to_owned())),
+                self.max_literal_number * number_of_tags,
+            );
+            !bumped_as_clause
+        }
+    }
+
+    pub fn is_cube_initial(&self, cube: &Cube) -> bool {
+        // check that cube contains no contradiction with initial.
+        for literal in cube.iter() {
+            if self.initial_literals.contains(&!literal.to_owned()) {
+                return false;
+            }
+        }
+        true
     }
 
     pub fn check_invariant<T: StatelessSatSolver>(&self, inv_candidate: &CNF) {

@@ -40,17 +40,17 @@ pub enum IC3Result {
     CTX { depth: VariableType },
 }
 
-pub enum StrengthenResult {
+enum StrengthenResult {
     Success,
     Failure { depth: VariableType },
 }
 
-pub enum InductivelyGeneralizeResult {
+enum InductivelyGeneralizeResult {
     Success { n: usize },
     Failure,
 }
 
-pub enum PushGeneralizeResult {
+enum PushGeneralizeResult {
     Success,
     Failure,
 }

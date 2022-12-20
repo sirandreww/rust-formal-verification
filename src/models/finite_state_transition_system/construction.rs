@@ -27,7 +27,9 @@ impl FiniteStateTransitionSystem {
         state_literals: Vec<VariableType>,
         input_literals: Vec<VariableType>,
     ) -> Self {
+        let initial_literals = initial_states.iter().map(|l| l.to_owned()).collect();
         Self {
+            initial_literals,
             initial_states,
             transition,
             state_to_safety_translation,

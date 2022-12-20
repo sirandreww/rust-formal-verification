@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::{
-    formulas::{Clause, Literal, CNF},
+    formulas::{Clause, Cube, Literal, CNF},
     solvers::sat::{Assignment, SatResponse},
 };
 
@@ -47,6 +47,14 @@ impl MiniSatSolver {
         result
     }
 
+    fn translate_cube_into_mini_sat_cube(&self, cube: &Cube) -> Vec<minisat::Bool> {
+        let mut result = Vec::with_capacity(cube.len());
+        for literal in cube.iter() {
+            result.push(self.literal_to_mini_sat_literal(literal));
+        }
+        result
+    }
+
     fn extend_mini_sat_literals_if_needed(&mut self, cnf: &CNF) {
         let max_lit: usize = cnf.get_max_variable_number().try_into().unwrap();
         if max_lit >= self.mini_sat_literals.len() {
@@ -71,21 +79,19 @@ impl MiniSatSolver {
         result
     }
 
-    // ************************************************************************************************
-    // API functions
-    // ************************************************************************************************
-
-    pub fn add_cnf(&mut self, cnf: &CNF) {
-        self.extend_mini_sat_literals_if_needed(cnf);
-        for c in cnf.iter() {
-            let mini_sat_clause = self.translate_clause_into_mini_sat_clause(c);
-            self.solver.add_clause(mini_sat_clause)
-        }
-    }
-
-    pub fn solve(&mut self) -> SatResponse {
+    fn solve_under_already_translated_assumptions(
+        &mut self,
+        mini_sat_cube: &[minisat::Bool],
+    ) -> SatResponse {
         let mini_sat_literals = &self.mini_sat_literals;
-        let sat_result = self.solver.solve();
+
+        let sat_result = if mini_sat_cube.is_empty() {
+            self.solver.solve()
+        } else {
+            self.solver
+                .solve_under_assumptions(mini_sat_cube.to_owned())
+        };
+
         match sat_result {
             Ok(model) => {
                 let result =
@@ -98,9 +104,71 @@ impl MiniSatSolver {
         }
     }
 
-    pub fn solve_under_assumptions(&mut self, assumptions: &crate::formulas::Cube) -> SatResponse {
-        assumptions.to_cnf();
-        todo!()
+    fn solve_with_just_cube_assumptions(&mut self, cube: Option<&Cube>) -> SatResponse {
+        let v = match cube {
+            Some(c) => self.translate_cube_into_mini_sat_cube(c),
+            None => Vec::new(),
+        };
+        self.solve_under_already_translated_assumptions(&v)
+    }
+
+    fn handle_temporary_extra_clause(&mut self, clause: &Clause, cube: Option<&Cube>) {
+        // get clause as mini sat vector of bool
+        let mut mini_sat_clause = self.translate_clause_into_mini_sat_clause(clause);
+
+        // add a entirely new variable
+        let some_new_variable = self.solver.new_lit();
+
+        // add the clause c || !var to minisat
+        mini_sat_clause.push(!some_new_variable);
+        self.solver.add_clause(mini_sat_clause);
+
+        // this should be added as assumption so as to not make the clause trivial
+        let mut assumptions = Vec::new();
+        assumptions.push(some_new_variable);
+
+        // add more assumption if present
+        match cube {
+            Some(c) => {
+                let translated_cube = self.translate_cube_into_mini_sat_cube(c);
+                assumptions.append(&mut translated_cube);
+            }
+            None => {}
+        }
+
+        // call sat solver
+        let result = self.solve_under_already_translated_assumptions(&assumptions);
+
+        // cancel the literal for all coming times
+        self.solver.add_clause([!some_new_variable]);
+    }
+
+    // ************************************************************************************************
+    // API functions
+    // ************************************************************************************************
+
+    pub fn add_cnf(&mut self, cnf: &CNF) {
+        self.extend_mini_sat_literals_if_needed(cnf);
+        for c in cnf.iter() {
+            let mini_sat_clause = self.translate_clause_into_mini_sat_clause(c);
+            self.solver.add_clause(mini_sat_clause)
+        }
+    }
+
+    pub fn solve(
+        &mut self,
+        temporary_extra_cube: Option<&Cube>,
+        temporary_extra_clause: Option<&Clause>,
+    ) -> SatResponse {
+        match (temporary_extra_cube, temporary_extra_clause) {
+            (None, None) => self.solve_with_just_cube_assumptions(temporary_extra_cube),
+            (None, Some(extra_clause)) => todo!(),
+            (Some(_), None) => self.solve_with_just_cube_assumptions(temporary_extra_cube),
+            (Some(_), Some(_)) => todo!(),
+        }
+        // if temporary_extra_cube == None && temporary_extra_clause == None
+        // assumptions.to_cnf();
+        // todo!()
     }
 }
 
@@ -113,12 +181,12 @@ impl StatefulSatSolver for MiniSatSolver {
         self.add_cnf(cnf)
     }
 
-    fn solve(&mut self) -> SatResponse {
-        self.solve()
-    }
-
-    fn solve_under_assumptions(&mut self, assumptions: &crate::formulas::Cube) -> SatResponse {
-        self.solve_under_assumptions(assumptions)
+    fn solve(
+        &mut self,
+        temporary_extra_cube: Option<&Cube>,
+        temporary_extra_clause: Option<&Clause>,
+    ) -> SatResponse {
+        self.solve(temporary_extra_cube, temporary_extra_clause)
     }
 }
 
