@@ -20,7 +20,7 @@ mod tests {
     use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::CNF;
     use rust_formal_verification::solvers::sat::stateless::CadicalSolver;
-    use rust_formal_verification::solvers::sat::stateless::SatResponse;
+    use rust_formal_verification::solvers::sat::SatResponse;
     use rust_formal_verification::solvers::sat::stateless::SplrSolver;
     use rust_formal_verification::solvers::sat::stateless::VarisatSolver;
     use std::cmp::min;
