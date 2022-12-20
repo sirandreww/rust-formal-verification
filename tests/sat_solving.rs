@@ -78,7 +78,10 @@ mod tests {
             (SatResponse::UnSat, SatResponse::UnSat, SatResponse::UnSat, SatResponse::UnSat) => {
                 false
             }
-            _ => panic!("Sat solvers disagree."),
+            _ => {
+                println!("{}", cnf);
+                panic!("Sat solvers disagree.")
+            }
         }
     }
 
