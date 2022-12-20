@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn ic3_on_few_hwmcc20_folded_problems() {
-        let run_test = true;
+        let run_test = false;
         if !run_test {
             return;
         }

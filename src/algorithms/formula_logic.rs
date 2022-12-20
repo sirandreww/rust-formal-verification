@@ -31,7 +31,7 @@ use crate::{
 /// ```
 /// use rust_formal_verification::formulas::{CNF, Clause, Literal};
 /// use rust_formal_verification::algorithms::formula_logic::does_a_imply_b;
-/// use rust_formal_verification::solvers::sat::VarisatSolver;
+/// use rust_formal_verification::solvers::sat::stateless::VarisatSolver;
 /// let l1 = Literal::new(1);
 /// let l2 = Literal::new(2);
 /// let l3 = Literal::new(3);

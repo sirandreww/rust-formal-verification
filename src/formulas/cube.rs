@@ -71,12 +71,7 @@ impl Not for Cube {
 
 impl fmt::Display for Cube {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut literals = self.literals.to_owned();
-        literals.sort();
-        let string_vec = literals
-            .iter()
-            .map(|lit| lit.to_string())
-            .collect::<Vec<String>>();
-        write!(f, "({})", string_vec.join(" & "))
+        let cnf = self.to_cnf();
+        write!(f, "{}", cnf)
     }
 }
