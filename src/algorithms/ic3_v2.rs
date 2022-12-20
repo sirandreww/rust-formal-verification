@@ -44,7 +44,7 @@ pub enum IC3V2Result {
 
 enum StrengthenResult {
     Success,
-    Failure { depth: VariableType },
+    Failure { _depth: VariableType },
 }
 
 enum InductivelyGeneralizeResult {
@@ -225,14 +225,14 @@ impl<T: StatefulSatSolver> IC3V2<T> {
         // Fi ^ T ^ d ^ !d’
         let not_d_tag = self.fin_state.add_tags_to_cube(&(!(d.to_owned())), 1);
 
-        match self.sat_call(SolverVariant::FiAndT(i), Some(&not_d_tag), Some(&d)) {
+        match self.sat_call(SolverVariant::FiAndT(i), Some(&not_d_tag), Some(d)) {
             SatResponse::UnSat => false,
             SatResponse::Sat { assignment: _ } => true,
         }
     }
 
     fn does_cube_intersect_with_initial(&mut self, cube: &Cube) -> bool {
-        match self.sat_call(SolverVariant::Initial, Some(&cube), None) {
+        match self.sat_call(SolverVariant::Initial, Some(cube), None) {
             SatResponse::UnSat => false,
             SatResponse::Sat { assignment: _ } => true,
         }
@@ -292,7 +292,7 @@ impl<T: StatefulSatSolver> IC3V2<T> {
             debug_assert!(!self.does_cube_intersect_with_initial(&(!(d.to_owned()))));
         }
 
-        !self.is_fi_and_t_and_clause_and_not_clause_tag_sat(i, &d)
+        !self.is_fi_and_t_and_clause_and_not_clause_tag_sat(i, d)
     }
 
     fn get_subclause_of_not_s_that_is_inductive_relative_to_fi(
@@ -432,7 +432,7 @@ impl<T: StatefulSatSolver> IC3V2<T> {
                     ) {
                         InductivelyGeneralizeResult::Failure => {
                             return StrengthenResult::Failure {
-                                depth: k.try_into().unwrap(),
+                                _depth: k.try_into().unwrap(),
                             };
                         }
                         InductivelyGeneralizeResult::Success { n } => {
@@ -441,7 +441,7 @@ impl<T: StatefulSatSolver> IC3V2<T> {
                             match self.push_generalization(&queue, k) {
                                 PushGeneralizeResult::Failure => {
                                     return StrengthenResult::Failure {
-                                        depth: k.try_into().unwrap(),
+                                        _depth: k.try_into().unwrap(),
                                     };
                                 }
                                 PushGeneralizeResult::Success => {}
@@ -514,7 +514,7 @@ impl<T: StatefulSatSolver> IC3V2<T> {
             debug_assert_eq!(self.get_clause_from_clauses(0).len(), 0);
             match self.strengthen(k) {
                 StrengthenResult::Success => {}
-                StrengthenResult::Failure { depth: _ } => {
+                StrengthenResult::Failure { _depth: _ } => {
                     return IC3V2Result::CTX {
                         depth: k.try_into().unwrap(),
                     };

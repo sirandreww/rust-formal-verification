@@ -42,7 +42,7 @@ pub enum IC3Result {
 
 enum StrengthenResult {
     Success,
-    Failure { depth: VariableType },
+    Failure { _depth: VariableType },
 }
 
 enum InductivelyGeneralizeResult {
@@ -361,7 +361,7 @@ impl<T: StatelessSatSolver> IC3<T> {
                     ) {
                         InductivelyGeneralizeResult::Failure => {
                             return StrengthenResult::Failure {
-                                depth: k.try_into().unwrap(),
+                                _depth: k.try_into().unwrap(),
                             };
                         }
                         InductivelyGeneralizeResult::Success { n } => {
@@ -370,7 +370,7 @@ impl<T: StatelessSatSolver> IC3<T> {
                             match self.push_generalization(&queue, k) {
                                 PushGeneralizeResult::Failure => {
                                     return StrengthenResult::Failure {
-                                        depth: k.try_into().unwrap(),
+                                        _depth: k.try_into().unwrap(),
                                     };
                                 }
                                 PushGeneralizeResult::Success => {}
@@ -440,7 +440,7 @@ impl<T: StatelessSatSolver> IC3<T> {
             debug_assert_eq!(self.clauses.len(), (k + 2));
             match self.strengthen(k) {
                 StrengthenResult::Success => {}
-                StrengthenResult::Failure { depth: _ } => {
+                StrengthenResult::Failure { _depth: _ } => {
                     return IC3Result::CTX {
                         depth: k.try_into().unwrap(),
                     };

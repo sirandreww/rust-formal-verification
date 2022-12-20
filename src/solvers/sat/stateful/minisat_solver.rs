@@ -129,12 +129,9 @@ impl MiniSatSolver {
         assumptions.push(some_new_variable);
 
         // add more assumption if present
-        match cube {
-            Some(c) => {
-                let mut translated_cube = self.translate_cube_into_mini_sat_cube(c);
-                assumptions.append(&mut translated_cube);
-            }
-            None => {}
+        if let Some(c) = cube {
+            let mut translated_cube = self.translate_cube_into_mini_sat_cube(c);
+            assumptions.append(&mut translated_cube);
         }
 
         // call sat solver
