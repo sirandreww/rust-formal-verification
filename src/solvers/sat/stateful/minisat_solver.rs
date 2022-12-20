@@ -85,12 +85,9 @@ impl MiniSatSolver {
     ) -> SatResponse {
         let mini_sat_literals = &self.mini_sat_literals;
 
-        let sat_result = if mini_sat_cube.is_empty() {
-            self.solver.solve()
-        } else {
-            self.solver
-                .solve_under_assumptions(mini_sat_cube.to_owned())
-        };
+        let sat_result = self
+            .solver
+            .solve_under_assumptions(mini_sat_cube.to_owned());
 
         match sat_result {
             Ok(model) => {
@@ -112,7 +109,11 @@ impl MiniSatSolver {
         self.solve_under_already_translated_assumptions(&v)
     }
 
-    fn handle_temporary_extra_clause(&mut self, clause: &Clause, cube: Option<&Cube>) {
+    fn handle_temporary_extra_clause(
+        &mut self,
+        clause: &Clause,
+        cube: Option<&Cube>,
+    ) -> SatResponse {
         // get clause as mini sat vector of bool
         let mut mini_sat_clause = self.translate_clause_into_mini_sat_clause(clause);
 
@@ -130,7 +131,7 @@ impl MiniSatSolver {
         // add more assumption if present
         match cube {
             Some(c) => {
-                let translated_cube = self.translate_cube_into_mini_sat_cube(c);
+                let mut translated_cube = self.translate_cube_into_mini_sat_cube(c);
                 assumptions.append(&mut translated_cube);
             }
             None => {}
@@ -139,8 +140,10 @@ impl MiniSatSolver {
         // call sat solver
         let result = self.solve_under_already_translated_assumptions(&assumptions);
 
-        // cancel the literal for all coming times
+        // cancel the previous clause
         self.solver.add_clause([!some_new_variable]);
+
+        result
     }
 
     // ************************************************************************************************
@@ -160,11 +163,11 @@ impl MiniSatSolver {
         temporary_extra_cube: Option<&Cube>,
         temporary_extra_clause: Option<&Clause>,
     ) -> SatResponse {
-        match (temporary_extra_cube, temporary_extra_clause) {
-            (None, None) => self.solve_with_just_cube_assumptions(temporary_extra_cube),
-            (None, Some(extra_clause)) => todo!(),
-            (Some(_), None) => self.solve_with_just_cube_assumptions(temporary_extra_cube),
-            (Some(_), Some(_)) => todo!(),
+        match temporary_extra_clause {
+            None => self.solve_with_just_cube_assumptions(temporary_extra_cube),
+            Some(extra_clause) => {
+                self.handle_temporary_extra_clause(extra_clause, temporary_extra_cube)
+            }
         }
         // if temporary_extra_cube == None && temporary_extra_clause == None
         // assumptions.to_cnf();

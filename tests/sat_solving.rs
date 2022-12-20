@@ -52,7 +52,7 @@ mod tests {
         let mini_sat_timer = time::Instant::now();
         let mut solver = MiniSatSolver::default();
         solver.add_cnf(&cnf);
-        let mini_sat_response = solver.solve();
+        let mini_sat_response = solver.solve(None, None);
         *stats.get_mut("MiniSatSolver").unwrap() += mini_sat_timer.elapsed().as_secs_f32();
 
         // make sure all results are the same

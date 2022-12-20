@@ -24,7 +24,7 @@
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{stateful::StatefulSatSolver, Assignment, SatResponse, StatelessSatSolver},
+    solvers::sat::{stateful::StatefulSatSolver, Assignment, SatResponse},
 };
 use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
@@ -61,6 +61,7 @@ enum SolverVariant {
     Initial,
     FiAndT(usize),
     FiAndTAndNotPTag(usize),
+    Custom(CNF),
 }
 
 // ************************************************************************************************
@@ -105,15 +106,49 @@ impl<T: StatefulSatSolver> IC3V2<T> {
     // ********************************************************************************************
 
     fn add_clause_to_clauses(&mut self, index: usize, clause: &Clause) {
+        debug_assert_eq!(self.clauses.len(), self.fi_and_t_solvers.len());
+        debug_assert_eq!(
+            self.clauses.len(),
+            self.fi_and_t_and_not_p_tag_solvers.len()
+        );
+
         self.clauses[index].add_clause(clause);
+        self.fi_and_t_solvers[index].add_cnf(&clause.to_cnf());
+        self.fi_and_t_and_not_p_tag_solvers[index].add_cnf(&clause.to_cnf());
     }
 
     fn get_clause_from_clauses(&self, index: usize) -> CNF {
-        self.clauses[index]
+        self.clauses[index].to_owned()
     }
 
     fn push_extra_frame_to_clauses(&mut self) {
+        debug_assert_eq!(self.clauses.len(), self.fi_and_t_solvers.len());
+        debug_assert_eq!(
+            self.clauses.len(),
+            self.fi_and_t_and_not_p_tag_solvers.len()
+        );
+
         self.clauses.push(CNF::new());
+
+        // update solvers
+        let mut fi_and_t = T::default();
+        fi_and_t.add_cnf(&self.transition);
+
+        let mut fi_and_t_and_not_p_tag = T::default();
+        fi_and_t_and_not_p_tag.add_cnf(&self.transition);
+        fi_and_t_and_not_p_tag.add_cnf(&self.not_p1);
+
+        if self.fi_and_t_solvers.is_empty() {
+            fi_and_t.add_cnf(&self.initial);
+            fi_and_t_and_not_p_tag.add_cnf(&self.initial);
+        } else {
+            fi_and_t.add_cnf(&self.p0);
+            fi_and_t_and_not_p_tag.add_cnf(&self.p0);
+        }
+
+        self.fi_and_t_solvers.push(fi_and_t);
+        self.fi_and_t_and_not_p_tag_solvers
+            .push(fi_and_t_and_not_p_tag);
     }
 
     // ********************************************************************************************
@@ -123,32 +158,28 @@ impl<T: StatefulSatSolver> IC3V2<T> {
     fn sat_call(
         &mut self,
         solver_index: SolverVariant,
-        assumptions: Option<&Cube>,
-        temporary_cnf: Option<&CNF>, // costly so please avoid.
+        cube_assumptions: Option<&Cube>,
+        clause_assumptions: Option<&Clause>,
     ) -> SatResponse {
         self.number_of_sat_calls += 1;
         let start_time = time::Instant::now();
 
         // find solver
-        let mut solver = match solver_index {
-            SolverVariant::Initial => &self.initial_solver,
-            SolverVariant::FiAndT(j) => &self.fi_and_t_solvers[j],
-            SolverVariant::FiAndTAndNotPTag(j) => &self.fi_and_t_and_not_p_tag_solvers[j],
-        };
-
-        // clone and add temporary cnf if needed.
-        match temporary_cnf {
-            Some(cnf) => {
-                solver = &solver.clone();
-                solver.add_cnf(cnf);
+        let result = match solver_index {
+            SolverVariant::Initial => self
+                .initial_solver
+                .solve(cube_assumptions, clause_assumptions),
+            SolverVariant::FiAndT(j) => {
+                self.fi_and_t_solvers[j].solve(cube_assumptions, clause_assumptions)
             }
-            None => {}
-        };
-
-        // call it
-        let result = match assumptions {
-            Some(c_assumption) => solver.solve_under_assumptions(c_assumption),
-            None => solver.solve(),
+            SolverVariant::FiAndTAndNotPTag(j) => {
+                self.fi_and_t_and_not_p_tag_solvers[j].solve(cube_assumptions, clause_assumptions)
+            }
+            SolverVariant::Custom(cnf) => {
+                let mut current_solver = T::default();
+                current_solver.add_cnf(&cnf);
+                current_solver.solve(cube_assumptions, clause_assumptions)
+            }
         };
 
         self.time_in_sat_calls += start_time.elapsed();
@@ -157,12 +188,15 @@ impl<T: StatefulSatSolver> IC3V2<T> {
 
     fn is_bad_reached_in_0_steps(&mut self) -> SatResponse {
         // I ^ !P
-        self.sat_call(SolverVariant::Initial, None, Some(&self.not_p0))
+        let mut cnf = CNF::new();
+        cnf.append(&self.initial);
+        cnf.append(&self.not_p0);
+        self.sat_call(SolverVariant::Custom(cnf), None, None)
     }
 
     fn is_bad_reached_in_1_steps(&mut self) -> SatResponse {
         // I ^ T ^ !P'
-        self.sat_call(SolverVariant::FiAndT(0), None, Some(&self.not_p1))
+        self.sat_call(SolverVariant::FiAndT(0), None, None)
     }
 
     fn is_cube_reachable_in_1_step_from_fi(&mut self, i: usize, cube: &Cube) -> SatResponse {
@@ -177,12 +211,28 @@ impl<T: StatefulSatSolver> IC3V2<T> {
     }
 
     fn is_fi_and_t_and_not_s_and_s_tag_sat(&mut self, i: usize, s: &Cube) -> bool {
-        // Fi ^ T ^ !s ^ s')
-        // this implementation can be improved since now stateful solver is copied each time.
+        // Fi ^ T ^ !s ^ s'
         let s_tag = self.fin_state.add_tags_to_cube(s, 1);
         let not_s = !(s.to_owned());
 
-        match self.sat_call(SolverVariant::FiAndTAndNotPTag(i), Some(&s_tag), Some()) {
+        match self.sat_call(SolverVariant::FiAndT(i), Some(&s_tag), Some(&not_s)) {
+            SatResponse::UnSat => false,
+            SatResponse::Sat { assignment: _ } => true,
+        }
+    }
+
+    fn is_fi_and_t_and_clause_and_not_clause_tag_sat(&mut self, i: usize, d: &Clause) -> bool {
+        // Fi ^ T ^ d ^ !d’
+        let not_d_tag = self.fin_state.add_tags_to_cube(&(!(d.to_owned())), 1);
+
+        match self.sat_call(SolverVariant::FiAndT(i), Some(&not_d_tag), Some(&d)) {
+            SatResponse::UnSat => false,
+            SatResponse::Sat { assignment: _ } => true,
+        }
+    }
+
+    fn does_cube_intersect_with_initial(&mut self, cube: &Cube) -> bool {
+        match self.sat_call(SolverVariant::Initial, Some(&cube), None) {
             SatResponse::UnSat => false,
             SatResponse::Sat { assignment: _ } => true,
         }
@@ -236,32 +286,13 @@ impl<T: StatefulSatSolver> IC3V2<T> {
     fn is_clause_inductive_relative_to_fi(&mut self, d: &Clause, i: usize) -> bool {
         // return !(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’)
         if self.fin_state.is_cube_initial(&(!(d.to_owned()))) {
-            let mut first_cnf = self.initial.to_owned();
-            first_cnf.append(&(!d.to_owned()).to_cnf());
-            match self.sat_call(&first_cnf) {
-                SatResponse::UnSat => {}
-                SatResponse::Sat { assignment: _ } => {
-                    return false;
-                }
-            }
+            debug_assert!(self.does_cube_intersect_with_initial(&(!(d.to_owned()))));
             return false;
+        } else {
+            debug_assert!(!self.does_cube_intersect_with_initial(&(!(d.to_owned()))));
         }
 
-        let mut second_cnf = self.get_fk(i);
-        second_cnf.add_clause(d);
-        second_cnf.append(&self.transition);
-        second_cnf.append(
-            &self
-                .fin_state
-                .add_tags_to_relation(&(!d.to_owned()).to_cnf(), 1),
-        );
-
-        let not_d_tag = self.fin_state.add_tags_to_cube(&(!(d.to_owned())), 1);
-
-        match self.sat_call(&not_d_tag) {
-            SatResponse::UnSat => true,
-            SatResponse::Sat { assignment: _ } => false,
-        }
+        !self.is_fi_and_t_and_clause_and_not_clause_tag_sat(i, &d)
     }
 
     fn get_subclause_of_not_s_that_is_inductive_relative_to_fi(
@@ -317,12 +348,6 @@ impl<T: StatefulSatSolver> IC3V2<T> {
         InductivelyGeneralizeResult::Success { n: k }
     }
 
-    // calculates sat(Fi ^ T ^ s')
-    fn solve_fi_and_t_and_s_tag(&mut self, i: usize, s: &Cube) -> SatResponse {
-        let assumptions = self.fin_state.add_tags_to_cube(s, 1);
-        self.sat_call(&assumptions, SolverVariant::FiAndT(i))
-    }
-
     fn push_generalization(
         &mut self,
         states: &PriorityQueue<Cube, Reverse<usize>>,
@@ -335,7 +360,7 @@ impl<T: StatefulSatSolver> IC3V2<T> {
             if n > k {
                 return PushGeneralizeResult::Success;
             }
-            match self.solve_fi_and_t_and_s_tag(n, &s) {
+            match self.is_cube_reachable_in_1_step_from_fi(n, &s) {
                 SatResponse::Sat { assignment } => {
                     // we have to block p in order to block n.
                     let p = self.extract_predecessor_from_assignment(&assignment);
@@ -446,6 +471,7 @@ impl<T: StatefulSatSolver> IC3V2<T> {
             fin_state: fin_state.to_owned(),
             fi_and_t_solvers: Vec::new(),
             initial_solver: T::default(),
+            fi_and_t_and_not_p_tag_solvers: Vec::new(),
             rng: thread_rng(),
             initial: fin_state.get_initial_relation().to_cnf(),
             transition: fin_state.get_transition_relation(),
