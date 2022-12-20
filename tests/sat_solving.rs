@@ -20,9 +20,9 @@ mod tests {
     use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::CNF;
     use rust_formal_verification::solvers::sat::stateless::CadicalSolver;
-    use rust_formal_verification::solvers::sat::SatResponse;
     use rust_formal_verification::solvers::sat::stateless::SplrSolver;
     use rust_formal_verification::solvers::sat::stateless::VarisatSolver;
+    use rust_formal_verification::solvers::sat::SatResponse;
     use std::cmp::min;
     use std::collections::HashMap;
     use std::time;

@@ -89,7 +89,8 @@ impl MiniSatSolver {
         let sat_result = self.solver.solve();
         match sat_result {
             Ok(model) => {
-                let result = Self::create_dimacs_assignment_from_mini_sat_model(mini_sat_literals, &model);
+                let result =
+                    Self::create_dimacs_assignment_from_mini_sat_model(mini_sat_literals, &model);
                 SatResponse::Sat {
                     assignment: Assignment::from_dimacs_assignment(&result),
                 }
