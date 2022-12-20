@@ -3,8 +3,8 @@
 // ************************************************************************************************
 
 use crate::{
-    formulas::CNF,
-    solvers::sat::{SatResponse, StatelessSatSolver},
+    formulas::{Clause, Literal, CNF},
+    solvers::sat::{Assignment, SatResponse, StatelessSatSolver},
 };
 
 // ************************************************************************************************
@@ -80,4 +80,31 @@ pub fn is_a_and_b_satisfiable<T: StatelessSatSolver>(a: &CNF, b: &CNF) -> bool {
         SatResponse::Sat { assignment: _ } => true,
         SatResponse::UnSat => false,
     }
+}
+
+pub fn evaluate_assignment_on_literal(literal: &Literal, assignment: &Assignment) -> bool {
+    let value = assignment.get_value_of_variable(&literal.get_number());
+    if literal.is_negated() {
+        !value
+    } else {
+        value
+    }
+}
+
+pub fn evaluate_assignment_on_clause(clause: &Clause, assignment: &Assignment) -> bool {
+    for literal in clause.iter() {
+        if evaluate_assignment_on_literal(literal, assignment) {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn evaluate_assignment_on_cnf(cnf: &CNF, assignment: &Assignment) -> bool {
+    for clause in cnf.iter() {
+        if !evaluate_assignment_on_clause(clause, assignment) {
+            return false;
+        }
+    }
+    true
 }

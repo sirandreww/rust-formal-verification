@@ -52,7 +52,7 @@ impl MiniSatSolver {
         if max_lit >= self.mini_sat_literals.len() {
             // reserve so as to avoid having to copy when extending.
             self.mini_sat_literals
-                .reserve(max_lit - self.mini_sat_literals.len());
+                .reserve(max_lit - self.mini_sat_literals.len() + 1);
             while max_lit >= self.mini_sat_literals.len() {
                 self.mini_sat_literals.push(self.solver.new_lit())
             }
