@@ -18,11 +18,12 @@ mod tests {
     use std::time;
 
     use rust_formal_verification::{
-        algorithms::{ic3::IC3Result, IC3, IC3V2, ic3_v2::IC3V2Result},
+        algorithms::{ic3::IC3Result, ic3_v2::IC3V2Result, IC3, IC3V2},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{
+            stateful::{MiniSatSolver, StatefulSatSolver},
             stateless::{CadicalSolver, SplrSolver, VarisatSolver},
-            StatelessSatSolver, stateful::{StatefulSatSolver, MiniSatSolver},
+            StatelessSatSolver,
         },
     };
 

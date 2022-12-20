@@ -477,7 +477,7 @@ impl<T: StatefulSatSolver> IC3V2<T> {
             clauses: Vec::new(),
             fin_state: fin_state.to_owned(),
             fi_and_t_solvers: Vec::new(),
-            initial_solver: initial_solver,
+            initial_solver,
             fi_and_t_and_not_p_tag_solvers: Vec::new(),
             rng: thread_rng(),
             initial: fin_state.get_initial_relation().to_cnf(),
