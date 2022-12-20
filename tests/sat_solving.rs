@@ -36,19 +36,20 @@ mod tests {
     fn test_cnf_on_sat_solvers(cnf: &CNF, stats: &mut HashMap<&str, f32>) -> bool {
         // println!("test_cnf_on_sat_solvers - cnf = {}", cnf);
         let splr_timer = time::Instant::now();
-        let splr_response = SplrSolver::default().solve_cnf(&cnf);
+        let splr_response = SplrSolver::default().solve_cnf(cnf);
         *stats.get_mut("SplrSolver").unwrap() += splr_timer.elapsed().as_secs_f32();
 
         let varisat_timer = time::Instant::now();
-        let varisat_response = VarisatSolver::default().solve_cnf(&cnf);
+        let varisat_response = VarisatSolver::default().solve_cnf(cnf);
         *stats.get_mut("VarisatSolver").unwrap() += varisat_timer.elapsed().as_secs_f32();
 
         let cadical_timer = time::Instant::now();
-        let cadical_response = CadicalSolver::default().solve_cnf(&cnf);
+        let cadical_response = CadicalSolver::default().solve_cnf(cnf);
         *stats.get_mut("CadicalSolver").unwrap() += cadical_timer.elapsed().as_secs_f32();
 
         // make sure all results are the same
-        let result = match (splr_response, varisat_response, cadical_response) {
+
+        match (splr_response, varisat_response, cadical_response) {
             (
                 SatResponse::Sat { assignment: _ },
                 SatResponse::Sat { assignment: _ },
@@ -56,9 +57,7 @@ mod tests {
             ) => true,
             (SatResponse::UnSat, SatResponse::UnSat, SatResponse::UnSat) => false,
             _ => panic!("Sat solvers disagree."),
-        };
-
-        result
+        }
     }
 
     fn print_results(

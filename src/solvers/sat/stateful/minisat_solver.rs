@@ -64,10 +64,9 @@ impl MiniSatSolver {
         model: &minisat::Model,
     ) -> Vec<i32> {
         let mut result = Vec::with_capacity(mini_sat_literals.len());
-        for i in 1..mini_sat_literals.len() {
+        for (i, lit) in mini_sat_literals.iter().enumerate().skip(1) {
             let j: i32 = i.try_into().unwrap();
-            let lit = mini_sat_literals[i];
-            result.push(if model.value(&lit) { j } else { -j });
+            result.push(if model.value(lit) { j } else { -j });
         }
         result
     }
