@@ -19,8 +19,8 @@ mod tests {
 
     use rust_formal_verification::{
         algorithms::{
-            ic3::IC3Result, ic3_test::IC3TestSatSolverResult, ic3_v2::IC3V2Result, ic3_test::IC3TestSatSolver
-            , IC3, IC3V2,
+            ic3::IC3Result, ic3_test::IC3TestSatSolver, ic3_test::IC3TestSatSolverResult,
+            ic3_v2::IC3V2Result, IC3, IC3V2,
         },
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{
