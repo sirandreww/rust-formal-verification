@@ -1,3 +1,5 @@
+//! module that holds objects and traits that performing sat solving in various ways.
+
 // ************************************************************************************************
 // rust submodule declaration, they get searched in their respective file  names
 // ************************************************************************************************

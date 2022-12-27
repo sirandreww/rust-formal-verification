@@ -22,7 +22,7 @@ mod tests {
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{
             stateful::{MiniSatSolver, StatefulSatSolver},
-            stateless::{CadicalSolver, SplrSolver, VarisatSolver},
+            stateless::{CaDiCalSolver, SplrSolver, VarisatSolver},
             StatelessSatSolver,
         },
     };
@@ -91,7 +91,7 @@ mod tests {
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
             test_ic3::<SplrSolver>(&fin_state, &aig);
             test_ic3::<VarisatSolver>(&fin_state, &aig);
-            test_ic3::<CadicalSolver>(&fin_state, &aig);
+            test_ic3::<CaDiCalSolver>(&fin_state, &aig);
         }
     }
 

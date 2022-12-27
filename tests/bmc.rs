@@ -20,7 +20,7 @@ mod tests {
         algorithms::{bmc::BMCResult, BMC},
         formulas::literal::VariableType,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::{stateless::CadicalSolver, Assignment},
+        solvers::sat::{stateless::CaDiCalSolver, Assignment},
     };
     use std::{
         collections::HashMap,
@@ -114,7 +114,7 @@ mod tests {
         let aig = AndInverterGraph::from_aig_path(aig_path);
         let fin_state = FiniteStateTransitionSystem::from_aig(&aig, false);
 
-        let bmc = BMC::<CadicalSolver>::new(true); // CadicalSolver faster in debug because it's c++
+        let bmc = BMC::<CaDiCalSolver>::new(true); // CadicalSolver faster in debug because it's c++
         let res = bmc.search(
             &fin_state,
             search_depth_limit,

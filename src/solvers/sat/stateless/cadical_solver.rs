@@ -13,13 +13,13 @@ use super::{super::Assignment, StatelessSatSolver};
 // ************************************************************************************************
 
 #[derive(Default, Clone, Copy)]
-pub struct CadicalSolver {}
+pub struct CaDiCalSolver {}
 
 // ************************************************************************************************
 // impl CadicalSolver
 // ************************************************************************************************
 
-impl CadicalSolver {
+impl CaDiCalSolver {
     fn convert_cnf_to_dimacs_into_solver(cnf_to_solve: &CNF) -> Vec<Vec<i32>> {
         let mut result = Vec::new();
         for clause in cnf_to_solve.iter() {
@@ -76,7 +76,7 @@ impl CadicalSolver {
 // impl trait
 // ************************************************************************************************
 
-impl StatelessSatSolver for CadicalSolver {
+impl StatelessSatSolver for CaDiCalSolver {
     fn solve_cnf(&self, cnf_to_solve: &CNF) -> SatResponse {
         self.solve_cnf(cnf_to_solve)
     }

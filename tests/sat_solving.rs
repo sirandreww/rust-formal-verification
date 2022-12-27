@@ -21,7 +21,7 @@ mod tests {
     use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::CNF;
     use rust_formal_verification::solvers::sat::stateful::MiniSatSolver;
-    use rust_formal_verification::solvers::sat::stateless::CadicalSolver;
+    use rust_formal_verification::solvers::sat::stateless::CaDiCalSolver;
     use rust_formal_verification::solvers::sat::stateless::SplrSolver;
     use rust_formal_verification::solvers::sat::stateless::VarisatSolver;
     use rust_formal_verification::solvers::sat::SatResponse;
@@ -46,7 +46,7 @@ mod tests {
         *stats.get_mut("VarisatSolver").unwrap() += varisat_timer.elapsed().as_secs_f32();
 
         let cadical_timer = time::Instant::now();
-        let cadical_response = CadicalSolver::default().solve_cnf(cnf);
+        let cadical_response = CaDiCalSolver::default().solve_cnf(cnf);
         *stats.get_mut("CadicalSolver").unwrap() += cadical_timer.elapsed().as_secs_f32();
 
         let mini_sat_timer = time::Instant::now();

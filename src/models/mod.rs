@@ -1,3 +1,5 @@
+//! models like AndInverterGraph and FiniteStateTransitionSystem.
+
 // ************************************************************************************************
 // rust submodule decleration, they get searched in their respective file  names
 // ************************************************************************************************

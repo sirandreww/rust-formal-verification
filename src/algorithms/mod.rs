@@ -1,3 +1,5 @@
+//! some algorithms that are already implemented.
+
 // ************************************************************************************************
 // rust submodule declaration, they get searched in their respective file  names
 // ************************************************************************************************

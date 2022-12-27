@@ -1,3 +1,5 @@
+//! module that holds sat solvers that are not mutable and don't hold a state.
+
 // ************************************************************************************************
 // rust submodule declaration, they get searched in their respective file  names
 // ************************************************************************************************
@@ -10,7 +12,7 @@ pub mod varisat_solver;
 // re-exports of structs in these modules to simplify paths for other imports
 // ************************************************************************************************
 
-pub use cadical_solver::CadicalSolver;
+pub use cadical_solver::CaDiCalSolver;
 pub use splr_solver::SplrSolver;
 pub use varisat_solver::VarisatSolver;
 
