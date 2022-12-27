@@ -135,7 +135,7 @@ impl CaDiCalSolver {
         let some_new_variable = self.new_lit();
 
         // add the clause c || !var to minisat
-        cadical_clause.push(!some_new_variable);
+        cadical_clause.push(-some_new_variable);
         self.solver.add_clause(cadical_clause.into_iter());
 
         // this should be added as assumption so as to not make the clause trivial
@@ -152,7 +152,7 @@ impl CaDiCalSolver {
         let result = self.solve_under_already_translated_assumptions(&assumptions);
 
         // cancel the previous clause
-        self.solver.add_clause([!some_new_variable].into_iter());
+        self.solver.add_clause([-some_new_variable].into_iter());
 
         result
     }
