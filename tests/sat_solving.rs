@@ -20,6 +20,7 @@ mod tests {
     use rust_formal_verification::formulas::Clause;
     use rust_formal_verification::formulas::Literal;
     use rust_formal_verification::formulas::CNF;
+    use rust_formal_verification::solvers::sat::stateful::CaDiCalSolver as StateFulCaDiCal;
     use rust_formal_verification::solvers::sat::stateful::MiniSatSolver;
     use rust_formal_verification::solvers::sat::stateless::CaDiCalSolver;
     use rust_formal_verification::solvers::sat::stateless::SplrSolver;
@@ -55,6 +56,12 @@ mod tests {
         let mini_sat_response = solver.solve(None, None);
         *stats.get_mut("MiniSatSolver").unwrap() += mini_sat_timer.elapsed().as_secs_f32();
 
+        let cadical_timer = time::Instant::now();
+        let mut solver = StateFulCaDiCal::default();
+        solver.add_cnf(cnf);
+        let cadical_timer_response = solver.solve(None, None);
+        *stats.get_mut("StateFulCaDiCal").unwrap() += cadical_timer.elapsed().as_secs_f32();
+
         // make sure all results are the same
 
         match (
@@ -62,22 +69,29 @@ mod tests {
             varisat_response,
             cadical_response,
             mini_sat_response,
+            cadical_timer_response,
         ) {
             (
                 SatResponse::Sat { assignment: a },
                 SatResponse::Sat { assignment: b },
                 SatResponse::Sat { assignment: c },
                 SatResponse::Sat { assignment: d },
+                SatResponse::Sat { assignment: e },
             ) => {
                 assert!(evaluate_assignment_on_cnf(cnf, &a));
                 assert!(evaluate_assignment_on_cnf(cnf, &b));
                 assert!(evaluate_assignment_on_cnf(cnf, &c));
                 assert!(evaluate_assignment_on_cnf(cnf, &d));
+                assert!(evaluate_assignment_on_cnf(cnf, &e));
                 true
             }
-            (SatResponse::UnSat, SatResponse::UnSat, SatResponse::UnSat, SatResponse::UnSat) => {
-                false
-            }
+            (
+                SatResponse::UnSat,
+                SatResponse::UnSat,
+                SatResponse::UnSat,
+                SatResponse::UnSat,
+                SatResponse::UnSat,
+            ) => false,
             _ => {
                 println!("{}", cnf);
                 panic!("Sat solvers disagree.")
@@ -204,6 +218,7 @@ mod tests {
             ("VarisatSolver", (0_f32)),
             ("CadicalSolver", (0_f32)),
             ("MiniSatSolver", (0_f32)),
+            ("StateFulCaDiCal", (0_f32)),
         ]);
         let mut vec_of_number_of_sat = Vec::new();
         let mut vec_of_number_of_unsat = Vec::new();

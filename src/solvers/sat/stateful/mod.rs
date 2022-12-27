@@ -4,15 +4,15 @@
 // rust submodule declaration, they get searched in their respective file  names
 // ************************************************************************************************
 
-pub mod minisat_solver;
 pub mod cadical_solver;
+pub mod minisat_solver;
 
 // ************************************************************************************************
 // re-exports of structs in these modules to simplify paths for other imports
 // ************************************************************************************************
 
-pub use minisat_solver::MiniSatSolver;
 pub use cadical_solver::CaDiCalSolver;
+pub use minisat_solver::MiniSatSolver;
 
 // ************************************************************************************************
 // use

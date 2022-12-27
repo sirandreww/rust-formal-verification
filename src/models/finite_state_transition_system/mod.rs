@@ -1,4 +1,4 @@
-//! Object for holding a finite state transition system, and performing operations like adding 
+//! Object for holding a finite state transition system, and performing operations like adding
 //! tags and so on.
 
 // ************************************************************************************************

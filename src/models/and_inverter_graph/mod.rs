@@ -1,4 +1,4 @@
-//! object for reading .aig files, turning them into .aag files, and scanning them in different 
+//! object for reading .aig files, turning them into .aag files, and scanning them in different
 //! ways.
 
 // ************************************************************************************************

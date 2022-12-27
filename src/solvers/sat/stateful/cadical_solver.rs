@@ -15,8 +15,9 @@ use super::StatefulSatSolver;
 
 // #[derive(Default, Clone, Copy)]
 pub struct CaDiCalSolver {
-    solver: minisat::Solver,
-    mini_sat_literals: Vec<minisat::Bool>,
+    solver: cadical::Solver,
+    cadical_literals: Vec<i32>,
+    new_literal: i32,
 }
 
 // ************************************************************************************************
@@ -28,81 +29,95 @@ impl CaDiCalSolver {
     // helper functions
     // ********************************************************************************************
 
-    fn literal_to_mini_sat_literal(&self, literal: &Literal) -> minisat::Bool {
+    fn new_lit(&mut self) -> i32 {
+        // get new literal not already in the sat solver.
+        let result = self.new_literal;
+        self.new_literal += 1;
+        result
+    }
+
+    fn literal_to_cadical_literal(&self, literal: &Literal) -> i32 {
         let index: usize = literal.get_number().try_into().unwrap();
-        let mini_sat_literal = self.mini_sat_literals[index];
+        let cadical_literal = self.cadical_literals[index];
         if literal.is_negated() {
-            !mini_sat_literal
+            -cadical_literal
         } else {
-            mini_sat_literal
+            cadical_literal
         }
     }
 
-    fn translate_clause_into_mini_sat_clause(&self, clause: &Clause) -> Vec<minisat::Bool> {
+    fn translate_clause_into_cadical_clause(&self, clause: &Clause) -> Vec<i32> {
         let mut result = Vec::with_capacity(clause.len());
         for literal in clause.iter() {
-            result.push(self.literal_to_mini_sat_literal(literal));
+            result.push(self.literal_to_cadical_literal(literal));
         }
         result
     }
 
-    fn translate_cube_into_mini_sat_cube(&self, cube: &Cube) -> Vec<minisat::Bool> {
+    fn translate_cube_into_cadical_cube(&self, cube: &Cube) -> Vec<i32> {
         let mut result = Vec::with_capacity(cube.len());
         for literal in cube.iter() {
-            result.push(self.literal_to_mini_sat_literal(literal));
+            result.push(self.literal_to_cadical_literal(literal));
         }
         result
     }
 
-    fn extend_mini_sat_literals_if_needed(&mut self, cnf: &CNF) {
+    fn extend_cadical_literals_if_needed(&mut self, cnf: &CNF) {
         let max_lit: usize = cnf.get_max_variable_number().try_into().unwrap();
-        if max_lit >= self.mini_sat_literals.len() {
+        if max_lit >= self.cadical_literals.len() {
             // reserve so as to avoid having to copy when extending.
-            self.mini_sat_literals
-                .reserve(max_lit - self.mini_sat_literals.len() + 1);
-            while max_lit >= self.mini_sat_literals.len() {
-                self.mini_sat_literals.push(self.solver.new_lit())
+            self.cadical_literals
+                .reserve(max_lit - self.cadical_literals.len() + 1);
+            while max_lit >= self.cadical_literals.len() {
+                let new_literal = self.new_lit();
+                self.cadical_literals.push(new_literal);
             }
         }
     }
 
-    fn create_dimacs_assignment_from_mini_sat_model(
-        mini_sat_literals: &[minisat::Bool],
-        model: &minisat::Model,
-    ) -> Vec<i32> {
-        let mut result = Vec::with_capacity(mini_sat_literals.len());
-        for (i, lit) in mini_sat_literals.iter().enumerate().skip(1) {
+    fn create_dimacs_assignment_from_cadical_model(&self, cadical_literals: &[i32]) -> Vec<i32> {
+        let mut result = Vec::with_capacity(cadical_literals.len());
+        for (i, lit) in cadical_literals.iter().enumerate().skip(1) {
             let j: i32 = i.try_into().unwrap();
-            result.push(if model.value(lit) { j } else { -j });
+            result.push(match self.solver.value(lit.to_owned()) {
+                Some(v) => {
+                    if v {
+                        j
+                    } else {
+                        -j
+                    }
+                }
+                None => j,
+            });
         }
         result
     }
 
-    fn solve_under_already_translated_assumptions(
-        &mut self,
-        mini_sat_cube: &[minisat::Bool],
-    ) -> SatResponse {
-        let mini_sat_literals = &self.mini_sat_literals;
+    fn solve_under_already_translated_assumptions(&mut self, cadical_cube: &[i32]) -> SatResponse {
+        let cadical_literals = &self.cadical_literals;
 
-        let sat_result = self
-            .solver
-            .solve_under_assumptions(mini_sat_cube.to_owned());
+        let sat_result = self.solver.solve_with(cadical_cube.iter().copied());
 
         match sat_result {
-            Ok(model) => {
-                let result =
-                    Self::create_dimacs_assignment_from_mini_sat_model(mini_sat_literals, &model);
-                SatResponse::Sat {
-                    assignment: Assignment::from_dimacs_assignment(&result),
+            Some(value) => {
+                if value {
+                    // sat
+                    let result = self.create_dimacs_assignment_from_cadical_model(cadical_literals);
+                    SatResponse::Sat {
+                        assignment: Assignment::from_dimacs_assignment(&result),
+                    }
+                } else {
+                    // un sat
+                    SatResponse::UnSat
                 }
             }
-            Err(()) => SatResponse::UnSat,
+            None => panic!("Sat solver error occurred."),
         }
     }
 
     fn solve_with_just_cube_assumptions(&mut self, cube: Option<&Cube>) -> SatResponse {
         let v = match cube {
-            Some(c) => self.translate_cube_into_mini_sat_cube(c),
+            Some(c) => self.translate_cube_into_cadical_cube(c),
             None => Vec::new(),
         };
         self.solve_under_already_translated_assumptions(&v)
@@ -113,15 +128,15 @@ impl CaDiCalSolver {
         clause: &Clause,
         cube: Option<&Cube>,
     ) -> SatResponse {
-        // get clause as mini sat vector of bool
-        let mut mini_sat_clause = self.translate_clause_into_mini_sat_clause(clause);
+        // get clause as cadical vector of bool
+        let mut cadical_clause = self.translate_clause_into_cadical_clause(clause);
 
         // add a entirely new variable
-        let some_new_variable = self.solver.new_lit();
+        let some_new_variable = self.new_lit();
 
         // add the clause c || !var to minisat
-        mini_sat_clause.push(!some_new_variable);
-        self.solver.add_clause(mini_sat_clause);
+        cadical_clause.push(!some_new_variable);
+        self.solver.add_clause(cadical_clause.into_iter());
 
         // this should be added as assumption so as to not make the clause trivial
         let mut assumptions = Vec::new();
@@ -129,7 +144,7 @@ impl CaDiCalSolver {
 
         // add more assumption if present
         if let Some(c) = cube {
-            let mut translated_cube = self.translate_cube_into_mini_sat_cube(c);
+            let mut translated_cube = self.translate_cube_into_cadical_cube(c);
             assumptions.append(&mut translated_cube);
         }
 
@@ -137,7 +152,7 @@ impl CaDiCalSolver {
         let result = self.solve_under_already_translated_assumptions(&assumptions);
 
         // cancel the previous clause
-        self.solver.add_clause([!some_new_variable]);
+        self.solver.add_clause([!some_new_variable].into_iter());
 
         result
     }
@@ -147,10 +162,10 @@ impl CaDiCalSolver {
     // ************************************************************************************************
 
     pub fn add_cnf(&mut self, cnf: &CNF) {
-        self.extend_mini_sat_literals_if_needed(cnf);
+        self.extend_cadical_literals_if_needed(cnf);
         for c in cnf.iter() {
-            let mini_sat_clause = self.translate_clause_into_mini_sat_clause(c);
-            self.solver.add_clause(mini_sat_clause)
+            let cadical_clause = self.translate_clause_into_cadical_clause(c);
+            self.solver.add_clause(cadical_clause.into_iter())
         }
     }
 
@@ -161,10 +176,10 @@ impl CaDiCalSolver {
     ) -> SatResponse {
         // just in case temporary contain odd literals.
         if let Some(cube) = temporary_extra_cube {
-            self.extend_mini_sat_literals_if_needed(&cube.to_cnf());
+            self.extend_cadical_literals_if_needed(&cube.to_cnf());
         }
         if let Some(clause) = temporary_extra_clause {
-            self.extend_mini_sat_literals_if_needed(&clause.to_cnf());
+            self.extend_cadical_literals_if_needed(&clause.to_cnf());
         }
 
         match temporary_extra_clause {
@@ -200,8 +215,9 @@ impl StatefulSatSolver for CaDiCalSolver {
 impl Default for CaDiCalSolver {
     fn default() -> Self {
         Self {
-            solver: minisat::Solver::new(),
-            mini_sat_literals: Vec::new(),
+            solver: cadical::Solver::new(),
+            cadical_literals: Vec::new(),
+            new_literal: 1,
         }
     }
 }
