@@ -21,11 +21,11 @@
 // use
 // ************************************************************************************************
 
-use super::ProofResult;
+use super::{FiniteStateTransitionSystemProver, ProofResult};
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{stateful::StatefulSatSolver, Assignment, SatResponse},
+    solvers::sat::{stateful::StatefulSatSolver, SatResponse},
 };
 use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
@@ -69,8 +69,6 @@ pub struct IC3Stateful<T> {
     clauses: Vec<CNF>,
     fin_state: FiniteStateTransitionSystem,
     rng: ThreadRng,
-    latch_literals: Vec<u32>,
-    _input_literals: Vec<u32>,
 
     // stateful sat solvers for speedup
     // Reminder: F0 == initial
@@ -270,19 +268,6 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
         }
     }
 
-    fn extract_predecessor_from_assignment(&self, assignment: &Assignment) -> Cube {
-        let mut literals = Vec::new();
-
-        for state_lit_num in &self.latch_literals {
-            literals.push(
-                Literal::new(state_lit_num.to_owned())
-                    .negate_if_true(!assignment.get_value_of_variable(state_lit_num)),
-            )
-        }
-
-        Cube::new(&literals)
-    }
-
     fn is_clause_inductive_relative_to_fi(&mut self, d: &Clause, i: usize) -> bool {
         // return !(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’)
         if self.fin_state.is_cube_initial(&(!(d.to_owned()))) {
@@ -363,7 +348,7 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
             match self.is_cube_reachable_in_1_step_from_fi(n, &s) {
                 SatResponse::Sat { assignment } => {
                     // we have to block p in order to block n.
-                    let p = self.extract_predecessor_from_assignment(&assignment);
+                    let p = self.fin_state.extract_state_from_assignment(&assignment);
                     // println!("Should block p = {} from F{}", p, n - 1);
                     match self.inductively_generalize(
                         &p,
@@ -423,7 +408,7 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
                     break;
                 }
                 SatResponse::Sat { assignment } => {
-                    let s = self.extract_predecessor_from_assignment(&assignment);
+                    let s = self.fin_state.extract_state_from_assignment(&assignment);
                     // println!("Should block s = {} from F{}", s, k - 1);
                     match self.inductively_generalize(
                         &s,
@@ -481,8 +466,6 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
             p0,
             not_p0: not_p0.to_owned(),
             not_p1: fin_state.add_tags_to_relation(&not_p0, 1),
-            latch_literals: fin_state.get_state_literal_numbers(),
-            _input_literals: fin_state.get_input_literal_numbers(),
             verbose,
             number_of_sat_calls: 0,
             time_in_sat_calls: time::Duration::from_secs(0),
@@ -542,5 +525,19 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
             }
         }
         unreachable!();
+    }
+}
+
+// ************************************************************************************************
+// impl trait
+// ************************************************************************************************
+
+impl<T: StatefulSatSolver> FiniteStateTransitionSystemProver for IC3Stateful<T> {
+    fn new(fin_state: &FiniteStateTransitionSystem) -> Self {
+        IC3Stateful::new(fin_state, true)
+    }
+
+    fn prove(&mut self) -> ProofResult {
+        self.prove()
     }
 }

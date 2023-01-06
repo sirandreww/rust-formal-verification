@@ -17,3 +17,18 @@ pub mod proof_result;
 pub use ic3_stateful_solver::IC3Stateful;
 pub use ic3_stateless_solver::IC3Stateless;
 pub use proof_result::ProofResult;
+
+// ************************************************************************************************
+// use
+// ************************************************************************************************
+
+use crate::models::FiniteStateTransitionSystem;
+
+// ************************************************************************************************
+// Sat Solver trait
+// ************************************************************************************************
+
+pub trait FiniteStateTransitionSystemProver {
+    fn new(fin_state: &FiniteStateTransitionSystem) -> Self;
+    fn prove(&mut self) -> ProofResult;
+}

@@ -5,7 +5,7 @@
 use crate::algorithms::formula_logic::{does_a_imply_b, is_a_and_b_satisfiable};
 use crate::formulas::literal::VariableType;
 use crate::formulas::{Clause, Cube, Literal, CNF};
-use crate::solvers::sat::StatelessSatSolver;
+use crate::solvers::sat::{Assignment, StatelessSatSolver};
 
 use super::FiniteStateTransitionSystem;
 
@@ -84,6 +84,19 @@ impl FiniteStateTransitionSystem {
             }
         }
         true
+    }
+
+    pub fn extract_state_from_assignment(&self, assignment: &Assignment) -> Cube {
+        let mut literals = Vec::new();
+
+        for state_lit_num in &self.state_literals {
+            literals.push(
+                Literal::new(state_lit_num.to_owned())
+                    .negate_if_true(!assignment.get_value_of_variable(state_lit_num)),
+            )
+        }
+
+        Cube::new(&literals)
     }
 
     pub fn check_invariant<T: StatelessSatSolver>(&self, inv_candidate: &CNF) {
