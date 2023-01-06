@@ -14,7 +14,7 @@
 // //! URL: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6148886&isnumber=6148882
 // //!
 // //! The implementation of the original 2010 bit-level symbolic model checking algorithm is
-// //! available under ic3.
+// //! available under ic3 stateless solver.
 
 // // ************************************************************************************************
 // // use
@@ -23,7 +23,7 @@
 // use crate::{
 //     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
 //     models::FiniteStateTransitionSystem,
-//     solvers::sat::{Assignment, SatResponse, SatSolver},
+//     solvers::sat::{Assignment, SatResponse, StatelessSatSolver},
 // };
 // use priority_queue::PriorityQueue;
 // use rand::rngs::ThreadRng;
@@ -41,13 +41,13 @@
 //     CTX { depth: VariableType },
 // }
 
-// pub enum Frame {
+// enum Frame {
 //     NULL,
 //     INF,
 //     Ok(usize),
 // }
 
-// pub struct TCube {
+// struct TCube {
 //     cube: Cube,
 //     frame: Frame,
 // }
@@ -56,11 +56,10 @@
 // // struct
 // // ************************************************************************************************
 
-// pub struct PDR<T: SatSolver> {
+// pub struct PDR<T: StatelessSatSolver> {
 //     f: Vec<Vec<Cube>>,
 //     fin_state: FiniteStateTransitionSystem,
-//     solver: T,
-//     rng: ThreadRng,
+
 //     latch_literals: Vec<u32>,
 //     _input_literals: Vec<u32>,
 //     // caching for speedup

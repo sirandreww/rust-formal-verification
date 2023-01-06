@@ -7,6 +7,7 @@
 pub mod ic3_stateful_solver;
 pub mod ic3_stateless_solver;
 pub mod pdr;
+pub mod pdr_v1;
 pub mod proof_result;
 
 // ************************************************************************************************
