@@ -18,10 +18,7 @@ mod tests {
     use std::time;
 
     use rust_formal_verification::{
-        algorithms::{
-            ic3::IC3Result, ic3_test::IC3TestSatSolver, ic3_test::IC3TestSatSolverResult,
-            ic3_v2::IC3V2Result, IC3, IC3V2,
-        },
+        algorithms::proof::{IC3Stateful, IC3Stateless, ProofResult},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{
             stateful::{CaDiCalSolver as StateFulCaDiCal, MiniSatSolver, StatefulSatSolver},
@@ -40,18 +37,18 @@ mod tests {
         fin_state: &FiniteStateTransitionSystem,
         _aig: &AndInverterGraph,
     ) {
-        let mut ic3_solver = IC3::<T>::new(fin_state, true);
+        let mut ic3_solver = IC3Stateless::<T>::new(fin_state, true);
         let start_time = time::Instant::now();
         let prove_result = ic3_solver.prove();
         let duration = start_time.elapsed();
         println!("Elapsed time = {}", duration.as_secs_f32());
         match prove_result {
-            IC3Result::Proof { invariant } => {
+            ProofResult::Proof { invariant } => {
                 println!("Safe, checking invariant.");
                 fin_state.check_invariant::<T>(&invariant);
                 println!("Invariant check passed!");
             }
-            IC3Result::CTX { depth } => {
+            ProofResult::CTX { depth } => {
                 // do nothing for now
                 println!("Unsafe, depth = {}", depth);
             }
@@ -62,44 +59,18 @@ mod tests {
         fin_state: &FiniteStateTransitionSystem,
         _aig: &AndInverterGraph,
     ) {
-        let mut ic3_solver = IC3V2::<T>::new(fin_state, true);
+        let mut ic3_solver = IC3Stateful::<T>::new(fin_state, true);
         let start_time = time::Instant::now();
         let prove_result = ic3_solver.prove();
         let duration = start_time.elapsed();
         println!("Elapsed time = {}", duration.as_secs_f32());
         match prove_result {
-            IC3V2Result::Proof { invariant } => {
+            ProofResult::Proof { invariant } => {
                 println!("Safe, checking invariant.");
                 fin_state.check_invariant::<U>(&invariant);
                 println!("Invariant check passed!");
             }
-            IC3V2Result::CTX { depth } => {
-                // do nothing for now
-                println!("Unsafe, depth = {}", depth);
-            }
-        }
-    }
-
-    fn _test_ic3_sat_solver_test<
-        T: StatefulSatSolver,
-        U: StatefulSatSolver,
-        V: StatelessSatSolver,
-    >(
-        fin_state: &FiniteStateTransitionSystem,
-        _aig: &AndInverterGraph,
-    ) {
-        let mut ic3_solver = IC3TestSatSolver::<T, U>::new(fin_state, true);
-        let start_time = time::Instant::now();
-        let prove_result = ic3_solver.prove();
-        let duration = start_time.elapsed();
-        println!("Elapsed time = {}", duration.as_secs_f32());
-        match prove_result {
-            IC3TestSatSolverResult::Proof { invariant } => {
-                println!("Safe, checking invariant.");
-                fin_state.check_invariant::<V>(&invariant);
-                println!("Invariant check passed!");
-            }
-            IC3TestSatSolverResult::CTX { depth } => {
+            ProofResult::CTX { depth } => {
                 // do nothing for now
                 println!("Unsafe, depth = {}", depth);
             }
@@ -197,13 +168,13 @@ mod tests {
 
     #[test]
     fn ic3v2_with_cadical_on_few_hwmcc20_folded_problems() {
-        let run_test = false;
+        let run_test = true;
         if !run_test {
             return;
         }
 
         let file_paths = vec![
-            "tests/examples/hwmcc20/2019/beem/brp2.3.prop1-back-serstep_zero_then_fold2.aig",
+            "tests/examples/hwmcc20/2019/beem/anderson.3.prop1-back-serstep_zero_then_fold2.aig",
             // "tests/examples/hwmcc20/2019/mann/data-integrity/unsafe/circular_pointer_top_w8_d16_e0_zero_then_fold2.aig"
         ];
 

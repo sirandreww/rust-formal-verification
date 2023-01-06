@@ -1,15 +1,15 @@
-//! some algorithms that are already implemented.
-
 // ************************************************************************************************
-// rust submodule declaration, they get searched in their respective file  names
+// use
 // ************************************************************************************************
 
-pub mod bmc; // requires file in this directory with the name 'bmc.rs'
-pub mod formula_logic;
-pub mod proof;
+use crate::formulas::{literal::VariableType, CNF};
 
 // ************************************************************************************************
-// re-exports of structs in these modules to simplify paths for other imports
+// struct
 // ************************************************************************************************
 
-pub use bmc::BMC;
+#[derive(PartialEq, Eq)]
+pub enum ProofResult {
+    Proof { invariant: CNF },
+    CTX { depth: VariableType },
+}

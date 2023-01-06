@@ -21,6 +21,7 @@
 // use
 // ************************************************************************************************
 
+use super::ProofResult;
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
@@ -36,11 +37,6 @@ use std::time;
 // ************************************************************************************************
 // Enum
 // ************************************************************************************************
-
-pub enum IC3V2Result {
-    Proof { invariant: CNF },
-    CTX { depth: VariableType },
-}
 
 enum StrengthenResult {
     Success,
@@ -68,7 +64,7 @@ enum SolverVariant {
 // struct
 // ************************************************************************************************
 
-pub struct IC3V2<T> {
+pub struct IC3Stateful<T> {
     // for the algorithm
     clauses: Vec<CNF>,
     fin_state: FiniteStateTransitionSystem,
@@ -100,7 +96,7 @@ pub struct IC3V2<T> {
 // impl
 // ************************************************************************************************
 
-impl<T: StatefulSatSolver> IC3V2<T> {
+impl<T: StatefulSatSolver> IC3Stateful<T> {
     // ********************************************************************************************
     // clauses
     // ********************************************************************************************
@@ -494,20 +490,20 @@ impl<T: StatefulSatSolver> IC3V2<T> {
         }
     }
 
-    pub fn prove(&mut self) -> IC3V2Result {
+    pub fn prove(&mut self) -> ProofResult {
         // update start time.
         self.start_time = time::Instant::now();
 
         let init_and_not_p = self.is_bad_reached_in_0_steps();
         match init_and_not_p {
-            SatResponse::Sat { assignment: _ } => return IC3V2Result::CTX { depth: 0 },
+            SatResponse::Sat { assignment: _ } => return ProofResult::CTX { depth: 0 },
             SatResponse::UnSat => (),
         }
         // debug_assert!(does_a_imply_b::<T>(&self.initial, &self.p0));
 
         let init_and_tr_and_not_p_tag = self.is_bad_reached_in_1_steps();
         match init_and_tr_and_not_p_tag {
-            SatResponse::Sat { assignment: _ } => return IC3V2Result::CTX { depth: 1 },
+            SatResponse::Sat { assignment: _ } => return ProofResult::CTX { depth: 1 },
             SatResponse::UnSat => (),
         }
 
@@ -522,7 +518,7 @@ impl<T: StatefulSatSolver> IC3V2<T> {
             match self.strengthen(k) {
                 StrengthenResult::Success => {}
                 StrengthenResult::Failure { _depth: _ } => {
-                    return IC3V2Result::CTX {
+                    return ProofResult::CTX {
                         depth: k.try_into().unwrap(),
                     };
                 }
@@ -539,7 +535,7 @@ impl<T: StatefulSatSolver> IC3V2<T> {
                 {
                     // todo: compare just the lengths
                     self.print_progress_if_verbose(k);
-                    return IC3V2Result::Proof {
+                    return ProofResult::Proof {
                         invariant: self.get_fk(i),
                     };
                 }
