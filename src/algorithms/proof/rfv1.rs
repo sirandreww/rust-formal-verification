@@ -154,7 +154,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
         );
         {
             // update solvers
-            let mut a = T::new(StatefulSatSolverHint::Sat);
+            let mut a = T::new(StatefulSatSolverHint::None);
             a.add_cnf(if self.clauses.is_empty() {
                 &self.i_and_t
             } else {
@@ -164,7 +164,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
         }
         {
             // update solvers
-            let mut b = T::new(StatefulSatSolverHint::Sat);
+            let mut b = T::new(StatefulSatSolverHint::None);
             b.add_cnf(if self.clauses.is_empty() {
                 &self.i_and_t_and_not_p_tag
             } else {
@@ -427,14 +427,14 @@ impl<T: StatefulSatSolver> RFV1<T> {
                 // .rev()
                 // .take(10)
                 .collect::<Vec<usize>>();
-            println!("IC3 is on k = {}, clauses lengths = {:?}", k, clauses);
-            println!("Number of SAT calls = {}", self.number_of_sat_calls);
+            println!("RFV1 - is on k = {}, clauses lengths = {:?}", k, clauses);
+            println!("RFV1 - Number of SAT calls = {}", self.number_of_sat_calls);
             println!(
-                "Time since start = {}",
+                "RFV1 - Time since start = {}",
                 self.start_time.elapsed().as_secs_f32()
             );
             println!(
-                "Time in SAT calls = {}",
+                "RFV1 - Time in SAT calls = {}",
                 self.time_in_sat_calls.as_secs_f32()
             );
         }
