@@ -1,21 +1,4 @@
-//! This algorithm is an almost exact implementation of what is described in "SAT-Based Model Checking without Unrolling".
-//!
-//! Bradley, A.R. (2011). SAT-Based Model Checking without Unrolling.
-//! In: Jhala, R., Schmidt, D. (eds) Verification, Model Checking, and Abstract Interpretation.
-//! VMCAI 2011. Lecture Notes in Computer Science, vol 6538. Springer, Berlin,
-//! Heidelberg. https://doi.org/10.1007/978-3-642-18275-4_7
-//!
-//! Abstract: A new form of SAT-based symbolic model checking is described.
-//! Instead of unrolling the transition relation, it incrementally generates clauses that are
-//! inductive relative to (and augment) stepwise approximate reachability information.
-//! In this way, the algorithm gradually refines the property, eventually producing either an
-//! inductive strengthening of the property or a counterexample trace. Our experimental studies
-//! show that induction is a powerful tool for generalizing the unreachability of given error
-//! states: it can refine away many states at once, and it is effective at focusing the proof
-//! search on aspects of the transition system relevant to the property. Furthermore, the
-//! incremental structure of the algorithm lends itself to a parallel implementation.
-//!
-//! This implementation uses stateful sat solvers to gain speedup.
+//! Imrovement trial of stateful IC3
 
 // ************************************************************************************************
 // use
@@ -55,6 +38,7 @@ enum PushGeneralizeResult {
 
 enum SolverVariant {
     FiAndT(usize),
+    FiAndTAndNotPTag(usize),
     Custom(CNF),
 }
 
@@ -72,7 +56,7 @@ pub struct RFV1<T> {
     // Reminder: F0 == initial
     fi_and_t_solvers: Vec<T>, // for each index i the solver holds Fi ^ T
     // initial_solver: T,        // houses just F0
-    // fi_and_t_and_not_p_tag_solvers: Vec<T>, // Fi ^ T ^ !P'
+    fi_and_t_and_not_p_tag_solvers: Vec<T>, // Fi ^ T ^ !P'
 
     // caching for speedup
     initial: CNF,
@@ -82,6 +66,10 @@ pub struct RFV1<T> {
     p0: Cube,
     not_p0: Clause,
     not_p1: Clause,
+    p_and_t: CNF,
+    p_and_t_and_not_p_tag: CNF,
+    i_and_t: CNF,
+    i_and_t_and_not_p_tag: CNF,
 
     // for printing
     verbose: bool,
@@ -101,8 +89,14 @@ impl<T: StatefulSatSolver> RFV1<T> {
 
     fn add_clause_to_clauses(&mut self, index: usize, clause: &Clause) {
         debug_assert_eq!(self.clauses.len(), self.fi_and_t_solvers.len());
+        debug_assert_eq!(
+            self.clauses.len(),
+            self.fi_and_t_and_not_p_tag_solvers.len()
+        );
+
         self.clauses[index].add_clause(clause);
         self.fi_and_t_solvers[index].add_cnf(&clause.to_cnf());
+        self.fi_and_t_and_not_p_tag_solvers[index].add_cnf(&clause.to_cnf());
     }
 
     fn get_clause_from_clauses(&self, index: usize) -> CNF {
@@ -111,23 +105,32 @@ impl<T: StatefulSatSolver> RFV1<T> {
 
     fn push_extra_frame_to_clauses(&mut self) {
         debug_assert_eq!(self.clauses.len(), self.fi_and_t_solvers.len());
+        debug_assert_eq!(
+            self.clauses.len(),
+            self.fi_and_t_and_not_p_tag_solvers.len()
+        );
+        {
+            // update solvers
+            let mut a = T::default();
+            a.add_cnf(if self.clauses.is_empty() {
+                &self.i_and_t
+            } else {
+                &self.p_and_t
+            });
+            self.fi_and_t_solvers.push(a);
+        }
+        {
+            // update solvers
+            let mut b = T::default();
+            b.add_cnf(if self.clauses.is_empty() {
+                &self.i_and_t_and_not_p_tag
+            } else {
+                &self.p_and_t_and_not_p_tag
+            });
+            self.fi_and_t_and_not_p_tag_solvers.push(b);
+        }
 
         self.clauses.push(CNF::new());
-
-        let mut fi_and_t_and_connection = CNF::new();
-        if self.clauses.is_empty() {
-            fi_and_t_and_connection.append(&self.initial);
-        } else {
-            fi_and_t_and_connection.append(&self.connection_from_state_to_safety0);
-            fi_and_t_and_connection.append(&self.p0.to_cnf());
-        }
-        fi_and_t_and_connection.append(&self.transition);
-        fi_and_t_and_connection.append(&self.connection_from_state_to_safety1);
-
-        // update solvers
-        let mut fi_and_t = T::default();
-        fi_and_t.add_cnf(&fi_and_t_and_connection);
-        self.fi_and_t_solvers.push(fi_and_t);
     }
 
     // ********************************************************************************************
@@ -150,6 +153,9 @@ impl<T: StatefulSatSolver> RFV1<T> {
             //     .solve(cube_assumptions, clause_assumptions),
             SolverVariant::FiAndT(j) => {
                 self.fi_and_t_solvers[j].solve(cube_assumptions, clause_assumptions)
+            }
+            SolverVariant::FiAndTAndNotPTag(j) => {
+                self.fi_and_t_and_not_p_tag_solvers[j].solve(cube_assumptions, clause_assumptions)
             }
             SolverVariant::Custom(cnf) => {
                 let mut current_solver = T::default();
@@ -189,11 +195,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
 
     fn is_bad_reachable_in_1_step_from_fi(&mut self, i: usize) -> SatResponse {
         // Fi ^ T ^ !P'
-        self.sat_call(
-            SolverVariant::FiAndT(i),
-            None,
-            Some(&self.not_p1.to_owned()),
-        )
+        self.sat_call(SolverVariant::FiAndTAndNotPTag(i), None, None)
     }
 
     fn is_fi_and_t_and_not_s_and_s_tag_sat(&mut self, i: usize, s: &Cube) -> bool {
@@ -430,19 +432,45 @@ impl<T: StatefulSatSolver> RFV1<T> {
         let connection_from_state_to_safety0 = fin_state.get_state_to_safety_translation();
         let connection_from_state_to_safety1 =
             fin_state.add_tags_to_relation(&connection_from_state_to_safety0, 1);
+        let transition = fin_state.get_transition_relation();
+        let initial = fin_state.get_initial_relation().to_cnf();
+
+        let mut i_and_t = CNF::new();
+        i_and_t.append(&initial);
+        i_and_t.append(&transition);
+
+        let mut i_and_t_and_not_p_tag = CNF::new();
+        i_and_t_and_not_p_tag.append(&i_and_t);
+        i_and_t_and_not_p_tag.append(&connection_from_state_to_safety1);
+        i_and_t_and_not_p_tag.append(&not_p1.to_cnf());
+
+        let mut p_and_t = CNF::new();
+        p_and_t.append(&connection_from_state_to_safety0);
+        p_and_t.append(&p0.to_cnf());
+        p_and_t.append(&transition);
+
+        let mut p_and_t_and_not_p_tag = CNF::new();
+        p_and_t_and_not_p_tag.append(&p_and_t);
+        p_and_t_and_not_p_tag.append(&connection_from_state_to_safety1);
+        p_and_t_and_not_p_tag.append(&not_p1.to_cnf());
 
         Self {
             clauses: Vec::new(),
             fin_state: fin_state.to_owned(),
             fi_and_t_solvers: Vec::new(),
+            fi_and_t_and_not_p_tag_solvers: Vec::new(),
             rng: thread_rng(),
-            initial: fin_state.get_initial_relation().to_cnf(),
-            transition: fin_state.get_transition_relation(),
+            initial,
+            transition,
             p0,
             not_p0,
             not_p1,
             connection_from_state_to_safety0,
             connection_from_state_to_safety1,
+            p_and_t,
+            p_and_t_and_not_p_tag,
+            i_and_t,
+            i_and_t_and_not_p_tag,
             verbose,
             number_of_sat_calls: 0,
             time_in_sat_calls: time::Duration::from_secs(0),
