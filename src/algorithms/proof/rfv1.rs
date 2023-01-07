@@ -54,7 +54,7 @@ enum PushGeneralizeResult {
 }
 
 enum SolverVariant {
-    Initial,
+    // Initial,
     FiAndT(usize),
     FiAndTAndNotPTag(usize),
     Custom(CNF),
@@ -64,7 +64,7 @@ enum SolverVariant {
 // struct
 // ************************************************************************************************
 
-pub struct IC3Stateful<T> {
+pub struct RFV1<T> {
     // for the algorithm
     clauses: Vec<CNF>,
     fin_state: FiniteStateTransitionSystem,
@@ -73,7 +73,7 @@ pub struct IC3Stateful<T> {
     // stateful sat solvers for speedup
     // Reminder: F0 == initial
     fi_and_t_solvers: Vec<T>, // for each index i the solver holds Fi ^ T
-    initial_solver: T,        // houses just F0
+    // initial_solver: T,        // houses just F0
     fi_and_t_and_not_p_tag_solvers: Vec<T>, // Fi ^ T ^ !P'
 
     // caching for speedup
@@ -94,7 +94,7 @@ pub struct IC3Stateful<T> {
 // impl
 // ************************************************************************************************
 
-impl<T: StatefulSatSolver> IC3Stateful<T> {
+impl<T: StatefulSatSolver> RFV1<T> {
     // ********************************************************************************************
     // clauses
     // ********************************************************************************************
@@ -160,9 +160,9 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
 
         // find solver
         let result = match solver_index {
-            SolverVariant::Initial => self
-                .initial_solver
-                .solve(cube_assumptions, clause_assumptions),
+            // SolverVariant::Initial => self
+            //     .initial_solver
+            //     .solve(cube_assumptions, clause_assumptions),
             SolverVariant::FiAndT(j) => {
                 self.fi_and_t_solvers[j].solve(cube_assumptions, clause_assumptions)
             }
@@ -229,13 +229,6 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
         }
     }
 
-    fn does_cube_intersect_with_initial(&mut self, cube: &Cube) -> bool {
-        match self.sat_call(SolverVariant::Initial, Some(cube), None) {
-            SatResponse::UnSat => false,
-            SatResponse::Sat { assignment: _ } => true,
-        }
-    }
-
     // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
@@ -271,10 +264,7 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
     fn is_clause_inductive_relative_to_fi(&mut self, d: &Clause, i: usize) -> bool {
         // return !(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’)
         if self.fin_state.is_cube_initial(&(!(d.to_owned()))) {
-            debug_assert!(self.does_cube_intersect_with_initial(&(!(d.to_owned()))));
             return false;
-        } else {
-            debug_assert!(!self.does_cube_intersect_with_initial(&(!(d.to_owned()))));
         }
 
         !self.is_fi_and_t_and_clause_and_not_clause_tag_sat(i, d)
@@ -451,14 +441,14 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
         let mut not_p0 = fin_state.get_state_to_safety_translation();
         not_p0.append(&fin_state.get_unsafety_property());
 
-        let mut initial_solver = T::default();
-        initial_solver.add_cnf(&fin_state.get_initial_relation().to_cnf());
+        // let mut initial_solver = T::default();
+        // initial_solver.add_cnf(&fin_state.get_initial_relation().to_cnf());
 
         Self {
             clauses: Vec::new(),
             fin_state: fin_state.to_owned(),
             fi_and_t_solvers: Vec::new(),
-            initial_solver,
+            // initial_solver,
             fi_and_t_and_not_p_tag_solvers: Vec::new(),
             rng: thread_rng(),
             initial: fin_state.get_initial_relation().to_cnf(),
@@ -532,9 +522,9 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
 // impl trait
 // ************************************************************************************************
 
-impl<T: StatefulSatSolver> FiniteStateTransitionSystemProver for IC3Stateful<T> {
+impl<T: StatefulSatSolver> FiniteStateTransitionSystemProver for RFV1<T> {
     fn new(fin_state: &FiniteStateTransitionSystem) -> Self {
-        IC3Stateful::new(fin_state, true)
+        RFV1::new(fin_state, true)
     }
 
     fn prove(&mut self) -> ProofResult {

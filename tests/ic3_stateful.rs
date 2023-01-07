@@ -18,7 +18,7 @@ mod tests {
     use std::time::{self, Duration};
 
     use rust_formal_verification::{
-        algorithms::proof::{IC3Stateful, ProofResult},
+        algorithms::proof::{IC3Stateful, ProofResult, RFV1},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{
             stateful::{CaDiCalSolver as StateFulCaDiCal, MiniSatSolver, StatefulSatSolver},
@@ -34,14 +34,37 @@ mod tests {
         numbers.iter().sum::<f32>() as f32 / numbers.len() as f32
     }
 
-    fn test<T: StatefulSatSolver>(
+    fn call_first_prover<T: StatefulSatSolver>(
         fin_state: &FiniteStateTransitionSystem,
-        _aig: &AndInverterGraph,
-    ) -> Duration {
+    ) -> (ProofResult, Duration) {
         let mut ic3_solver = IC3Stateful::<T>::new(fin_state, true);
         let start_time = time::Instant::now();
         let prove_result = ic3_solver.prove();
         let duration = start_time.elapsed();
+        (prove_result, duration)
+    }
+
+    fn call_second_prover<T: StatefulSatSolver>(
+        fin_state: &FiniteStateTransitionSystem,
+    ) -> (ProofResult, Duration) {
+        let mut ic3_solver = RFV1::<T>::new(fin_state, true);
+        let start_time = time::Instant::now();
+        let prove_result = ic3_solver.prove();
+        let duration = start_time.elapsed();
+        (prove_result, duration)
+    }
+
+    fn test<T: StatefulSatSolver>(
+        fin_state: &FiniteStateTransitionSystem,
+        is_first: bool,
+        _aig: &AndInverterGraph,
+    ) -> Duration {
+        let (prove_result, duration) = if is_first {
+            call_first_prover::<T>(fin_state)
+        } else {
+            call_second_prover::<T>(fin_state)
+        };
+
         println!("Elapsed time = {}", duration.as_secs_f32());
         match prove_result {
             ProofResult::Proof { invariant } => {
@@ -116,8 +139,8 @@ mod tests {
             let aig = AndInverterGraph::from_aig_path(aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig, true);
 
-            let t1 = 0.0; // test::<MiniSatSolver>(&fin_state, &aig).as_secs_f32();
-            let t2 = test::<StateFulCaDiCal>(&fin_state, &aig).as_secs_f32();
+            let t1 = test::<MiniSatSolver>(&fin_state, true, &aig).as_secs_f32();
+            let t2 = test::<StateFulCaDiCal>(&fin_state, false, &aig).as_secs_f32();
 
             time1.push(t1);
             time2.push(t2);
