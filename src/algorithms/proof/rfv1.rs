@@ -51,7 +51,7 @@ enum SolverVariant {
 
 pub struct RFV1<T> {
     // for the algorithm
-    clauses: Vec<CNF>,
+    clauses: Vec<Vec<Clause>>,
     fin_state: FiniteStateTransitionSystem,
     rng: ThreadRng,
 
@@ -90,20 +90,60 @@ impl<T: StatefulSatSolver> RFV1<T> {
     // clauses
     // ********************************************************************************************
 
-    fn add_clause_to_clauses(&mut self, index: usize, clause: &Clause) {
+    fn add_to_vector_of_clauses_in_specific_frame(&mut self, frame_index: usize, clause: &Clause) {
         debug_assert_eq!(self.clauses.len(), self.fi_and_t_solvers.len());
         debug_assert_eq!(
             self.clauses.len(),
             self.fi_and_t_and_not_p_tag_solvers.len()
         );
 
-        self.clauses[index].add_clause(clause);
-        self.fi_and_t_solvers[index].add_cnf(&clause.to_cnf());
-        self.fi_and_t_and_not_p_tag_solvers[index].add_cnf(&clause.to_cnf());
+        self.clauses[frame_index].push(clause.to_owned());
+        for i in 0..(frame_index + 1) {
+            self.fi_and_t_solvers[i].add_cnf(&clause.to_cnf());
+            self.fi_and_t_and_not_p_tag_solvers[i].add_cnf(&clause.to_cnf());
+        }
     }
 
-    fn get_clause_from_clauses(&self, index: usize) -> CNF {
-        self.clauses[index].to_owned()
+    // fn get_vector_of_clauses_in_specific_frame(&self, frame_index: usize) -> Vec<Clause> {
+    //     self.clauses[frame_index].to_owned()
+    // }
+
+    fn get_length_of_vector_of_clauses_in_specific_frame(&self, frame_index: usize) -> usize {
+        self.clauses[frame_index].len()
+    }
+
+    fn get_clause_in_vector_of_clauses_in_specific_frame(
+        &self,
+        frame_index: usize,
+        clause_index: usize,
+    ) -> Clause {
+        self.clauses[frame_index][clause_index].to_owned()
+    }
+
+    fn remove_from_vector_of_clauses_in_specific_frame(
+        &mut self,
+        frame_index: usize,
+        clause_index: usize,
+    ) {
+        debug_assert_eq!(self.clauses.len(), self.fi_and_t_solvers.len());
+        debug_assert_eq!(
+            self.clauses.len(),
+            self.fi_and_t_and_not_p_tag_solvers.len()
+        );
+        debug_assert!(clause_index < self.clauses[frame_index].len());
+
+        self.clauses[frame_index].swap_remove(clause_index);
+    }
+
+    fn get_all_clause_that_are_in_some_frame(&self, frame_index: usize) -> CNF {
+        let mut result = CNF::new();
+        for i in frame_index..self.clauses.len() {
+            for j in 0..self.get_length_of_vector_of_clauses_in_specific_frame(i) {
+                let c = self.get_clause_in_vector_of_clauses_in_specific_frame(i, j);
+                result.add_clause(&c);
+            }
+        }
+        result
     }
 
     fn push_extra_frame_to_clauses(&mut self) {
@@ -114,7 +154,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
         );
         {
             // update solvers
-            let mut a = T::new(StatefulSatSolverHint::None);
+            let mut a = T::new(StatefulSatSolverHint::Sat);
             a.add_cnf(if self.clauses.is_empty() {
                 &self.i_and_t
             } else {
@@ -124,7 +164,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
         }
         {
             // update solvers
-            let mut b = T::new(StatefulSatSolverHint::None);
+            let mut b = T::new(StatefulSatSolverHint::Sat);
             b.add_cnf(if self.clauses.is_empty() {
                 &self.i_and_t_and_not_p_tag
             } else {
@@ -133,7 +173,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
             self.fi_and_t_and_not_p_tag_solvers.push(b);
         }
 
-        self.clauses.push(CNF::new());
+        self.clauses.push(Vec::new());
     }
 
     // ********************************************************************************************
@@ -161,7 +201,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
                 self.fi_and_t_and_not_p_tag_solvers[j].solve(cube_assumptions, clause_assumptions)
             }
             SolverVariant::Custom(cnf) => {
-                let mut current_solver = T::new(StatefulSatSolverHint::None);
+                let mut current_solver = T::new(StatefulSatSolverHint::UnSat);
                 current_solver.add_cnf(&cnf);
                 current_solver.solve(cube_assumptions, clause_assumptions)
             }
@@ -227,7 +267,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
     // ********************************************************************************************
 
     fn get_fk(&self, k: usize) -> CNF {
-        let mut clauses_fk = self.get_clause_from_clauses(k);
+        let mut clauses_fk = self.get_all_clause_that_are_in_some_frame(k);
         if k == 0 {
             clauses_fk.append(&self.initial);
         } else {
@@ -238,17 +278,34 @@ impl<T: StatefulSatSolver> RFV1<T> {
     }
 
     fn propagate_clauses(&mut self, k: usize) {
-        for i in 1..(k + 1) {
-            let clauses_fi = self.get_clause_from_clauses(i);
-            for c in clauses_fi.iter() {
-                let check = self.is_cube_reachable_in_1_step_from_fi(i, &(!(c.to_owned())));
+        for frame_index in 1..(k + 1) {
+            let mut clause_index = 0;
+            while clause_index < self.get_length_of_vector_of_clauses_in_specific_frame(frame_index)
+            {
+                let c = self
+                    .get_clause_in_vector_of_clauses_in_specific_frame(frame_index, clause_index);
+                let check =
+                    self.is_cube_reachable_in_1_step_from_fi(frame_index, &(!(c.to_owned())));
                 match check {
                     SatResponse::UnSat => {
                         // can propagate this property :)
-                        self.add_clause_to_clauses(i + 1, c);
+                        self.add_to_vector_of_clauses_in_specific_frame(frame_index + 1, &c);
+                        debug_assert_eq!(
+                            self.get_clause_in_vector_of_clauses_in_specific_frame(
+                                frame_index,
+                                clause_index
+                            )
+                            .to_string(),
+                            c.to_string()
+                        );
+                        self.remove_from_vector_of_clauses_in_specific_frame(
+                            frame_index,
+                            clause_index,
+                        );
                     }
                     SatResponse::Sat { assignment: _ } => {
                         // can't propagate this clause :(
+                        clause_index += 1;
                     }
                 }
             }
@@ -292,9 +349,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
 
     fn generate_clause(&mut self, s: &Cube, i: usize, _k: usize) {
         let c = self.get_subclause_of_not_s_that_is_inductive_relative_to_fi(s, i);
-        for j in 1..(i + 2) {
-            self.add_clause_to_clauses(j, &c);
-        }
+        self.add_to_vector_of_clauses_in_specific_frame(i + 1, &c);
     }
 
     fn inductively_generalize(
@@ -369,8 +424,8 @@ impl<T: StatefulSatSolver> RFV1<T> {
                 .clauses
                 .iter()
                 .map(|c| c.len())
-                .rev()
-                .take(10)
+                // .rev()
+                // .take(10)
                 .collect::<Vec<usize>>();
             println!("IC3 is on k = {}, clauses lengths = {:?}", k, clauses);
             println!("Number of SAT calls = {}", self.number_of_sat_calls);
@@ -393,6 +448,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
                 }
                 SatResponse::Sat { assignment } => {
                     let s = self.fin_state.extract_state_from_assignment(&assignment);
+                    // println!("{}", !s.to_owned());
                     // println!("Should block s = {} from F{}", s, k - 1);
                     match self.inductively_generalize(
                         &s,
@@ -505,7 +561,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
             // debug_assert!(self.does_a_hold(k), "Bug in algorithm implementation found!!");
             self.print_progress_if_verbose(k);
             debug_assert_eq!(self.clauses.len(), (k + 2));
-            debug_assert_eq!(self.get_clause_from_clauses(0).len(), 0);
+            debug_assert_eq!(self.get_length_of_vector_of_clauses_in_specific_frame(0), 0);
             match self.strengthen(k) {
                 StrengthenResult::Success => {}
                 StrengthenResult::Failure { _depth: _ } => {
@@ -517,13 +573,11 @@ impl<T: StatefulSatSolver> RFV1<T> {
             self.propagate_clauses(k);
             for i in 1..(k + 1) {
                 // all clauses in i+1 should be in i.
-                debug_assert!(self
-                    .get_clause_from_clauses(i + 1)
-                    .iter()
-                    .all(|c| self.get_clause_from_clauses(i).contains(c)));
-                if self.get_clause_from_clauses(i).len()
-                    == self.get_clause_from_clauses(i + 1).len()
-                {
+                // debug_assert!(self
+                //     .get_vector_of_clauses_in_specific_frame(i + 1)
+                //     .iter()
+                //     .all(|c| self.get_vector_of_clauses_in_specific_frame(i).contains(c)));
+                if self.get_length_of_vector_of_clauses_in_specific_frame(i) == 0 {
                     // todo: compare just the lengths
                     self.print_progress_if_verbose(k);
                     return ProofResult::Proof {

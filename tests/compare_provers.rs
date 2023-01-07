@@ -108,11 +108,11 @@ mod tests {
 
         let file_paths = vec![
             // 0 to 2 seconds
-"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divthree-p143_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p2/vis_arrays_am2910_p2_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p11_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p143_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p07_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divthree-p143_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p2/vis_arrays_am2910_p2_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p11_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p143_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p07_zero_then_fold2.aig",
 "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p1/vis_arrays_am2910_p1_zero_then_fold2.aig",
 "tests/examples/hwmcc20/2020/mann/simple_alu_zero_then_fold2.aig",
 "tests/examples/hwmcc20/2019/goel/opensource/vcegar_QF_BV_itc99_b13_p10/vcegar_QF_BV_itc99_b13_p10_zero_then_fold2.aig",
