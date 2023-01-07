@@ -25,7 +25,10 @@ use super::{FiniteStateTransitionSystemProver, ProofResult};
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{stateful::StatefulSatSolver, SatResponse},
+    solvers::sat::{
+        stateful::{StatefulSatSolver, StatefulSatSolverHint},
+        SatResponse,
+    },
 };
 use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
@@ -125,10 +128,10 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
         self.clauses.push(CNF::new());
 
         // update solvers
-        let mut fi_and_t = T::default();
+        let mut fi_and_t = T::new(StatefulSatSolverHint::None);
         fi_and_t.add_cnf(&self.transition);
 
-        let mut fi_and_t_and_not_p_tag = T::default();
+        let mut fi_and_t_and_not_p_tag = T::new(StatefulSatSolverHint::None);
         fi_and_t_and_not_p_tag.add_cnf(&self.transition);
         fi_and_t_and_not_p_tag.add_cnf(&self.not_p1);
 
@@ -170,7 +173,7 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
                 self.fi_and_t_and_not_p_tag_solvers[j].solve(cube_assumptions, clause_assumptions)
             }
             SolverVariant::Custom(cnf) => {
-                let mut current_solver = T::default();
+                let mut current_solver = T::new(StatefulSatSolverHint::None);
                 current_solver.add_cnf(&cnf);
                 current_solver.solve(cube_assumptions, clause_assumptions)
             }
@@ -451,7 +454,7 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
         let mut not_p0 = fin_state.get_state_to_safety_translation();
         not_p0.append(&fin_state.get_unsafety_property().to_cnf());
 
-        let mut initial_solver = T::default();
+        let mut initial_solver = T::new(StatefulSatSolverHint::None);
         initial_solver.add_cnf(&fin_state.get_initial_relation().to_cnf());
 
         Self {

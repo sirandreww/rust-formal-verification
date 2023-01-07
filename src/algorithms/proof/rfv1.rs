@@ -8,7 +8,10 @@ use super::{FiniteStateTransitionSystemProver, ProofResult};
 use crate::{
     formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
-    solvers::sat::{stateful::StatefulSatSolver, SatResponse},
+    solvers::sat::{
+        stateful::{StatefulSatSolver, StatefulSatSolverHint},
+        SatResponse,
+    },
 };
 use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
@@ -111,7 +114,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
         );
         {
             // update solvers
-            let mut a = T::default();
+            let mut a = T::new(StatefulSatSolverHint::None);
             a.add_cnf(if self.clauses.is_empty() {
                 &self.i_and_t
             } else {
@@ -121,7 +124,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
         }
         {
             // update solvers
-            let mut b = T::default();
+            let mut b = T::new(StatefulSatSolverHint::None);
             b.add_cnf(if self.clauses.is_empty() {
                 &self.i_and_t_and_not_p_tag
             } else {
@@ -158,7 +161,7 @@ impl<T: StatefulSatSolver> RFV1<T> {
                 self.fi_and_t_and_not_p_tag_solvers[j].solve(cube_assumptions, clause_assumptions)
             }
             SolverVariant::Custom(cnf) => {
-                let mut current_solver = T::default();
+                let mut current_solver = T::new(StatefulSatSolverHint::None);
                 current_solver.add_cnf(&cnf);
                 current_solver.solve(cube_assumptions, clause_assumptions)
             }

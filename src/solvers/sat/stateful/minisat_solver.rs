@@ -196,6 +196,10 @@ impl StatefulSatSolver for MiniSatSolver {
     ) -> SatResponse {
         self.solve(temporary_extra_cube, temporary_extra_clause)
     }
+
+    fn new(_hint: super::StatefulSatSolverHint) -> Self {
+        Self::default()
+    }
 }
 
 impl Default for MiniSatSolver {

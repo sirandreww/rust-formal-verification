@@ -207,6 +207,22 @@ impl StatefulSatSolver for CaDiCalSolver {
     ) -> SatResponse {
         self.solve(temporary_extra_cube, temporary_extra_clause)
     }
+
+    fn new(hint: super::StatefulSatSolverHint) -> Self {
+        match hint {
+            super::StatefulSatSolverHint::None => Self::default(),
+            super::StatefulSatSolverHint::Sat => Self {
+                solver: cadical::Solver::with_config("sat").unwrap(),
+                cadical_literals: Vec::new(),
+                new_literal: 1,
+            },
+            super::StatefulSatSolverHint::UnSat => Self {
+                solver: cadical::Solver::with_config("unsat").unwrap(),
+                cadical_literals: Vec::new(),
+                new_literal: 1,
+            },
+        }
+    }
 }
 
 impl Default for CaDiCalSolver {

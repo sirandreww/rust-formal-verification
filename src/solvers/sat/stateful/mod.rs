@@ -22,10 +22,21 @@ use super::SatResponse;
 use crate::formulas::{Clause, Cube, CNF};
 
 // ************************************************************************************************
+// Sat Solver hint
+// ************************************************************************************************
+
+pub enum StatefulSatSolverHint {
+    None,
+    Sat,
+    UnSat,
+}
+
+// ************************************************************************************************
 // Sat Solver trait
 // ************************************************************************************************
 
-pub trait StatefulSatSolver: Default {
+pub trait StatefulSatSolver {
+    fn new(hint: StatefulSatSolverHint) -> Self;
     fn add_cnf(&mut self, cnf: &CNF);
     fn solve(
         &mut self,
