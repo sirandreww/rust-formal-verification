@@ -101,7 +101,7 @@ impl<T: StatelessSatSolver + std::marker::Send + 'static + std::marker::Sync + C
         let initial = fin_state.get_initial_relation();
         // println!("initial = {}", initial);
         // !P
-        let mut not_p0 = fin_state.get_unsafety_property();
+        let mut not_p0 = fin_state.get_unsafety_property().to_cnf();
         not_p0.append(&fin_state.get_state_to_safety_translation());
         // println!("not_p0 = {}", not_p0);
         // Tr

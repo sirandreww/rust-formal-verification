@@ -162,8 +162,11 @@ mod tests {
                     // check that p and not !p cannot hold at the same time for some depths.
                     for depth in 0..depth_to_test_for {
                         assert!(!is_a_and_b_satisfiable::<VarisatSolver>(
-                            &fsts.add_tags_to_relation(&fsts.get_safety_property(), depth),
-                            &fsts.add_tags_to_relation(&fsts.get_unsafety_property(), depth)
+                            &fsts.add_tags_to_relation(&fsts.get_safety_property().to_cnf(), depth),
+                            &fsts.add_tags_to_relation(
+                                &fsts.get_unsafety_property().to_cnf(),
+                                depth
+                            )
                         ));
                     }
                 }

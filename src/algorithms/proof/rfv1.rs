@@ -54,9 +54,7 @@ enum PushGeneralizeResult {
 }
 
 enum SolverVariant {
-    // Initial,
     FiAndT(usize),
-    FiAndTAndNotPTag(usize),
     Custom(CNF),
 }
 
@@ -74,14 +72,16 @@ pub struct RFV1<T> {
     // Reminder: F0 == initial
     fi_and_t_solvers: Vec<T>, // for each index i the solver holds Fi ^ T
     // initial_solver: T,        // houses just F0
-    fi_and_t_and_not_p_tag_solvers: Vec<T>, // Fi ^ T ^ !P'
+    // fi_and_t_and_not_p_tag_solvers: Vec<T>, // Fi ^ T ^ !P'
 
     // caching for speedup
     initial: CNF,
     transition: CNF,
-    p0: CNF,
-    not_p0: CNF,
-    not_p1: CNF,
+    connection_from_state_to_safety0: CNF,
+    connection_from_state_to_safety1: CNF,
+    p0: Cube,
+    not_p0: Clause,
+    not_p1: Clause,
 
     // for printing
     verbose: bool,
@@ -101,14 +101,8 @@ impl<T: StatefulSatSolver> RFV1<T> {
 
     fn add_clause_to_clauses(&mut self, index: usize, clause: &Clause) {
         debug_assert_eq!(self.clauses.len(), self.fi_and_t_solvers.len());
-        debug_assert_eq!(
-            self.clauses.len(),
-            self.fi_and_t_and_not_p_tag_solvers.len()
-        );
-
         self.clauses[index].add_clause(clause);
         self.fi_and_t_solvers[index].add_cnf(&clause.to_cnf());
-        self.fi_and_t_and_not_p_tag_solvers[index].add_cnf(&clause.to_cnf());
     }
 
     fn get_clause_from_clauses(&self, index: usize) -> CNF {
@@ -117,32 +111,23 @@ impl<T: StatefulSatSolver> RFV1<T> {
 
     fn push_extra_frame_to_clauses(&mut self) {
         debug_assert_eq!(self.clauses.len(), self.fi_and_t_solvers.len());
-        debug_assert_eq!(
-            self.clauses.len(),
-            self.fi_and_t_and_not_p_tag_solvers.len()
-        );
 
         self.clauses.push(CNF::new());
 
+        let mut fi_and_t_and_connection = CNF::new();
+        if self.clauses.is_empty() {
+            fi_and_t_and_connection.append(&self.initial);
+        } else {
+            fi_and_t_and_connection.append(&self.connection_from_state_to_safety0);
+            fi_and_t_and_connection.append(&self.p0.to_cnf());
+        }
+        fi_and_t_and_connection.append(&self.transition);
+        fi_and_t_and_connection.append(&self.connection_from_state_to_safety1);
+
         // update solvers
         let mut fi_and_t = T::default();
-        fi_and_t.add_cnf(&self.transition);
-
-        let mut fi_and_t_and_not_p_tag = T::default();
-        fi_and_t_and_not_p_tag.add_cnf(&self.transition);
-        fi_and_t_and_not_p_tag.add_cnf(&self.not_p1);
-
-        if self.fi_and_t_solvers.is_empty() {
-            fi_and_t.add_cnf(&self.initial);
-            fi_and_t_and_not_p_tag.add_cnf(&self.initial);
-        } else {
-            fi_and_t.add_cnf(&self.p0);
-            fi_and_t_and_not_p_tag.add_cnf(&self.p0);
-        }
-
+        fi_and_t.add_cnf(&fi_and_t_and_connection);
         self.fi_and_t_solvers.push(fi_and_t);
-        self.fi_and_t_and_not_p_tag_solvers
-            .push(fi_and_t_and_not_p_tag);
     }
 
     // ********************************************************************************************
@@ -166,9 +151,6 @@ impl<T: StatefulSatSolver> RFV1<T> {
             SolverVariant::FiAndT(j) => {
                 self.fi_and_t_solvers[j].solve(cube_assumptions, clause_assumptions)
             }
-            SolverVariant::FiAndTAndNotPTag(j) => {
-                self.fi_and_t_and_not_p_tag_solvers[j].solve(cube_assumptions, clause_assumptions)
-            }
             SolverVariant::Custom(cnf) => {
                 let mut current_solver = T::default();
                 current_solver.add_cnf(&cnf);
@@ -184,7 +166,8 @@ impl<T: StatefulSatSolver> RFV1<T> {
         // I ^ !P
         let mut cnf = CNF::new();
         cnf.append(&self.initial);
-        cnf.append(&self.not_p0);
+        cnf.append(&self.connection_from_state_to_safety0);
+        cnf.append(&self.not_p0.to_cnf());
         self.sat_call(SolverVariant::Custom(cnf), None, None)
     }
 
@@ -193,7 +176,8 @@ impl<T: StatefulSatSolver> RFV1<T> {
         let mut cnf = CNF::new();
         cnf.append(&self.initial);
         cnf.append(&self.transition);
-        cnf.append(&self.not_p1);
+        cnf.append(&self.connection_from_state_to_safety1);
+        cnf.append(&self.not_p1.to_cnf());
         self.sat_call(SolverVariant::Custom(cnf), None, None)
     }
 
@@ -205,7 +189,11 @@ impl<T: StatefulSatSolver> RFV1<T> {
 
     fn is_bad_reachable_in_1_step_from_fi(&mut self, i: usize) -> SatResponse {
         // Fi ^ T ^ !P'
-        self.sat_call(SolverVariant::FiAndTAndNotPTag(i), None, None)
+        self.sat_call(
+            SolverVariant::FiAndT(i),
+            None,
+            Some(&self.not_p1.to_owned()),
+        )
     }
 
     fn is_fi_and_t_and_not_s_and_s_tag_sat(&mut self, i: usize, s: &Cube) -> bool {
@@ -238,7 +226,8 @@ impl<T: StatefulSatSolver> RFV1<T> {
         if k == 0 {
             clauses_fk.append(&self.initial);
         } else {
-            clauses_fk.append(&self.p0);
+            clauses_fk.append(&self.connection_from_state_to_safety0);
+            clauses_fk.append(&self.p0.to_cnf());
         }
         clauses_fk
     }
@@ -435,27 +424,25 @@ impl<T: StatefulSatSolver> RFV1<T> {
     // ********************************************************************************************
 
     pub fn new(fin_state: &FiniteStateTransitionSystem, verbose: bool) -> Self {
-        let mut p0 = fin_state.get_state_to_safety_translation();
-        p0.append(&fin_state.get_safety_property());
-
-        let mut not_p0 = fin_state.get_state_to_safety_translation();
-        not_p0.append(&fin_state.get_unsafety_property());
-
-        // let mut initial_solver = T::default();
-        // initial_solver.add_cnf(&fin_state.get_initial_relation().to_cnf());
+        let p0 = fin_state.get_safety_property();
+        let not_p0 = fin_state.get_unsafety_property();
+        let not_p1 = fin_state.add_tags_to_clause(&not_p0, 1);
+        let connection_from_state_to_safety0 = fin_state.get_state_to_safety_translation();
+        let connection_from_state_to_safety1 =
+            fin_state.add_tags_to_relation(&connection_from_state_to_safety0, 1);
 
         Self {
             clauses: Vec::new(),
             fin_state: fin_state.to_owned(),
             fi_and_t_solvers: Vec::new(),
-            // initial_solver,
-            fi_and_t_and_not_p_tag_solvers: Vec::new(),
             rng: thread_rng(),
             initial: fin_state.get_initial_relation().to_cnf(),
             transition: fin_state.get_transition_relation(),
             p0,
-            not_p0: not_p0.to_owned(),
-            not_p1: fin_state.add_tags_to_relation(&not_p0, 1),
+            not_p0,
+            not_p1,
+            connection_from_state_to_safety0,
+            connection_from_state_to_safety1,
             verbose,
             number_of_sat_calls: 0,
             time_in_sat_calls: time::Duration::from_secs(0),

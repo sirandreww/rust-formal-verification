@@ -76,6 +76,18 @@ impl FiniteStateTransitionSystem {
         }
     }
 
+    pub fn add_tags_to_clause(&self, clause: &Clause, number_of_tags: VariableType) -> Clause {
+        if number_of_tags == 0 {
+            // this makes the function faster for the simple case
+            clause.to_owned()
+        } else {
+            Self::bump_all_clause_variables_by_some_number(
+                clause,
+                self.max_literal_number * number_of_tags,
+            )
+        }
+    }
+
     pub fn is_cube_initial(&self, cube: &Cube) -> bool {
         // check that cube contains no contradiction with initial.
         for literal in cube.iter() {
@@ -123,7 +135,7 @@ impl FiniteStateTransitionSystem {
         );
 
         // check inv_candidate ^ !p is un-sat
-        let mut bad = self.get_unsafety_property();
+        let mut bad = self.get_unsafety_property().to_cnf();
         bad.append(&self.get_state_to_safety_translation());
         assert!(
             !is_a_and_b_satisfiable::<T>(inv_candidate, &bad),

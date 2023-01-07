@@ -446,10 +446,10 @@ impl<T: StatefulSatSolver> IC3Stateful<T> {
 
     pub fn new(fin_state: &FiniteStateTransitionSystem, verbose: bool) -> Self {
         let mut p0 = fin_state.get_state_to_safety_translation();
-        p0.append(&fin_state.get_safety_property());
+        p0.append(&fin_state.get_safety_property().to_cnf());
 
         let mut not_p0 = fin_state.get_state_to_safety_translation();
-        not_p0.append(&fin_state.get_unsafety_property());
+        not_p0.append(&fin_state.get_unsafety_property().to_cnf());
 
         let mut initial_solver = T::default();
         initial_solver.add_cnf(&fin_state.get_initial_relation().to_cnf());

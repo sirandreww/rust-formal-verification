@@ -372,10 +372,10 @@ impl<T: StatelessSatSolver> IC3Stateless<T> {
 
     pub fn new(fin_state: &FiniteStateTransitionSystem, verbose: bool) -> Self {
         let mut p0 = fin_state.get_state_to_safety_translation();
-        p0.append(&fin_state.get_safety_property());
+        p0.append(&fin_state.get_safety_property().to_cnf());
 
         let mut not_p0 = fin_state.get_state_to_safety_translation();
-        not_p0.append(&fin_state.get_unsafety_property());
+        not_p0.append(&fin_state.get_unsafety_property().to_cnf());
 
         Self {
             clauses: Vec::new(),

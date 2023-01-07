@@ -3,7 +3,7 @@
 // ************************************************************************************************
 
 use crate::formulas::literal::VariableType;
-use crate::formulas::{Cube, CNF};
+use crate::formulas::{Clause, Cube, CNF};
 
 use super::FiniteStateTransitionSystem;
 
@@ -60,11 +60,11 @@ impl FiniteStateTransitionSystem {
         self.state_to_safety_translation.to_owned()
     }
 
-    pub fn get_safety_property(&self) -> CNF {
-        (!self.unsafety_property.to_owned()).to_cnf()
+    pub fn get_safety_property(&self) -> Cube {
+        !self.unsafety_property.to_owned()
     }
 
-    pub fn get_unsafety_property(&self) -> CNF {
-        self.unsafety_property.to_cnf()
+    pub fn get_unsafety_property(&self) -> Clause {
+        self.unsafety_property.to_owned()
     }
 }
