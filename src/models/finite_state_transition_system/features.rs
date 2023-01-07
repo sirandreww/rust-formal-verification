@@ -92,7 +92,7 @@ impl FiniteStateTransitionSystem {
         for state_lit_num in &self.state_literals {
             literals.push(
                 Literal::new(state_lit_num.to_owned())
-                    .negate_if_true(!assignment.get_value_of_variable(state_lit_num)),
+                    .negate_if_true(!assignment.get_value(state_lit_num).unwrap()),
             )
         }
 

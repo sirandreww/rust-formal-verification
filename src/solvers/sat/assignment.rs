@@ -11,9 +11,8 @@ use std::collections::HashSet;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Assignment {
-    set_of_variables: HashSet<VariableType>,
-    in_set_value: bool,
-    out_of_set_value: bool,
+    true_variables: HashSet<VariableType>,
+    false_variables: HashSet<VariableType>,
 }
 
 // ************************************************************************************************
@@ -25,11 +24,10 @@ impl Assignment {
     // helper functions
     // ********************************************************************************************
 
-    fn new(set_of_variables: HashSet<VariableType>, in_set_value: bool) -> Self {
+    fn new(true_variables: HashSet<VariableType>, false_variables: HashSet<VariableType>) -> Self {
         Self {
-            set_of_variables,
-            in_set_value,
-            out_of_set_value: !in_set_value,
+            true_variables,
+            false_variables,
         }
     }
 
@@ -50,22 +48,17 @@ impl Assignment {
                 true_variables.insert(var_num);
             }
         }
-        if true_variables.len() > false_variables.len() {
-            // there are more true variables than false variables.
-            // better to save the false variables.
-            Self::new(false_variables, false)
-        } else {
-            // there are more false variables than true variables.
-            // better to save the true variables.
-            Self::new(true_variables, true)
-        }
+
+        Self::new(true_variables, false_variables)
     }
 
-    pub fn get_value_of_variable(&self, variable: &VariableType) -> bool {
-        if self.set_of_variables.contains(variable) {
-            self.in_set_value
+    pub fn get_value(&self, variable: &VariableType) -> Option<bool> {
+        if self.true_variables.contains(variable) {
+            Some(true)
+        } else if self.false_variables.contains(variable) {
+            Some(false)
         } else {
-            self.out_of_set_value
+            None
         }
     }
 }

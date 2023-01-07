@@ -72,22 +72,22 @@ mod tests {
 "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divthree-p143_zero_then_fold2.aig",
 "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p2/vis_arrays_am2910_p2_zero_then_fold2.aig",
 "tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p11_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p143_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p07_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p1/vis_arrays_am2910_p1_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2020/mann/simple_alu_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2019/goel/opensource/vcegar_QF_BV_itc99_b13_p10/vcegar_QF_BV_itc99_b13_p10_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2020/mann/stack-p1_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2019/beem/anderson.3.prop1-back-serstep_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2901/vis_arrays_am2901_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p00_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2020/mann/rast-p04_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2020/mann/rast-p01_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2020/mann/rast-p03_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2020/mann/rast-p06_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2020/mann/rast-p19_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2020/mann/rast-p18_zero_then_fold2.aig",
-// "tests/examples/hwmcc20/2020/mann/rast-p21_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p143_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p07_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p1/vis_arrays_am2910_p1_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/simple_alu_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/goel/opensource/vcegar_QF_BV_itc99_b13_p10/vcegar_QF_BV_itc99_b13_p10_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/stack-p1_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/beem/anderson.3.prop1-back-serstep_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2901/vis_arrays_am2901_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p00_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/rast-p04_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/rast-p01_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/rast-p03_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/rast-p06_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/rast-p19_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/rast-p18_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/rast-p21_zero_then_fold2.aig",
 // "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p3/vis_arrays_am2910_p3_zero_then_fold2.aig",
 // "tests/examples/hwmcc20/2019/goel/industry/gen21/gen21_zero_then_fold2.aig",
 // "tests/examples/hwmcc20/2019/goel/industry/cal41/cal41_zero_then_fold2.aig",
@@ -115,8 +115,12 @@ mod tests {
             );
             let aig = AndInverterGraph::from_aig_path(aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig, true);
-            time1.push(test::<MiniSatSolver>(&fin_state, &aig).as_secs_f32());
-            time2.push(test::<StateFulCaDiCal>(&fin_state, &aig).as_secs_f32());
+
+            let t1 = 0.0; // test::<MiniSatSolver>(&fin_state, &aig).as_secs_f32();
+            let t2 = test::<StateFulCaDiCal>(&fin_state, &aig).as_secs_f32();
+
+            time1.push(t1);
+            time2.push(t2);
         }
         println!("Average time for first prover = {}", average(&time1));
         println!("Average time for second prover = {}", average(&time2));

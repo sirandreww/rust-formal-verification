@@ -41,7 +41,7 @@ mod tests {
         for _ in 0..number_of_clocks_wanted {
             let mut clk_inputs = HashMap::new(); // <usize, bool>
             for input in input_literals.iter() {
-                let val = assignment.get_value_of_variable(input);
+                let val = assignment.get_value(input).unwrap();
                 let input: usize = input.to_owned().try_into().unwrap();
                 clk_inputs.insert(input, val);
             }
@@ -58,7 +58,7 @@ mod tests {
         let state_literals = fin_state.get_state_literal_numbers();
 
         for state in state_literals {
-            let val = assignment.get_value_of_variable(&state);
+            let val = assignment.get_value(&state).unwrap();
             let input: usize = state.to_owned().try_into().unwrap();
             result.insert(input, val);
         }

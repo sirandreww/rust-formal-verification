@@ -79,16 +79,16 @@ impl CaDiCalSolver {
         let mut result = Vec::with_capacity(cadical_literals.len());
         for (i, lit) in cadical_literals.iter().enumerate().skip(1) {
             let j: i32 = i.try_into().unwrap();
-            result.push(match self.solver.value(lit.to_owned()) {
+            match self.solver.value(lit.to_owned()) {
                 Some(v) => {
                     if v {
-                        j
+                        result.push(j);
                     } else {
-                        -j
+                        result.push(-j);
                     }
                 }
-                None => j,
-            });
+                None => {}
+            }
         }
         result
     }

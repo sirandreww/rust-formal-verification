@@ -83,7 +83,7 @@ pub fn is_a_and_b_satisfiable<T: StatelessSatSolver>(a: &CNF, b: &CNF) -> bool {
 }
 
 pub fn evaluate_assignment_on_literal(literal: &Literal, assignment: &Assignment) -> bool {
-    let value = assignment.get_value_of_variable(&literal.get_number());
+    let value = assignment.get_value(&literal.get_number()).unwrap();
     if literal.is_negated() {
         !value
     } else {
