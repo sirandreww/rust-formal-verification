@@ -21,7 +21,7 @@ mod tests {
         algorithms::proof::{IC3Stateful, ProofResult, RFV1},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{
-            stateful::{CaDiCalSolver as StateFulCaDiCal, MiniSatSolver, StatefulSatSolver},
+            stateful::{CaDiCalSolver as StateFulCaDiCal, StatefulSatSolver},
             stateless::CaDiCalSolver,
         },
     };
@@ -92,25 +92,26 @@ mod tests {
         }
 
         let file_paths = vec![
-"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divthree-p143_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p2/vis_arrays_am2910_p2_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p11_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p143_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p07_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p1/vis_arrays_am2910_p1_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2020/mann/simple_alu_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/opensource/vcegar_QF_BV_itc99_b13_p10/vcegar_QF_BV_itc99_b13_p10_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2020/mann/stack-p1_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/beem/anderson.3.prop1-back-serstep_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2901/vis_arrays_am2901_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p00_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2020/mann/rast-p04_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2020/mann/rast-p01_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2020/mann/rast-p03_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2020/mann/rast-p06_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2020/mann/rast-p19_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2020/mann/rast-p18_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2020/mann/rast-p21_zero_then_fold2.aig",
+            // 0 to 2 seconds
+// "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divthree-p143_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p2/vis_arrays_am2910_p2_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p11_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p143_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p07_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p1/vis_arrays_am2910_p1_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2020/mann/simple_alu_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/opensource/vcegar_QF_BV_itc99_b13_p10/vcegar_QF_BV_itc99_b13_p10_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2020/mann/stack-p1_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/beem/anderson.3.prop1-back-serstep_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2901/vis_arrays_am2901_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/zipversa_composecrc_prf-p00_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2020/mann/rast-p04_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2020/mann/rast-p01_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2020/mann/rast-p03_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2020/mann/rast-p06_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2020/mann/rast-p19_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2020/mann/rast-p18_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2020/mann/rast-p21_zero_then_fold2.aig",
 // "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p3/vis_arrays_am2910_p3_zero_then_fold2.aig",
 // "tests/examples/hwmcc20/2019/goel/industry/gen21/gen21_zero_then_fold2.aig",
 // "tests/examples/hwmcc20/2019/goel/industry/cal41/cal41_zero_then_fold2.aig",
@@ -124,6 +125,24 @@ mod tests {
 // "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p016_zero_then_fold2.aig",
 // "tests/examples/hwmcc20/2019/goel/industry/cal4/cal4_zero_then_fold2.aig",
 // "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_qflexpress_divfive-p017_zero_then_fold2.aig",
+
+            // 2 seconds to 25
+"tests/examples/hwmcc20/2019/wolf/2019B/marlann_compute_cp_pass-p2_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/goel/opensource/h_TreeArb/h_TreeArb_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/wolf/2019B/marlann_compute_cp_fail1-p2_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/goel/opensource/miim/miim_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/goel/industry/gen39/gen39_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_qflexpress_divfive-p122_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/goel/industry/cal35/cal35_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/wolf/2018D/zipcpu-busdelay-p43_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/beem/at.6.prop1-back-serstep_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/goel/industry/cal33/cal33_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/goel/industry/cal37/cal37_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_qflexpress_divfive-p048_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2020/mann/rast-p11_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_qflexpress_divfive-p038_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/beem/brp2.3.prop1-back-serstep_zero_then_fold2.aig",
+"tests/examples/hwmcc20/2019/mann/data-integrity/unsafe/shift_register_top_w16_d8_e0_zero_then_fold2.aig",
         ];
 
         let mut time1 = Vec::new();
@@ -139,13 +158,14 @@ mod tests {
             let aig = AndInverterGraph::from_aig_path(aig_file_path);
             let fin_state = FiniteStateTransitionSystem::from_aig(&aig, true);
 
-            let t1 = test::<MiniSatSolver>(&fin_state, true, &aig).as_secs_f32();
+            let t1 = test::<StateFulCaDiCal>(&fin_state, true, &aig).as_secs_f32();
             let t2 = test::<StateFulCaDiCal>(&fin_state, false, &aig).as_secs_f32();
 
             time1.push(t1);
             time2.push(t2);
+            println!("************************************************************************");
+            println!("Average time for first prover = {}", average(&time1));
+            println!("Average time for second prover = {}", average(&time2));
         }
-        println!("Average time for first prover = {}", average(&time1));
-        println!("Average time for second prover = {}", average(&time2));
     }
 }
