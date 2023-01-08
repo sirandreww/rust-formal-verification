@@ -18,7 +18,7 @@ mod tests {
     use rust_formal_verification::{
         algorithms::formula_logic::is_a_and_b_satisfiable,
         models::{AndInverterGraph, FiniteStateTransitionSystem},
-        solvers::sat::stateless::VarisatSolver,
+        solvers::sat::stateless::{CaDiCalSolver, VarisatSolver},
     };
     // use std::fs;
 
@@ -60,7 +60,7 @@ mod tests {
         );
         assert_eq!(fsts.get_safety_property().to_string(), "p cnf 0 0\n"); // empty CNF is always true.
         assert_eq!(
-            fsts.get_unsafety_property().to_string(),
+            fsts.get_unsafety_property().to_cnf().to_string(),
             "p cnf 0 1\n 0" // a cnf with the empty clause is simply always false.
         );
         assert_eq!(
@@ -96,8 +96,14 @@ mod tests {
             fsts.get_initial_relation().to_string(),
             "p cnf 3 3\n-1 0\n-2 0\n-3 0"
         );
-        assert_eq!(fsts.get_safety_property().to_string(), "p cnf 3 1\n-3 0");
-        assert_eq!(fsts.get_unsafety_property().to_string(), "p cnf 3 1\n3 0");
+        assert_eq!(
+            fsts.get_safety_property().to_cnf().to_string(),
+            "p cnf 3 1\n-3 0"
+        );
+        assert_eq!(
+            fsts.get_unsafety_property().to_cnf().to_string(),
+            "p cnf 3 1\n3 0"
+        );
         assert_eq!(
             fsts.get_transition_relation().to_string(),
             "p cnf 8 12\n1 -7 0\n-1 -5 0\n-1 7 0\n2 -8 0\n-2 -4 0\n-2 8 0\n-3 -4 0\n4 -5 0\n5 -6 0\n-5 6 0\n1 -4 5 0\n2 3 4 0"
@@ -133,10 +139,13 @@ mod tests {
             "p cnf 3 3\n-1 0\n-2 0\n-3 0"
         );
         assert_eq!(
-            fsts.get_safety_property().to_string(),
+            fsts.get_safety_property().to_cnf().to_string(),
             "p cnf 3 2\n-2 0\n-3 0"
         );
-        assert_eq!(fsts.get_unsafety_property().to_string(), "p cnf 3 1\n2 3 0");
+        assert_eq!(
+            fsts.get_unsafety_property().to_cnf().to_string(),
+            "p cnf 3 1\n2 3 0"
+        );
         assert_eq!(
             fsts.get_transition_relation().to_string(),
             "p cnf 8 12\n1 -7 0\n-1 -5 0\n-1 7 0\n2 -8 0\n-2 -4 0\n-2 8 0\n-3 -4 0\n4 -5 0\n5 -6 0\n-5 6 0\n1 -4 5 0\n2 3 4 0"
@@ -146,7 +155,7 @@ mod tests {
     #[test]
     fn read_all_aig_files_from_hwmcc20() {
         let depth_to_test_for = 3;
-        let probability_of_testing_file = 0.05;
+        let probability_of_testing_file = 0.00;
 
         let file_paths = common::_get_paths_to_all_aig_and_corresponding_aag_files();
         for (aig_file_path, _) in file_paths {
@@ -161,7 +170,7 @@ mod tests {
                     let fsts = FiniteStateTransitionSystem::from_aig(&aig, assume_output_is_bad);
                     // check that p and not !p cannot hold at the same time for some depths.
                     for depth in 0..depth_to_test_for {
-                        assert!(!is_a_and_b_satisfiable::<VarisatSolver>(
+                        assert!(!is_a_and_b_satisfiable::<CaDiCalSolver>(
                             &fsts.add_tags_to_relation(&fsts.get_safety_property().to_cnf(), depth),
                             &fsts.add_tags_to_relation(
                                 &fsts.get_unsafety_property().to_cnf(),

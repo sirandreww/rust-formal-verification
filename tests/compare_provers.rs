@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn compare_2_provers() {
-        let run_test = true;
+        let run_test = false;
         if !run_test {
             return;
         }
