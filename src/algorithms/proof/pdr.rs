@@ -33,8 +33,11 @@ use priority_queue::PriorityQueue;
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use std::{cmp::{max, Reverse, min}, collections::{BinaryHeap, HashSet}};
 use std::time;
+use std::{
+    cmp::{max, min, Reverse},
+    collections::{BinaryHeap, HashSet},
+};
 
 // ************************************************************************************************
 // Enum
@@ -74,8 +77,6 @@ enum SolveRelativeParam {
     NoInd,
 }
 
-
-
 // ************************************************************************************************
 // struct
 // ************************************************************************************************
@@ -89,8 +90,8 @@ pub struct PDR<T> {
     // stateful sat solvers for speedup
     // Reminder: R0 == initial
     ri_and_not_p_solvers: Vec<T>, // for each index i the solver holds Fi ^ !P
-    ri_solvers: Vec<T>, // for each index i the solver holds Fi
-    ri_and_t_solvers: Vec<T>, // for each index i the solver holds Fi ^ T
+    ri_solvers: Vec<T>,           // for each index i the solver holds Fi
+    ri_and_t_solvers: Vec<T>,     // for each index i the solver holds Fi ^ T
 
     // caching for speedup
     initial: CNF,
@@ -121,7 +122,6 @@ pub struct PDR<T> {
 // ************************************************************************************************
 
 impl<T: StatefulSatSolver> PDR<T> {
-
     // ********************************************************************************************
     // helper functions - TCube
     // ********************************************************************************************
@@ -130,8 +130,9 @@ impl<T: StatefulSatSolver> PDR<T> {
         match s.frame {
             Frame::NULL => unreachable!(),
             Frame::INF => unreachable!(),
-            Frame::Ok(i) => {
-                TCube { cube: s.cube.to_owned(), frame: Frame::Ok(i + 1) }
+            Frame::Ok(i) => TCube {
+                cube: s.cube.to_owned(),
+                frame: Frame::Ok(i + 1),
             },
         }
     }
@@ -156,7 +157,7 @@ impl<T: StatefulSatSolver> PDR<T> {
             Frame::NULL => unreachable!(),
             Frame::INF => unreachable!(),
             Frame::Ok(frame) => {
-                // return true iff Ri ^ c == UnSat 
+                // return true iff Ri ^ c == UnSat
                 match self.ri_solvers[frame].solve(None, None) {
                     crate::solvers::sat::SatResponse::Sat { assignment: _ } => false,
                     crate::solvers::sat::SatResponse::UnSat => true,
@@ -180,20 +181,13 @@ impl<T: StatefulSatSolver> PDR<T> {
                 let extra_clause = !s.cube.to_owned();
 
                 let sat_result = match params {
-                    SolveRelativeParam::DoNotExtractModel |
-                    SolveRelativeParam::ExtractModel => {
+                    SolveRelativeParam::DoNotExtractModel | SolveRelativeParam::ExtractModel => {
                         // these two are the same sat call Ri-1 ^ T ^ !s.cube ^ s.cube'
-                        self.ri_and_t_solvers[i-1].solve(
-                            Some(&extra_cube), 
-                            Some(&extra_clause)
-                        )
+                        self.ri_and_t_solvers[i - 1].solve(Some(&extra_cube), Some(&extra_clause))
                     }
                     SolveRelativeParam::NoInd => {
                         // this one has another sat call: Ri-1 ^ T ^ s.cube'
-                        self.ri_and_t_solvers[i-1].solve(
-                            Some(&extra_cube), 
-                            None
-                        )
+                        self.ri_and_t_solvers[i - 1].solve(Some(&extra_cube), None)
                     }
                 };
 
@@ -201,24 +195,29 @@ impl<T: StatefulSatSolver> PDR<T> {
                     SatResponse::Sat { assignment } => {
                         match params {
                             SolveRelativeParam::DoNotExtractModel | SolveRelativeParam::NoInd => {
-                                TCube { cube: Cube::new(&[]), frame: Frame::NULL }
-                            },
+                                TCube {
+                                    cube: Cube::new(&[]),
+                                    frame: Frame::NULL,
+                                }
+                            }
                             SolveRelativeParam::ExtractModel => {
-                                let predecessor = self.fin_state.extract_state_from_assignment(&assignment);
+                                let predecessor =
+                                    self.fin_state.extract_state_from_assignment(&assignment);
                                 // trinary simulation todo
-                                TCube { cube: predecessor, frame: Frame::NULL }
-                            },
+                                TCube {
+                                    cube: predecessor,
+                                    frame: Frame::NULL,
+                                }
+                            }
                         }
-                        
-                    },
+                    }
                     SatResponse::UnSat => {
                         debug_assert!(s.frame != Frame::NULL);
                         s.to_owned()
-                    },
+                    }
                 }
-            },
+            }
         }
-        
     }
 
     fn z_block_cube_in_solver(&mut self, s: &TCube) {
@@ -230,15 +229,15 @@ impl<T: StatefulSatSolver> PDR<T> {
         match s.frame {
             Frame::NULL => unreachable!(),
             Frame::INF => {
-                for i in 0..self.ri_solvers.len(){
+                for i in 0..self.ri_solvers.len() {
                     self.ri_solvers[i].add_cnf(&cnf);
                     self.ri_and_not_p_solvers[i].add_cnf(&cnf);
                     self.ri_and_t_solvers[i].add_cnf(&cnf);
                 }
-            },
+            }
             Frame::Ok(frame) => {
                 debug_assert!(frame < self.ri_solvers.len());
-                for i in 0..(frame + 1){
+                for i in 0..(frame + 1) {
                     self.ri_solvers[i].add_cnf(&cnf);
                     self.ri_and_not_p_solvers[i].add_cnf(&cnf);
                     self.ri_and_t_solvers[i].add_cnf(&cnf);
@@ -256,7 +255,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                 let mut a = T::new(StatefulSatSolverHint::None);
                 a.add_cnf(&self.initial_and_not_p_cnf);
                 self.ri_and_not_p_solvers.push(a);
-            } 
+            }
             {
                 let mut b = T::new(StatefulSatSolverHint::None);
                 b.add_cnf(&self.initial);
@@ -272,7 +271,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                 let mut a = T::new(StatefulSatSolverHint::None);
                 a.add_cnf(&self.ri_and_not_p_cnf);
                 self.ri_and_not_p_solvers.push(a);
-            } 
+            }
             {
                 let b = T::new(StatefulSatSolverHint::None);
                 // b.add_cnf(&self.ri);
@@ -349,10 +348,9 @@ impl<T: StatefulSatSolver> PDR<T> {
     fn is_blocked(&mut self, s: &TCube) -> bool {
         match s.frame {
             Frame::Ok(s_frame) => {
-
                 // check syntactic submission (faster than SAT)
-                for d in s_frame..self.f.len(){
-                    for i in 0..self.f[d].len(){
+                for d in s_frame..self.f.len() {
+                    for i in 0..self.f[d].len() {
                         if self.subsumes(&self.f[d][i], &s.cube) {
                             return true;
                         }
@@ -360,13 +358,12 @@ impl<T: StatefulSatSolver> PDR<T> {
                 }
 
                 return self.z_is_blocked(&s);
-            },
-            _ => unreachable!()
+            }
+            _ => unreachable!(),
         }
     }
 
     fn generalize(&mut self, s: &TCube) -> TCube {
-
         let mut s_literals: Vec<Literal> = s.cube.iter().map(|l| l.to_owned()).collect();
         s_literals.shuffle(&mut self.rng);
         let mut j = 0;
@@ -374,12 +371,14 @@ impl<T: StatefulSatSolver> PDR<T> {
             // remove current literal
             let removed = s_literals.swap_remove(j);
 
-            let t = TCube { cube: Cube::new(&s_literals), frame: s.frame };
+            let t = TCube {
+                cube: Cube::new(&s_literals),
+                frame: s.frame,
+            };
             if !self.z_is_initial(&t.cube) {
-                let check_if_t_is_inductive_relative_to_frame = self.z_solve_relative(&t, SolveRelativeParam::DoNotExtractModel);
-                if self.is_solve_relative_un_sat(
-                    &check_if_t_is_inductive_relative_to_frame
-                ) {
+                let check_if_t_is_inductive_relative_to_frame =
+                    self.z_solve_relative(&t, SolveRelativeParam::DoNotExtractModel);
+                if self.is_solve_relative_un_sat(&check_if_t_is_inductive_relative_to_frame) {
                     // remove successful, j should remain the same
                     continue;
                 }
@@ -391,10 +390,11 @@ impl<T: StatefulSatSolver> PDR<T> {
             s_literals.swap(j, last_index);
             // move on to next literal
             j += 1;
-
         }
-        TCube { cube: Cube::new(&s_literals), frame: s.frame }
-
+        TCube {
+            cube: Cube::new(&s_literals),
+            frame: s.frame,
+        }
     }
 
     // ********************************************************************************************
@@ -404,11 +404,14 @@ impl<T: StatefulSatSolver> PDR<T> {
     fn propagate_blocked_cubes(&mut self) -> Option<usize> {
         for k in 1..self.depth() {
             let mut clause_index = 0;
-            while clause_index < self.f[k].len(){
+            while clause_index < self.f[k].len() {
                 let c = self.f[k][clause_index].to_owned();
                 let s = self.z_solve_relative(
-                    &TCube { cube: c, frame: Frame::Ok(k + 1) }, 
-                    SolveRelativeParam::NoInd
+                    &TCube {
+                        cube: c,
+                        frame: Frame::Ok(k + 1),
+                    },
+                    SolveRelativeParam::NoInd,
                 );
                 if s.frame != Frame::NULL {
                     self.add_blocked_cube(&s);
@@ -416,7 +419,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                     clause_index += 1;
                 }
             }
-            if self.f[k].is_empty(){
+            if self.f[k].is_empty() {
                 return Some(k); // invariant found
             }
         }
@@ -450,7 +453,6 @@ impl<T: StatefulSatSolver> PDR<T> {
         return c1_literals.is_superset(&c2_literals);
     }
 
-
     // ********************************************************************************************
     // helper functions - main blocking function
     // ********************************************************************************************
@@ -458,7 +460,7 @@ impl<T: StatefulSatSolver> PDR<T> {
     fn rec_block_cube(&mut self, s0: TCube) -> bool {
         // create queue of proof obligations.
         // Each proof obligation is a cube that reaches bad, and at what frame this cube was found.
-        // It's called proof obligation because you're obliged to prove that this cube cannot be 
+        // It's called proof obligation because you're obliged to prove that this cube cannot be
         // reached by previous frames.
         let mut q = PriorityQueue::<TCube, Reverse<usize>>::new();
         if let Frame::Ok(p) = s0.frame {
@@ -466,7 +468,7 @@ impl<T: StatefulSatSolver> PDR<T> {
         } else {
             panic!("Bad Cube to block, check get_bad_cube.");
         }
-        
+
         // while proof obligations remain.
         while q.len() > 0 {
             // take one out
@@ -476,8 +478,8 @@ impl<T: StatefulSatSolver> PDR<T> {
                     if s_frame == 0 {
                         // a bad reaching cube was found in F0 == initial
                         return false;
-                    } else if !self.is_blocked(&s){
-                        debug_assert!(! self.z_is_initial(&s.cube));
+                    } else if !self.is_blocked(&s) {
+                        debug_assert!(!self.z_is_initial(&s.cube));
                         let z = self.z_solve_relative(&s, SolveRelativeParam::ExtractModel);
 
                         if z.frame != Frame::NULL {
@@ -488,7 +490,10 @@ impl<T: StatefulSatSolver> PDR<T> {
                                 Frame::Ok(z_frame) => {
                                     let mut another_iteration = true;
                                     while (z_frame < (self.depth() - 1)) && another_iteration {
-                                        z = self.z_solve_relative(&self.next(&z), SolveRelativeParam::DoNotExtractModel);
+                                        z = self.z_solve_relative(
+                                            &self.next(&z),
+                                            SolveRelativeParam::DoNotExtractModel,
+                                        );
                                         another_iteration = self.is_solve_relative_un_sat(&z);
                                     }
 
@@ -500,30 +505,30 @@ impl<T: StatefulSatSolver> PDR<T> {
                                             Frame::Ok(next_s_frame) => {
                                                 q.push(next_s, Reverse(next_s_frame));
                                             }
-                                            _ => unreachable!()
+                                            _ => unreachable!(),
                                         }
                                     }
-                                },
+                                }
                                 _ => unreachable!(),
                             }
-                            
-
                         } else {
                             // cube 's' was not blocked by image of predecessor.
                             match s.frame {
                                 Frame::Ok(s_frame) => {
                                     debug_assert!(s_frame > 0);
-                                    let z = TCube { cube: z.cube, frame: Frame::Ok(s_frame - 1) };
+                                    let z = TCube {
+                                        cube: z.cube,
+                                        frame: Frame::Ok(s_frame - 1),
+                                    };
                                     q.push(z, Reverse(s_frame - 1));
                                     q.push(s, Reverse(s_frame));
-                                },
+                                }
                                 _ => unreachable!(),
                             }
                         }
-
                     }
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
         true
@@ -572,7 +577,7 @@ impl<T: StatefulSatSolver> PDR<T> {
             initial_and_t_cnf,
             ri_and_not_p_cnf,
             ri_and_t_cnf,
-            
+
             verbose,
             number_of_sat_calls: 0,
             time_in_sat_calls: time::Duration::from_secs(0),
@@ -630,435 +635,399 @@ impl<T: StatefulSatSolver> FiniteStateTransitionSystemProver for PDR<T> {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ********************************************************************************************
-    // clauses
-    // ********************************************************************************************
+// clauses
+// ********************************************************************************************
 
-    // fn add_to_vector_of_clauses_in_specific_frame(&mut self, frame_index: usize, clause: &Clause) {
-    //     debug_assert_eq!(self.clauses.len(), self.fi_and_not_p_solvers.len());
-    //     debug_assert_eq!(
-    //         self.clauses.len(),
-    //         self.fi_and_t_and_not_p_tag_solvers.len()
-    //     );
+// fn add_to_vector_of_clauses_in_specific_frame(&mut self, frame_index: usize, clause: &Clause) {
+//     debug_assert_eq!(self.clauses.len(), self.fi_and_not_p_solvers.len());
+//     debug_assert_eq!(
+//         self.clauses.len(),
+//         self.fi_and_t_and_not_p_tag_solvers.len()
+//     );
 
-    //     self.clauses[frame_index].push(clause.to_owned());
-    //     for i in 0..(frame_index + 1) {
-    //         self.fi_and_not_p_solvers[i].add_cnf(&clause.to_cnf());
-    //         self.fi_and_t_and_not_p_tag_solvers[i].add_cnf(&clause.to_cnf());
-    //     }
-    // }
+//     self.clauses[frame_index].push(clause.to_owned());
+//     for i in 0..(frame_index + 1) {
+//         self.fi_and_not_p_solvers[i].add_cnf(&clause.to_cnf());
+//         self.fi_and_t_and_not_p_tag_solvers[i].add_cnf(&clause.to_cnf());
+//     }
+// }
 
-    // // fn get_vector_of_clauses_in_specific_frame(&self, frame_index: usize) -> Vec<Clause> {
-    // //     self.clauses[frame_index].to_owned()
-    // // }
+// // fn get_vector_of_clauses_in_specific_frame(&self, frame_index: usize) -> Vec<Clause> {
+// //     self.clauses[frame_index].to_owned()
+// // }
 
-    // fn get_length_of_vector_of_clauses_in_specific_frame(&self, frame_index: usize) -> usize {
-    //     self.clauses[frame_index].len()
-    // }
+// fn get_length_of_vector_of_clauses_in_specific_frame(&self, frame_index: usize) -> usize {
+//     self.clauses[frame_index].len()
+// }
 
-    // fn get_clause_in_vector_of_clauses_in_specific_frame(
-    //     &self,
-    //     frame_index: usize,
-    //     clause_index: usize,
-    // ) -> Clause {
-    //     self.clauses[frame_index][clause_index].to_owned()
-    // }
+// fn get_clause_in_vector_of_clauses_in_specific_frame(
+//     &self,
+//     frame_index: usize,
+//     clause_index: usize,
+// ) -> Clause {
+//     self.clauses[frame_index][clause_index].to_owned()
+// }
 
-    // fn remove_from_vector_of_clauses_in_specific_frame(
-    //     &mut self,
-    //     frame_index: usize,
-    //     clause_index: usize,
-    // ) {
-    //     debug_assert_eq!(self.clauses.len(), self.fi_and_not_p_solvers.len());
-    //     debug_assert_eq!(
-    //         self.clauses.len(),
-    //         self.fi_and_t_and_not_p_tag_solvers.len()
-    //     );
-    //     debug_assert!(clause_index < self.clauses[frame_index].len());
+// fn remove_from_vector_of_clauses_in_specific_frame(
+//     &mut self,
+//     frame_index: usize,
+//     clause_index: usize,
+// ) {
+//     debug_assert_eq!(self.clauses.len(), self.fi_and_not_p_solvers.len());
+//     debug_assert_eq!(
+//         self.clauses.len(),
+//         self.fi_and_t_and_not_p_tag_solvers.len()
+//     );
+//     debug_assert!(clause_index < self.clauses[frame_index].len());
 
-    //     self.clauses[frame_index].swap_remove(clause_index);
-    // }
+//     self.clauses[frame_index].swap_remove(clause_index);
+// }
 
-    // fn get_all_clause_that_are_in_some_frame(&self, frame_index: usize) -> CNF {
-    //     let mut result = CNF::new();
-    //     for i in frame_index..self.clauses.len() {
-    //         for j in 0..self.get_length_of_vector_of_clauses_in_specific_frame(i) {
-    //             let c = self.get_clause_in_vector_of_clauses_in_specific_frame(i, j);
-    //             result.add_clause(&c);
-    //         }
-    //     }
-    //     result
-    // }
+// fn get_all_clause_that_are_in_some_frame(&self, frame_index: usize) -> CNF {
+//     let mut result = CNF::new();
+//     for i in frame_index..self.clauses.len() {
+//         for j in 0..self.get_length_of_vector_of_clauses_in_specific_frame(i) {
+//             let c = self.get_clause_in_vector_of_clauses_in_specific_frame(i, j);
+//             result.add_clause(&c);
+//         }
+//     }
+//     result
+// }
 
-    // fn push_extra_frame_to_clauses(&mut self) {
-    //     debug_assert_eq!(self.clauses.len(), self.fi_and_not_p_solvers.len());
-    //     debug_assert_eq!(
-    //         self.clauses.len(),
-    //         self.fi_and_t_and_not_p_tag_solvers.len()
-    //     );
-    //     {
-    //         // update solvers
-    //         let mut a = T::new(StatefulSatSolverHint::None);
-    //         a.add_cnf(if self.clauses.is_empty() {
-    //             &self.i_and_t
-    //         } else {
-    //             &self.p_and_t
-    //         });
-    //         self.fi_and_not_p_solvers.push(a);
-    //     }
-    //     {
-    //         // update solvers
-    //         let mut b = T::new(StatefulSatSolverHint::None);
-    //         b.add_cnf(if self.clauses.is_empty() {
-    //             &self.i_and_t_and_not_p_tag
-    //         } else {
-    //             &self.p_and_t_and_not_p_tag
-    //         });
-    //         self.fi_and_t_and_not_p_tag_solvers.push(b);
-    //     }
+// fn push_extra_frame_to_clauses(&mut self) {
+//     debug_assert_eq!(self.clauses.len(), self.fi_and_not_p_solvers.len());
+//     debug_assert_eq!(
+//         self.clauses.len(),
+//         self.fi_and_t_and_not_p_tag_solvers.len()
+//     );
+//     {
+//         // update solvers
+//         let mut a = T::new(StatefulSatSolverHint::None);
+//         a.add_cnf(if self.clauses.is_empty() {
+//             &self.i_and_t
+//         } else {
+//             &self.p_and_t
+//         });
+//         self.fi_and_not_p_solvers.push(a);
+//     }
+//     {
+//         // update solvers
+//         let mut b = T::new(StatefulSatSolverHint::None);
+//         b.add_cnf(if self.clauses.is_empty() {
+//             &self.i_and_t_and_not_p_tag
+//         } else {
+//             &self.p_and_t_and_not_p_tag
+//         });
+//         self.fi_and_t_and_not_p_tag_solvers.push(b);
+//     }
 
-    //     self.clauses.push(Vec::new());
-    // }
+//     self.clauses.push(Vec::new());
+// }
 
-    // // ********************************************************************************************
-    // // sat calls
-    // // ********************************************************************************************
+// // ********************************************************************************************
+// // sat calls
+// // ********************************************************************************************
 
-    // fn sat_call(
-    //     &mut self,
-    //     solver_index: SolverVariant,
-    //     cube_assumptions: Option<&Cube>,
-    //     clause_assumptions: Option<&Clause>,
-    // ) -> SatResponse {
-    //     self.number_of_sat_calls += 1;
-    //     let start_time = time::Instant::now();
+// fn sat_call(
+//     &mut self,
+//     solver_index: SolverVariant,
+//     cube_assumptions: Option<&Cube>,
+//     clause_assumptions: Option<&Clause>,
+// ) -> SatResponse {
+//     self.number_of_sat_calls += 1;
+//     let start_time = time::Instant::now();
 
-    //     // find solver
-    //     let result = match solver_index {
-    //         // SolverVariant::Initial => self
-    //         //     .initial_solver
-    //         //     .solve(cube_assumptions, clause_assumptions),
-    //         SolverVariant::FiAndT(j) => {
-    //             self.fi_and_not_p_solvers[j].solve(cube_assumptions, clause_assumptions)
-    //         }
-    //         SolverVariant::FiAndTAndNotPTag(j) => {
-    //             self.fi_and_t_and_not_p_tag_solvers[j].solve(cube_assumptions, clause_assumptions)
-    //         }
-    //         SolverVariant::Custom(cnf) => {
-    //             let mut current_solver = T::new(StatefulSatSolverHint::UnSat);
-    //             current_solver.add_cnf(&cnf);
-    //             current_solver.solve(cube_assumptions, clause_assumptions)
-    //         }
-    //     };
+//     // find solver
+//     let result = match solver_index {
+//         // SolverVariant::Initial => self
+//         //     .initial_solver
+//         //     .solve(cube_assumptions, clause_assumptions),
+//         SolverVariant::FiAndT(j) => {
+//             self.fi_and_not_p_solvers[j].solve(cube_assumptions, clause_assumptions)
+//         }
+//         SolverVariant::FiAndTAndNotPTag(j) => {
+//             self.fi_and_t_and_not_p_tag_solvers[j].solve(cube_assumptions, clause_assumptions)
+//         }
+//         SolverVariant::Custom(cnf) => {
+//             let mut current_solver = T::new(StatefulSatSolverHint::UnSat);
+//             current_solver.add_cnf(&cnf);
+//             current_solver.solve(cube_assumptions, clause_assumptions)
+//         }
+//     };
 
-    //     self.time_in_sat_calls += start_time.elapsed();
-    //     result
-    // }
+//     self.time_in_sat_calls += start_time.elapsed();
+//     result
+// }
 
-    // fn is_bad_reached_in_0_steps(&mut self) -> SatResponse {
-    //     // I ^ !P
-    //     let mut cnf = CNF::new();
-    //     cnf.append(&self.initial);
-    //     cnf.append(&self.connection_from_state_to_safety0);
-    //     cnf.append(&self.not_p0.to_cnf());
-    //     self.sat_call(SolverVariant::Custom(cnf), None, None)
-    // }
+// fn is_bad_reached_in_0_steps(&mut self) -> SatResponse {
+//     // I ^ !P
+//     let mut cnf = CNF::new();
+//     cnf.append(&self.initial);
+//     cnf.append(&self.connection_from_state_to_safety0);
+//     cnf.append(&self.not_p0.to_cnf());
+//     self.sat_call(SolverVariant::Custom(cnf), None, None)
+// }
 
-    // fn is_bad_reached_in_1_steps(&mut self) -> SatResponse {
-    //     // I ^ T ^ !P'
-    //     let mut cnf = CNF::new();
-    //     cnf.append(&self.initial);
-    //     cnf.append(&self.transition);
-    //     cnf.append(&self.connection_from_state_to_safety1);
-    //     cnf.append(&self.not_p1.to_cnf());
-    //     self.sat_call(SolverVariant::Custom(cnf), None, None)
-    // }
+// fn is_bad_reached_in_1_steps(&mut self) -> SatResponse {
+//     // I ^ T ^ !P'
+//     let mut cnf = CNF::new();
+//     cnf.append(&self.initial);
+//     cnf.append(&self.transition);
+//     cnf.append(&self.connection_from_state_to_safety1);
+//     cnf.append(&self.not_p1.to_cnf());
+//     self.sat_call(SolverVariant::Custom(cnf), None, None)
+// }
 
-    // fn is_cube_reachable_in_1_step_from_fi(&mut self, i: usize, cube: &Cube) -> SatResponse {
-    //     // Fi ^ T ^ c'
-    //     let cube_tag = self.fin_state.add_tags_to_cube(cube, 1);
-    //     self.sat_call(SolverVariant::FiAndT(i), Some(&cube_tag), None)
-    // }
+// fn is_cube_reachable_in_1_step_from_fi(&mut self, i: usize, cube: &Cube) -> SatResponse {
+//     // Fi ^ T ^ c'
+//     let cube_tag = self.fin_state.add_tags_to_cube(cube, 1);
+//     self.sat_call(SolverVariant::FiAndT(i), Some(&cube_tag), None)
+// }
 
-    // fn is_bad_reachable_in_1_step_from_fi(&mut self, i: usize) -> SatResponse {
-    //     // Fi ^ T ^ !P'
-    //     self.sat_call(SolverVariant::FiAndTAndNotPTag(i), None, None)
-    // }
+// fn is_bad_reachable_in_1_step_from_fi(&mut self, i: usize) -> SatResponse {
+//     // Fi ^ T ^ !P'
+//     self.sat_call(SolverVariant::FiAndTAndNotPTag(i), None, None)
+// }
 
-    // fn is_fi_and_t_and_not_s_and_s_tag_sat(&mut self, i: usize, s: &Cube) -> bool {
-    //     // Fi ^ T ^ !s ^ s'
-    //     let s_tag = self.fin_state.add_tags_to_cube(s, 1);
-    //     let not_s = !(s.to_owned());
+// fn is_fi_and_t_and_not_s_and_s_tag_sat(&mut self, i: usize, s: &Cube) -> bool {
+//     // Fi ^ T ^ !s ^ s'
+//     let s_tag = self.fin_state.add_tags_to_cube(s, 1);
+//     let not_s = !(s.to_owned());
 
-    //     match self.sat_call(SolverVariant::FiAndT(i), Some(&s_tag), Some(&not_s)) {
-    //         SatResponse::UnSat => false,
-    //         SatResponse::Sat { assignment: _ } => true,
-    //     }
-    // }
+//     match self.sat_call(SolverVariant::FiAndT(i), Some(&s_tag), Some(&not_s)) {
+//         SatResponse::UnSat => false,
+//         SatResponse::Sat { assignment: _ } => true,
+//     }
+// }
 
-    // fn is_fi_and_t_and_clause_and_not_clause_tag_sat(&mut self, i: usize, d: &Clause) -> bool {
-    //     // Fi ^ T ^ d ^ !d’
-    //     let not_d_tag = self.fin_state.add_tags_to_cube(&(!(d.to_owned())), 1);
+// fn is_fi_and_t_and_clause_and_not_clause_tag_sat(&mut self, i: usize, d: &Clause) -> bool {
+//     // Fi ^ T ^ d ^ !d’
+//     let not_d_tag = self.fin_state.add_tags_to_cube(&(!(d.to_owned())), 1);
 
-    //     match self.sat_call(SolverVariant::FiAndT(i), Some(&not_d_tag), Some(d)) {
-    //         SatResponse::UnSat => false,
-    //         SatResponse::Sat { assignment: _ } => true,
-    //     }
-    // }
+//     match self.sat_call(SolverVariant::FiAndT(i), Some(&not_d_tag), Some(d)) {
+//         SatResponse::UnSat => false,
+//         SatResponse::Sat { assignment: _ } => true,
+//     }
+// }
 
-    // // ********************************************************************************************
-    // // helper functions
-    // // ********************************************************************************************
+// // ********************************************************************************************
+// // helper functions
+// // ********************************************************************************************
 
-    // fn get_fk(&self, k: usize) -> CNF {
-    //     let mut clauses_fk = self.get_all_clause_that_are_in_some_frame(k);
-    //     if k == 0 {
-    //         clauses_fk.append(&self.initial);
-    //     } else {
-    //         clauses_fk.append(&self.connection_from_state_to_safety0);
-    //         clauses_fk.append(&self.p0.to_cnf());
-    //     }
-    //     clauses_fk
-    // }
+// fn get_fk(&self, k: usize) -> CNF {
+//     let mut clauses_fk = self.get_all_clause_that_are_in_some_frame(k);
+//     if k == 0 {
+//         clauses_fk.append(&self.initial);
+//     } else {
+//         clauses_fk.append(&self.connection_from_state_to_safety0);
+//         clauses_fk.append(&self.p0.to_cnf());
+//     }
+//     clauses_fk
+// }
 
-    // fn propagate_clauses(&mut self, k: usize) {
-    //     for frame_index in 1..(k + 1) {
-    //         let mut clause_index = 0;
-    //         while clause_index < self.get_length_of_vector_of_clauses_in_specific_frame(frame_index)
-    //         {
-    //             let c = self
-    //                 .get_clause_in_vector_of_clauses_in_specific_frame(frame_index, clause_index);
-    //             let check =
-    //                 self.is_cube_reachable_in_1_step_from_fi(frame_index, &(!(c.to_owned())));
-    //             match check {
-    //                 SatResponse::UnSat => {
-    //                     // can propagate this property :)
-    //                     self.add_to_vector_of_clauses_in_specific_frame(frame_index + 1, &c);
-    //                     debug_assert_eq!(
-    //                         self.get_clause_in_vector_of_clauses_in_specific_frame(
-    //                             frame_index,
-    //                             clause_index
-    //                         )
-    //                         .to_string(),
-    //                         c.to_string()
-    //                     );
-    //                     self.remove_from_vector_of_clauses_in_specific_frame(
-    //                         frame_index,
-    //                         clause_index,
-    //                     );
-    //                 }
-    //                 SatResponse::Sat { assignment: _ } => {
-    //                     // can't propagate this clause :(
-    //                     clause_index += 1;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+// fn propagate_clauses(&mut self, k: usize) {
+//     for frame_index in 1..(k + 1) {
+//         let mut clause_index = 0;
+//         while clause_index < self.get_length_of_vector_of_clauses_in_specific_frame(frame_index)
+//         {
+//             let c = self
+//                 .get_clause_in_vector_of_clauses_in_specific_frame(frame_index, clause_index);
+//             let check =
+//                 self.is_cube_reachable_in_1_step_from_fi(frame_index, &(!(c.to_owned())));
+//             match check {
+//                 SatResponse::UnSat => {
+//                     // can propagate this property :)
+//                     self.add_to_vector_of_clauses_in_specific_frame(frame_index + 1, &c);
+//                     debug_assert_eq!(
+//                         self.get_clause_in_vector_of_clauses_in_specific_frame(
+//                             frame_index,
+//                             clause_index
+//                         )
+//                         .to_string(),
+//                         c.to_string()
+//                     );
+//                     self.remove_from_vector_of_clauses_in_specific_frame(
+//                         frame_index,
+//                         clause_index,
+//                     );
+//                 }
+//                 SatResponse::Sat { assignment: _ } => {
+//                     // can't propagate this clause :(
+//                     clause_index += 1;
+//                 }
+//             }
+//         }
+//     }
+// }
 
-    // fn is_clause_inductive_relative_to_fi(&mut self, d: &Clause, i: usize) -> bool {
-    //     // return !(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’)
-    //     if self.fin_state.is_cube_initial(&(!(d.to_owned()))) {
-    //         return false;
-    //     }
+// fn is_clause_inductive_relative_to_fi(&mut self, d: &Clause, i: usize) -> bool {
+//     // return !(Init ∧ ¬d) && !((Fi ∧ d)∧ Tr ∧ ¬d’)
+//     if self.fin_state.is_cube_initial(&(!(d.to_owned()))) {
+//         return false;
+//     }
 
-    //     !self.is_fi_and_t_and_clause_and_not_clause_tag_sat(i, d)
-    // }
+//     !self.is_fi_and_t_and_clause_and_not_clause_tag_sat(i, d)
+// }
 
-    // fn get_subclause_of_not_s_that_is_inductive_relative_to_fi(
-    //     &mut self,
-    //     s: &Cube,
-    //     i: usize,
-    // ) -> Clause {
-    //     let c = !(s.to_owned());
-    //     let mut c_literals: Vec<Literal> = c.iter().map(|l| l.to_owned()).collect();
-    //     c_literals.shuffle(&mut self.rng);
-    //     let mut j = 0;
-    //     while j < c_literals.len() {
-    //         let removed = c_literals.swap_remove(j);
-    //         let d = Clause::new(&c_literals);
-    //         if self.is_clause_inductive_relative_to_fi(&d, i) {
-    //             // remove successful, j should remain the same
-    //         } else {
-    //             // undo remove
-    //             c_literals.push(removed);
-    //             let last_index = c_literals.len() - 1;
-    //             c_literals.swap(j, last_index);
-    //             // move on to next literal
-    //             j += 1;
-    //         }
-    //     }
-    //     Clause::new(&c_literals)
-    // }
+// fn get_subclause_of_not_s_that_is_inductive_relative_to_fi(
+//     &mut self,
+//     s: &Cube,
+//     i: usize,
+// ) -> Clause {
+//     let c = !(s.to_owned());
+//     let mut c_literals: Vec<Literal> = c.iter().map(|l| l.to_owned()).collect();
+//     c_literals.shuffle(&mut self.rng);
+//     let mut j = 0;
+//     while j < c_literals.len() {
+//         let removed = c_literals.swap_remove(j);
+//         let d = Clause::new(&c_literals);
+//         if self.is_clause_inductive_relative_to_fi(&d, i) {
+//             // remove successful, j should remain the same
+//         } else {
+//             // undo remove
+//             c_literals.push(removed);
+//             let last_index = c_literals.len() - 1;
+//             c_literals.swap(j, last_index);
+//             // move on to next literal
+//             j += 1;
+//         }
+//     }
+//     Clause::new(&c_literals)
+// }
 
-    // fn generate_clause(&mut self, s: &Cube, i: usize, _k: usize) {
-    //     let c = self.get_subclause_of_not_s_that_is_inductive_relative_to_fi(s, i);
-    //     self.add_to_vector_of_clauses_in_specific_frame(i + 1, &c);
-    // }
+// fn generate_clause(&mut self, s: &Cube, i: usize, _k: usize) {
+//     let c = self.get_subclause_of_not_s_that_is_inductive_relative_to_fi(s, i);
+//     self.add_to_vector_of_clauses_in_specific_frame(i + 1, &c);
+// }
 
-    // fn inductively_generalize(
-    //     &mut self,
-    //     s: &Cube,
-    //     min: isize,
-    //     k: usize,
-    // ) -> Result<> {
-    //     if min < 0 && self.is_fi_and_t_and_not_s_and_s_tag_sat(0, s) {
-    //         return InductivelyGeneralizeResult::Failure;
-    //     }
+// fn inductively_generalize(
+//     &mut self,
+//     s: &Cube,
+//     min: isize,
+//     k: usize,
+// ) -> Result<> {
+//     if min < 0 && self.is_fi_and_t_and_not_s_and_s_tag_sat(0, s) {
+//         return InductivelyGeneralizeResult::Failure;
+//     }
 
-    //     for i in max(1, min + 1).try_into().unwrap()..(k + 1) {
-    //         if self.is_fi_and_t_and_not_s_and_s_tag_sat(i, s) {
-    //             self.generate_clause(s, i - 1, k);
-    //             return InductivelyGeneralizeResult::Success { n: i - 1 };
-    //         }
-    //     }
-    //     self.generate_clause(s, k, k);
-    //     InductivelyGeneralizeResult::Success { n: k }
-    // }
+//     for i in max(1, min + 1).try_into().unwrap()..(k + 1) {
+//         if self.is_fi_and_t_and_not_s_and_s_tag_sat(i, s) {
+//             self.generate_clause(s, i - 1, k);
+//             return InductivelyGeneralizeResult::Success { n: i - 1 };
+//         }
+//     }
+//     self.generate_clause(s, k, k);
+//     InductivelyGeneralizeResult::Success { n: k }
+// }
 
-    // fn push_generalization(
-    //     &mut self,
-    //     states: &PriorityQueue<Cube, Reverse<usize>>,
-    //     k: usize,
-    // ) -> PushGeneralizeResult {
-    //     let mut states = states.to_owned();
-    //     loop {
-    //         let (s, reversed_n) = states.pop().unwrap();
-    //         let n = reversed_n.0;
-    //         if n > k {
-    //             return PushGeneralizeResult::Success;
-    //         }
-    //         match self.is_cube_reachable_in_1_step_from_fi(n, &s) {
-    //             SatResponse::Sat { assignment } => {
-    //                 // we have to block p in order to block n.
-    //                 let p = self.fin_state.extract_state_from_assignment(&assignment);
-    //                 // println!("Should block p = {} from F{}", p, n - 1);
-    //                 match self.inductively_generalize(
-    //                     &p,
-    //                     <usize as TryInto<isize>>::try_into(n).unwrap() - 2,
-    //                     k,
-    //                 ) {
-    //                     InductivelyGeneralizeResult::Failure => {
-    //                         return PushGeneralizeResult::Failure;
-    //                     }
-    //                     InductivelyGeneralizeResult::Success { n: m } => {
-    //                         states.push(s, reversed_n);
-    //                         states.push(p, Reverse(m + 1));
-    //                     }
-    //                 }
-    //             }
-    //             SatResponse::UnSat => {
-    //                 // n can be blocked
-    //                 match self.inductively_generalize(&s, n.try_into().unwrap(), k) {
-    //                     InductivelyGeneralizeResult::Failure => {
-    //                         return PushGeneralizeResult::Failure;
-    //                     }
-    //                     InductivelyGeneralizeResult::Success { n: m } => {
-    //                         states.push(s.to_owned(), Reverse(m + 1));
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+// fn push_generalization(
+//     &mut self,
+//     states: &PriorityQueue<Cube, Reverse<usize>>,
+//     k: usize,
+// ) -> PushGeneralizeResult {
+//     let mut states = states.to_owned();
+//     loop {
+//         let (s, reversed_n) = states.pop().unwrap();
+//         let n = reversed_n.0;
+//         if n > k {
+//             return PushGeneralizeResult::Success;
+//         }
+//         match self.is_cube_reachable_in_1_step_from_fi(n, &s) {
+//             SatResponse::Sat { assignment } => {
+//                 // we have to block p in order to block n.
+//                 let p = self.fin_state.extract_state_from_assignment(&assignment);
+//                 // println!("Should block p = {} from F{}", p, n - 1);
+//                 match self.inductively_generalize(
+//                     &p,
+//                     <usize as TryInto<isize>>::try_into(n).unwrap() - 2,
+//                     k,
+//                 ) {
+//                     InductivelyGeneralizeResult::Failure => {
+//                         return PushGeneralizeResult::Failure;
+//                     }
+//                     InductivelyGeneralizeResult::Success { n: m } => {
+//                         states.push(s, reversed_n);
+//                         states.push(p, Reverse(m + 1));
+//                     }
+//                 }
+//             }
+//             SatResponse::UnSat => {
+//                 // n can be blocked
+//                 match self.inductively_generalize(&s, n.try_into().unwrap(), k) {
+//                     InductivelyGeneralizeResult::Failure => {
+//                         return PushGeneralizeResult::Failure;
+//                     }
+//                     InductivelyGeneralizeResult::Success { n: m } => {
+//                         states.push(s.to_owned(), Reverse(m + 1));
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
 
-    // fn print_progress_if_verbose(&self, k: usize) {
-    //     if self.verbose {
-    //         let clauses = self
-    //             .clauses
-    //             .iter()
-    //             .map(|c| c.len())
-    //             // .rev()
-    //             // .take(10)
-    //             .collect::<Vec<usize>>();
-    //         println!("RFV1 - is on k = {}, clauses lengths = {:?}", k, clauses);
-    //         println!("RFV1 - Number of SAT calls = {}", self.number_of_sat_calls);
-    //         println!(
-    //             "RFV1 - Time since start = {}",
-    //             self.start_time.elapsed().as_secs_f32()
-    //         );
-    //         println!(
-    //             "RFV1 - Time in SAT calls = {}",
-    //             self.time_in_sat_calls.as_secs_f32()
-    //         );
-    //     }
-    // }
+// fn print_progress_if_verbose(&self, k: usize) {
+//     if self.verbose {
+//         let clauses = self
+//             .clauses
+//             .iter()
+//             .map(|c| c.len())
+//             // .rev()
+//             // .take(10)
+//             .collect::<Vec<usize>>();
+//         println!("RFV1 - is on k = {}, clauses lengths = {:?}", k, clauses);
+//         println!("RFV1 - Number of SAT calls = {}", self.number_of_sat_calls);
+//         println!(
+//             "RFV1 - Time since start = {}",
+//             self.start_time.elapsed().as_secs_f32()
+//         );
+//         println!(
+//             "RFV1 - Time in SAT calls = {}",
+//             self.time_in_sat_calls.as_secs_f32()
+//         );
+//     }
+// }
 
-    // fn strengthen(&mut self, k: usize) -> StrengthenResult {
-    //     loop {
-    //         match self.is_bad_reachable_in_1_step_from_fi(k) {
-    //             SatResponse::UnSat => {
-    //                 break;
-    //             }
-    //             SatResponse::Sat { assignment } => {
-    //                 let s = self.fin_state.extract_state_from_assignment(&assignment);
-    //                 // println!("{}", !s.to_owned());
-    //                 // println!("Should block s = {} from F{}", s, k - 1);
-    //                 match self.inductively_generalize(
-    //                     &s,
-    //                     <usize as TryInto<isize>>::try_into(k).unwrap() - 2,
-    //                     k,
-    //                 ) {
-    //                     InductivelyGeneralizeResult::Failure => {
-    //                         return StrengthenResult::Failure {
-    //                             _depth: k.try_into().unwrap(),
-    //                         };
-    //                     }
-    //                     InductivelyGeneralizeResult::Success { n } => {
-    //                         let mut queue = PriorityQueue::<Cube, Reverse<usize>>::new();
-    //                         queue.push(s, Reverse(n + 1));
-    //                         match self.push_generalization(&queue, k) {
-    //                             PushGeneralizeResult::Failure => {
-    //                                 return StrengthenResult::Failure {
-    //                                     _depth: k.try_into().unwrap(),
-    //                                 };
-    //                             }
-    //                             PushGeneralizeResult::Success => {}
-    //                         };
-    //                     }
-    //                 };
-    //             }
-    //         }
-    //     }
+// fn strengthen(&mut self, k: usize) -> StrengthenResult {
+//     loop {
+//         match self.is_bad_reachable_in_1_step_from_fi(k) {
+//             SatResponse::UnSat => {
+//                 break;
+//             }
+//             SatResponse::Sat { assignment } => {
+//                 let s = self.fin_state.extract_state_from_assignment(&assignment);
+//                 // println!("{}", !s.to_owned());
+//                 // println!("Should block s = {} from F{}", s, k - 1);
+//                 match self.inductively_generalize(
+//                     &s,
+//                     <usize as TryInto<isize>>::try_into(k).unwrap() - 2,
+//                     k,
+//                 ) {
+//                     InductivelyGeneralizeResult::Failure => {
+//                         return StrengthenResult::Failure {
+//                             _depth: k.try_into().unwrap(),
+//                         };
+//                     }
+//                     InductivelyGeneralizeResult::Success { n } => {
+//                         let mut queue = PriorityQueue::<Cube, Reverse<usize>>::new();
+//                         queue.push(s, Reverse(n + 1));
+//                         match self.push_generalization(&queue, k) {
+//                             PushGeneralizeResult::Failure => {
+//                                 return StrengthenResult::Failure {
+//                                     _depth: k.try_into().unwrap(),
+//                                 };
+//                             }
+//                             PushGeneralizeResult::Success => {}
+//                         };
+//                     }
+//                 };
+//             }
+//         }
+//     }
 
-    //     StrengthenResult::Success
-    // }
-
+//     StrengthenResult::Success
+// }
 
 // // ************************************************************************************************
 // // use
