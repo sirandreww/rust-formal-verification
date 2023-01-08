@@ -2,8 +2,10 @@
 // use
 // ************************************************************************************************
 
+use std::collections::HashSet;
+
 use crate::{
-    formulas::{Clause, Literal, CNF},
+    formulas::{literal::VariableType, Clause, Literal, CNF},
     solvers::sat::{Assignment, SatResponse, StatelessSatSolver},
 };
 
@@ -107,4 +109,14 @@ pub fn evaluate_assignment_on_cnf(cnf: &CNF, assignment: &Assignment) -> bool {
         }
     }
     true
+}
+
+pub fn get_all_variable_numbers_in_cnf(cnf: &CNF) -> HashSet<VariableType> {
+    let mut set = HashSet::new();
+    for clause in cnf.iter() {
+        for literal in clause.iter() {
+            set.insert(literal.get_number());
+        }
+    }
+    set
 }

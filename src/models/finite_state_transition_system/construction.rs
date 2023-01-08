@@ -2,6 +2,9 @@
 // use
 // ************************************************************************************************
 
+use std::collections::{HashMap, HashSet};
+
+use crate::algorithms::formula_logic::get_all_variable_numbers_in_cnf;
 use crate::formulas::literal::VariableType;
 use crate::formulas::{Clause, Cube, Literal, CNF};
 use crate::models::AndInverterGraph;
@@ -17,28 +20,6 @@ impl FiniteStateTransitionSystem {
     // ********************************************************************************************
     // helper functions
     // ********************************************************************************************
-
-    fn new(
-        initial_states: Cube,
-        transition: CNF,
-        state_to_safety_translation: CNF,
-        unsafety_property: Clause,
-        max_literal_number: VariableType,
-        state_literals: Vec<VariableType>,
-        input_literals: Vec<VariableType>,
-    ) -> Self {
-        let initial_literals = initial_states.iter().map(|l| l.to_owned()).collect();
-        Self {
-            initial_literals,
-            initial_states,
-            transition,
-            state_to_safety_translation,
-            unsafety_property,
-            max_literal_number,
-            state_literals,
-            input_literals,
-        }
-    }
 
     fn get_literal_from_aig_literal(aig_literal: usize) -> Literal {
         let aig_var_num: VariableType = (aig_literal >> 1).try_into().unwrap();
@@ -212,6 +193,22 @@ impl FiniteStateTransitionSystem {
         (input_literals, state_literals)
     }
 
+    fn create_cone_of_state_literals(
+        aig: &AndInverterGraph,
+    ) -> HashMap<VariableType, HashSet<VariableType>> {
+        let mut cones_of_state_literals = HashMap::new();
+        for (latch_output, latch_input, _) in aig.get_latch_information() {
+            let cone_cnf =Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(
+                aig,
+                &[latch_input],
+            );
+            let cone_of_latch = get_all_variable_numbers_in_cnf(&cone_cnf);
+            let var = Self::get_literal_from_aig_literal(latch_output).get_number();
+            cones_of_state_literals.insert(var, cone_of_latch);
+        }
+        cones_of_state_literals
+    }
+
     // ********************************************************************************************
     // aig api functions
     // ********************************************************************************************
@@ -250,9 +247,13 @@ impl FiniteStateTransitionSystem {
         let state_to_safety_translation: CNF =
             Self::create_state_to_safety_translation(aig, assume_output_is_bad);
         let unsafety_property: Clause = Self::create_unsafety_property(aig, assume_output_is_bad);
+        let initial_literals = initial_states.iter().map(|l| l.to_owned()).collect();
+        let cone_of_safety = get_all_variable_numbers_in_cnf(&state_to_safety_translation);
+        let cones_of_state_literals = Self::create_cone_of_state_literals(aig);
 
         // create object
-        Self::new(
+        Self {
+            initial_literals,
             initial_states,
             transition,
             state_to_safety_translation,
@@ -260,6 +261,8 @@ impl FiniteStateTransitionSystem {
             max_literal_number,
             state_literals,
             input_literals,
-        )
+            cone_of_safety,
+            cones_of_state_literals,
+        }
     }
 }

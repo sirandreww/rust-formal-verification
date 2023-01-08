@@ -2,6 +2,8 @@
 // use
 // ************************************************************************************************
 
+use std::collections::HashSet;
+
 use crate::algorithms::formula_logic::{does_a_imply_b, is_a_and_b_satisfiable};
 use crate::formulas::literal::VariableType;
 use crate::formulas::{Clause, Cube, Literal, CNF};
@@ -109,6 +111,38 @@ impl FiniteStateTransitionSystem {
         }
 
         Cube::new(&literals)
+    }
+
+    pub fn intersect_cube_with_clone_of_safety(&self, c: &Cube) -> Cube {
+        let filtered_c: Vec<Literal> = c
+            .iter()
+            .filter(|l| self.cone_of_safety.contains(&l.get_number()))
+            .map(|l| l.to_owned())
+            .collect();
+        Cube::new(&filtered_c)
+    }
+
+    pub fn get_clone_of_cube(&self, c: &Cube) -> HashSet<VariableType> {
+        let mut set = HashSet::new();
+        set.reserve(self.state_literals.len());
+        for l in c.iter() {
+            let current_clone = self.cones_of_state_literals.get(&l.get_number()).unwrap();
+            for v in current_clone {
+                set.insert(v.to_owned());
+            }
+        }
+        set
+    }
+
+    pub fn intersect_cube_with_clone_of_other_cube(&self, c: &Cube, other: &Cube) -> Cube {
+        let cone_of_other = self.get_clone_of_cube(other);
+
+        let filtered_c: Vec<Literal> = c
+            .iter()
+            .filter(|l| cone_of_other.contains(&l.get_number()))
+            .map(|l| l.to_owned())
+            .collect();
+        Cube::new(&filtered_c)
     }
 
     pub fn check_invariant<T: StatelessSatSolver>(&self, inv_candidate: &CNF) {

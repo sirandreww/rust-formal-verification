@@ -146,7 +146,11 @@ impl<T: StatefulSatSolver> PDR<T> {
         let depth = self.depth();
         match self.ri_and_not_p_solvers[depth].solve(None, None) {
             crate::solvers::sat::SatResponse::Sat { assignment } => {
-                Option::Some(self.fin_state.extract_state_from_assignment(&assignment))
+                let bad_state = self.fin_state.extract_state_from_assignment(&assignment);
+                let filtered_bad_state = self
+                    .fin_state
+                    .intersect_cube_with_clone_of_safety(&bad_state);
+                Option::Some(filtered_bad_state)
             }
             crate::solvers::sat::SatResponse::UnSat => Option::None,
         }
@@ -176,7 +180,7 @@ impl<T: StatefulSatSolver> PDR<T> {
             Frame::Null => unreachable!(),
             Frame::Inf => unreachable!(),
             Frame::Ok(i) => {
-                debug_assert!(i > 0);
+                debug_assert!(0 < i && i < self.ri_and_t_solvers.len());
                 let extra_cube = self.fin_state.add_tags_to_cube(&s.cube, 1);
                 let extra_clause = !s.cube.to_owned();
 
@@ -203,6 +207,9 @@ impl<T: StatefulSatSolver> PDR<T> {
                             SolveRelativeParam::ExtractModel => {
                                 let predecessor =
                                     self.fin_state.extract_state_from_assignment(&assignment);
+                                let predecessor = self
+                                    .fin_state
+                                    .intersect_cube_with_clone_of_other_cube(&predecessor, &s.cube);
                                 // trinary simulation todo
                                 TCube {
                                     cube: predecessor,
@@ -427,11 +434,12 @@ impl<T: StatefulSatSolver> PDR<T> {
     // ********************************************************************************************
 
     fn get_r_i(&self, i: usize) -> CNF {
+        println!("get_r_i called with i = {}", i);
         assert!(self.f[0].is_empty());
+        let mut r_i = CNF::new();
         if i == 0 {
-            self.initial.to_owned()
+            r_i.append(&self.initial);
         } else {
-            let mut r_i = CNF::new();
             for i in i..self.f.len() {
                 let cubes = self.f[i].to_owned();
                 for cube in &cubes {
@@ -439,14 +447,14 @@ impl<T: StatefulSatSolver> PDR<T> {
                     r_i.add_clause(&clause);
                 }
             }
-            r_i
         }
+        r_i
     }
 
     fn subsumes(&self, c1: &Cube, c2: &Cube) -> bool {
         let c1_literals = c1.iter().collect::<HashSet<&Literal>>();
         let c2_literals = c2.iter().collect::<HashSet<&Literal>>();
-        c1_literals.is_superset(&c2_literals)
+        c1_literals.is_subset(&c2_literals)
     }
 
     fn print_progress_if_verbose(&self) {
@@ -509,16 +517,29 @@ impl<T: StatefulSatSolver> PDR<T> {
                             let mut z = self.generalize(&z);
                             debug_assert!(z.frame != Frame::Inf);
                             match z.frame {
-                                Frame::Ok(z_frame) => {
+                                Frame::Ok(mut z_frame) => {
                                     let mut another_iteration = true;
                                     while (z_frame < (self.depth() - 1)) && another_iteration {
-                                        z = self.z_solve_relative(
+                                        let potential_z = self.z_solve_relative(
                                             &self.next(&z),
                                             SolveRelativeParam::DoNotExtractModel,
                                         );
-                                        another_iteration = self.is_solve_relative_un_sat(&z);
+                                        another_iteration =
+                                            self.is_solve_relative_un_sat(&potential_z);
+                                        if another_iteration {
+                                            z = potential_z;
+                                            debug_assert!(z.frame != Frame::Inf);
+                                            debug_assert!(z.frame != Frame::Null);
+                                            match z.frame {
+                                                Frame::Ok(potential_z_frame) => {
+                                                    z_frame = potential_z_frame
+                                                }
+                                                _ => unreachable!(),
+                                            }
+                                        }
                                     }
-
+                                    debug_assert!(z.frame != Frame::Inf);
+                                    debug_assert!(z.frame != Frame::Null);
                                     self.add_blocked_cube(&z);
 
                                     debug_assert!(z.frame != Frame::Inf);
