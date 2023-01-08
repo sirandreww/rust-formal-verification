@@ -15,6 +15,7 @@ pub mod proof_result;
 
 pub use ic3_stateful_solver::IC3Stateful;
 pub use ic3_stateless_solver::IC3Stateless;
+pub use pdr::PDR;
 pub use proof_result::ProofResult;
 
 // ************************************************************************************************

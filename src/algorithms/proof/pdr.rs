@@ -22,7 +22,7 @@
 
 use super::{FiniteStateTransitionSystemProver, ProofResult};
 use crate::{
-    formulas::{literal::VariableType, Clause, Cube, Literal, CNF},
+    formulas::{Cube, Literal, CNF},
     models::FiniteStateTransitionSystem,
     solvers::sat::{
         stateful::{StatefulSatSolver, StatefulSatSolverHint},
@@ -35,8 +35,8 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::time;
 use std::{
-    cmp::{max, min, Reverse},
-    collections::{BinaryHeap, HashSet},
+    cmp::{min, Reverse},
+    collections::HashSet,
 };
 
 // ************************************************************************************************
@@ -60,8 +60,8 @@ use std::{
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum Frame {
-    NULL,
-    INF,
+    Null,
+    Inf,
     Ok(usize),
 }
 
@@ -128,8 +128,8 @@ impl<T: StatefulSatSolver> PDR<T> {
 
     fn next(&self, s: &TCube) -> TCube {
         match s.frame {
-            Frame::NULL => unreachable!(),
-            Frame::INF => unreachable!(),
+            Frame::Null => unreachable!(),
+            Frame::Inf => unreachable!(),
             Frame::Ok(i) => TCube {
                 cube: s.cube.to_owned(),
                 frame: Frame::Ok(i + 1),
@@ -154,8 +154,8 @@ impl<T: StatefulSatSolver> PDR<T> {
 
     fn z_is_blocked(&mut self, s: &TCube) -> bool {
         match s.frame {
-            Frame::NULL => unreachable!(),
-            Frame::INF => unreachable!(),
+            Frame::Null => unreachable!(),
+            Frame::Inf => unreachable!(),
             Frame::Ok(frame) => {
                 // return true iff Ri ^ c == UnSat
                 match self.ri_solvers[frame].solve(None, None) {
@@ -173,8 +173,8 @@ impl<T: StatefulSatSolver> PDR<T> {
 
     fn z_solve_relative(&mut self, s: &TCube, params: SolveRelativeParam) -> TCube {
         match s.frame {
-            Frame::NULL => unreachable!(),
-            Frame::INF => unreachable!(),
+            Frame::Null => unreachable!(),
+            Frame::Inf => unreachable!(),
             Frame::Ok(i) => {
                 debug_assert!(i > 0);
                 let extra_cube = self.fin_state.add_tags_to_cube(&s.cube, 1);
@@ -197,7 +197,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                             SolveRelativeParam::DoNotExtractModel | SolveRelativeParam::NoInd => {
                                 TCube {
                                     cube: Cube::new(&[]),
-                                    frame: Frame::NULL,
+                                    frame: Frame::Null,
                                 }
                             }
                             SolveRelativeParam::ExtractModel => {
@@ -206,13 +206,13 @@ impl<T: StatefulSatSolver> PDR<T> {
                                 // trinary simulation todo
                                 TCube {
                                     cube: predecessor,
-                                    frame: Frame::NULL,
+                                    frame: Frame::Null,
                                 }
                             }
                         }
                     }
                     SatResponse::UnSat => {
-                        debug_assert!(s.frame != Frame::NULL);
+                        debug_assert!(s.frame != Frame::Null);
                         s.to_owned()
                     }
                 }
@@ -227,8 +227,8 @@ impl<T: StatefulSatSolver> PDR<T> {
         let mut cnf = CNF::new();
         cnf.add_clause(&!s.cube.to_owned());
         match s.frame {
-            Frame::NULL => unreachable!(),
-            Frame::INF => {
+            Frame::Null => unreachable!(),
+            Frame::Inf => {
                 for i in 0..self.ri_solvers.len() {
                     self.ri_solvers[i].add_cnf(&cnf);
                     self.ri_and_not_p_solvers[i].add_cnf(&cnf);
@@ -305,11 +305,7 @@ impl<T: StatefulSatSolver> PDR<T> {
     }
 
     fn is_solve_relative_un_sat(&self, t: &TCube) -> bool {
-        if t.frame != Frame::NULL {
-            true
-        } else {
-            false
-        }
+        t.frame != Frame::Null
     }
 
     // adds a cube to Fa nd the PdrSat object. It will also remove any subsumed cube in F.
@@ -357,7 +353,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                     }
                 }
 
-                return self.z_is_blocked(&s);
+                self.z_is_blocked(s)
             }
             _ => unreachable!(),
         }
@@ -413,7 +409,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                     },
                     SolveRelativeParam::NoInd,
                 );
-                if s.frame != Frame::NULL {
+                if s.frame != Frame::Null {
                     self.add_blocked_cube(&s);
                 } else {
                     clause_index += 1;
@@ -423,7 +419,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                 return Some(k); // invariant found
             }
         }
-        return None;
+        None
     }
 
     // ********************************************************************************************
@@ -433,7 +429,7 @@ impl<T: StatefulSatSolver> PDR<T> {
     fn get_r_i(&self, i: usize) -> CNF {
         assert!(self.f[0].is_empty());
         if i == 0 {
-            return self.initial.to_owned();
+            self.initial.to_owned()
         } else {
             let mut r_i = CNF::new();
             for i in i..self.f.len() {
@@ -443,14 +439,40 @@ impl<T: StatefulSatSolver> PDR<T> {
                     r_i.add_clause(&clause);
                 }
             }
-            return r_i;
+            r_i
         }
     }
 
     fn subsumes(&self, c1: &Cube, c2: &Cube) -> bool {
         let c1_literals = c1.iter().collect::<HashSet<&Literal>>();
         let c2_literals = c2.iter().collect::<HashSet<&Literal>>();
-        return c1_literals.is_superset(&c2_literals);
+        c1_literals.is_superset(&c2_literals)
+    }
+
+    fn print_progress_if_verbose(&self) {
+        if self.verbose {
+            let clauses = self
+                .f
+                .iter()
+                .map(|c| c.len())
+                // .rev()
+                // .take(10)
+                .collect::<Vec<usize>>();
+            println!(
+                "PDR - is on depth = {}, clauses lengths = {:?}",
+                self.depth(),
+                clauses
+            );
+            println!("PDR - Number of SAT calls = {}", self.number_of_sat_calls);
+            println!(
+                "PDR - Time since start = {}",
+                self.start_time.elapsed().as_secs_f32()
+            );
+            println!(
+                "PDR - Time in SAT calls = {}",
+                self.time_in_sat_calls.as_secs_f32()
+            );
+        }
     }
 
     // ********************************************************************************************
@@ -470,7 +492,7 @@ impl<T: StatefulSatSolver> PDR<T> {
         }
 
         // while proof obligations remain.
-        while q.len() > 0 {
+        while !q.is_empty() {
             // take one out
             let s = q.pop().unwrap().0;
             match s.frame {
@@ -482,10 +504,10 @@ impl<T: StatefulSatSolver> PDR<T> {
                         debug_assert!(!self.z_is_initial(&s.cube));
                         let z = self.z_solve_relative(&s, SolveRelativeParam::ExtractModel);
 
-                        if z.frame != Frame::NULL {
+                        if z.frame != Frame::Null {
                             // cube 's' was blocked by image of predecessor.
                             let mut z = self.generalize(&z);
-                            debug_assert!(z.frame != Frame::INF);
+                            debug_assert!(z.frame != Frame::Inf);
                             match z.frame {
                                 Frame::Ok(z_frame) => {
                                     let mut another_iteration = true;
@@ -499,7 +521,8 @@ impl<T: StatefulSatSolver> PDR<T> {
 
                                     self.add_blocked_cube(&z);
 
-                                    if (s_frame < self.depth()) && (z.frame != Frame::INF) {
+                                    debug_assert!(z.frame != Frame::Inf);
+                                    if (s_frame < self.depth()) && (z.frame != Frame::Inf) {
                                         let next_s = self.next(&s);
                                         match next_s.frame {
                                             Frame::Ok(next_s_frame) => {
@@ -539,7 +562,7 @@ impl<T: StatefulSatSolver> PDR<T> {
     // ********************************************************************************************
 
     pub fn new(fin_state: &FiniteStateTransitionSystem, verbose: bool) -> Self {
-        let p0 = fin_state.get_safety_property();
+        // let p0 = fin_state.get_safety_property();
         let not_p0 = fin_state.get_unsafety_property();
         // let not_p1 = fin_state.add_tags_to_clause(&not_p0, 1);
         let connection_from_state_to_safety0 = fin_state.get_state_to_safety_translation();
@@ -607,6 +630,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                     }
                 }
                 None => {
+                    self.print_progress_if_verbose();
                     self.new_frame();
                     let propagation_result = self.propagate_blocked_cubes();
                     if let Some(i) = propagation_result {

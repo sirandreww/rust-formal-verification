@@ -18,7 +18,7 @@ mod tests {
     use std::time::{self, Duration};
 
     use rust_formal_verification::{
-        algorithms::proof::{IC3Stateful, ProofResult, RFV1},
+        algorithms::proof::{IC3Stateful, ProofResult, PDR},
         models::{AndInverterGraph, FiniteStateTransitionSystem},
         solvers::sat::{
             stateful::{CaDiCalSolver as StateFulCaDiCal, StatefulSatSolver},
