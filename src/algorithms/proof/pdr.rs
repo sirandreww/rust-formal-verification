@@ -109,6 +109,7 @@ pub struct PDR<T> {
     // p_and_t_and_not_p_tag: CNF,
     // i_and_t: CNF,
     // i_and_t_and_not_p_tag: CNF,
+    should_intersect_predecessor_with_transition_cone: bool,
 
     // for printing
     verbose: bool,
@@ -207,9 +208,24 @@ impl<T: StatefulSatSolver> PDR<T> {
                             SolveRelativeParam::ExtractModel => {
                                 let predecessor =
                                     self.fin_state.extract_state_from_assignment(&assignment);
-                                let predecessor = self
-                                    .fin_state
-                                    .intersect_cube_with_clone_of_other_cube(&predecessor, &s.cube);
+                                if self.should_intersect_predecessor_with_transition_cone {
+                                    let size_a = predecessor.len();
+                                    let predecessor = self
+                                        .fin_state
+                                        .intersect_cube_with_clone_of_transition(&predecessor);
+                                    let size_b = predecessor.len();
+                                    self.should_intersect_predecessor_with_transition_cone =
+                                        size_a != size_b;
+                                    println!(
+                                        "********************************** size_a = {}",
+                                        size_a
+                                    );
+                                    println!(
+                                        "********************************** size_b = {}",
+                                        size_b
+                                    );
+                                }
+
                                 // trinary simulation todo
                                 TCube {
                                     cube: predecessor,
@@ -621,7 +637,7 @@ impl<T: StatefulSatSolver> PDR<T> {
             initial_and_t_cnf,
             ri_and_not_p_cnf,
             ri_and_t_cnf,
-
+            should_intersect_predecessor_with_transition_cone: true,
             verbose,
             number_of_sat_calls: 0,
             time_in_sat_calls: time::Duration::from_secs(0),
@@ -631,6 +647,7 @@ impl<T: StatefulSatSolver> PDR<T> {
 
     pub fn prove(&mut self) -> ProofResult {
         // update start time.
+        self.should_intersect_predecessor_with_transition_cone = true;
         self.start_time = time::Instant::now();
 
         self.f.push(Vec::new()); // push F_inf

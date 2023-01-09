@@ -6,7 +6,7 @@
 // ************************************************************************************************
 
 use crate::formulas::{literal::VariableType, Clause, Cube, Literal, CNF};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 // ************************************************************************************************
 // struct
@@ -26,7 +26,9 @@ pub struct FiniteStateTransitionSystem {
     state_literals: Vec<VariableType>,
     input_literals: Vec<VariableType>,
     cone_of_safety: HashSet<VariableType>,
-    cones_of_state_literals: HashMap<VariableType, HashSet<VariableType>>,
+    cone_of_transition: HashSet<VariableType>,
+    // cone_of_safety_only_latches: HashSet<VariableType>,
+    // cone_of_transition_only_latches: HashSet<VariableType>,
 }
 
 // ************************************************************************************************

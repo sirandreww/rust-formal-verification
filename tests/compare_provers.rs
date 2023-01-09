@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn compare_2_provers() {
-        let run_test = false;
+        let run_test = true;
         if !run_test {
             return;
         }
@@ -129,17 +129,17 @@ mod tests {
 "tests/examples/hwmcc20/2020/mann/rast-p21_zero_then_fold2.aig",
 "tests/examples/hwmcc20/2019/goel/opensource/vis_arrays_am2910_p3/vis_arrays_am2910_p3_zero_then_fold2.aig",
 "tests/examples/hwmcc20/2019/goel/industry/gen21/gen21_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/industry/cal41/cal41_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/mann/safe/intersymbol_analog_estimation_convergence_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p022_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divthree-p158_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/industry/cal21/cal21_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/industry/gen14/gen14_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/industry/gen10/gen10_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/industry/gen12/gen12_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p016_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/goel/industry/cal4/cal4_zero_then_fold2.aig",
-"tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_qflexpress_divfive-p017_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/industry/cal41/cal41_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/mann/safe/intersymbol_analog_estimation_convergence_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p022_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divthree-p158_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/industry/cal21/cal21_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/industry/gen14/gen14_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/industry/gen10/gen10_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/industry/gen12/gen12_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_dualflexpress_divfive-p016_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/goel/industry/cal4/cal4_zero_then_fold2.aig",
+// "tests/examples/hwmcc20/2019/wolf/2019C/qspiflash_qflexpress_divfive-p017_zero_then_fold2.aig",
 
 //             // 2 seconds to 25
 // "tests/examples/hwmcc20/2019/wolf/2019B/marlann_compute_cp_pass-p2_zero_then_fold2.aig",

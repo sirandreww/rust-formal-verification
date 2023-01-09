@@ -2,7 +2,7 @@
 // use
 // ************************************************************************************************
 
-use std::collections::{HashMap, HashSet};
+// use std::collections::HashSet;
 
 use crate::algorithms::formula_logic::get_all_variable_numbers_in_cnf;
 use crate::formulas::literal::VariableType;
@@ -193,22 +193,6 @@ impl FiniteStateTransitionSystem {
         (input_literals, state_literals)
     }
 
-    fn create_cone_of_state_literals(
-        aig: &AndInverterGraph,
-    ) -> HashMap<VariableType, HashSet<VariableType>> {
-        let mut cones_of_state_literals = HashMap::new();
-        for (latch_output, latch_input, _) in aig.get_latch_information() {
-            let cone_cnf =Self::get_cnf_that_describes_wire_values_as_a_function_of_latch_values_for_specific_wires(
-                aig,
-                &[latch_input],
-            );
-            let cone_of_latch = get_all_variable_numbers_in_cnf(&cone_cnf);
-            let var = Self::get_literal_from_aig_literal(latch_output).get_number();
-            cones_of_state_literals.insert(var, cone_of_latch);
-        }
-        cones_of_state_literals
-    }
-
     // ********************************************************************************************
     // aig api functions
     // ********************************************************************************************
@@ -248,8 +232,12 @@ impl FiniteStateTransitionSystem {
             Self::create_state_to_safety_translation(aig, assume_output_is_bad);
         let unsafety_property: Clause = Self::create_unsafety_property(aig, assume_output_is_bad);
         let initial_literals = initial_states.iter().map(|l| l.to_owned()).collect();
+
         let cone_of_safety = get_all_variable_numbers_in_cnf(&state_to_safety_translation);
-        let cones_of_state_literals = Self::create_cone_of_state_literals(aig);
+        let cone_of_transition = get_all_variable_numbers_in_cnf(&transition);
+
+        // let cone_of_safety_only_latches: HashSet<VariableType> = cone_of_safety.iter().filter(|v| input_literals.contains(v)).map(|v| v.to_owned()).collect();
+        // let cone_of_transition_only_latches: HashSet<VariableType> = cone_of_transition.iter().filter(|v| input_literals.contains(v)).map(|v| v.to_owned()).collect();
 
         // create object
         Self {
@@ -262,7 +250,9 @@ impl FiniteStateTransitionSystem {
             state_literals,
             input_literals,
             cone_of_safety,
-            cones_of_state_literals,
+            cone_of_transition,
+            // cone_of_safety_only_latches,
+            // cone_of_transition_only_latches
         }
     }
 }
