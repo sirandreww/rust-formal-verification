@@ -111,19 +111,22 @@ impl FiniteStateTransitionSystem {
         Cube::new(&literals)
     }
 
-    pub fn intersect_cube_with_clone_of_safety(&self, c: &Cube) -> Cube {
+    pub fn intersect_cube_with_cone_of_safety(&self, c: &Cube) -> Cube {
         let filtered_c: Vec<Literal> = c
             .iter()
-            .filter(|l| self.cone_of_safety.contains(&l.get_number()))
+            .filter(|l| self.cone_of_safety_only_latches.contains(&l.get_number()))
             .map(|l| l.to_owned())
             .collect();
         Cube::new(&filtered_c)
     }
 
-    pub fn intersect_cube_with_clone_of_transition(&self, c: &Cube) -> Cube {
+    pub fn intersect_cube_with_cone_of_transition(&self, c: &Cube) -> Cube {
         let filtered_c: Vec<Literal> = c
             .iter()
-            .filter(|l| self.cone_of_transition.contains(&l.get_number()))
+            .filter(|l| {
+                self.cone_of_transition_only_latches
+                    .contains(&l.get_number())
+            })
             .map(|l| l.to_owned())
             .collect();
         Cube::new(&filtered_c)

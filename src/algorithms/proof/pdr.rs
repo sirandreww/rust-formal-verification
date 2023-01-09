@@ -150,7 +150,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                 let bad_state = self.fin_state.extract_state_from_assignment(&assignment);
                 let filtered_bad_state = self
                     .fin_state
-                    .intersect_cube_with_clone_of_safety(&bad_state);
+                    .intersect_cube_with_cone_of_safety(&bad_state);
                 Option::Some(filtered_bad_state)
             }
             crate::solvers::sat::SatResponse::UnSat => Option::None,
@@ -209,20 +209,16 @@ impl<T: StatefulSatSolver> PDR<T> {
                                 let predecessor =
                                     self.fin_state.extract_state_from_assignment(&assignment);
                                 if self.should_intersect_predecessor_with_transition_cone {
-                                    let size_a = predecessor.len();
+                                    let size_before = predecessor.len();
                                     let predecessor = self
                                         .fin_state
-                                        .intersect_cube_with_clone_of_transition(&predecessor);
-                                    let size_b = predecessor.len();
+                                        .intersect_cube_with_cone_of_transition(&predecessor);
+                                    let size_after = predecessor.len();
                                     self.should_intersect_predecessor_with_transition_cone =
-                                        size_a != size_b;
+                                        size_before != size_after;
                                     println!(
-                                        "********************************** size_a = {}",
-                                        size_a
-                                    );
-                                    println!(
-                                        "********************************** size_b = {}",
-                                        size_b
+                                        "********************************** size before = {}, size after = {}",
+                                        size_before, size_after
                                     );
                                 }
 

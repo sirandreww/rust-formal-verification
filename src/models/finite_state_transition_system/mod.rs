@@ -25,10 +25,10 @@ pub struct FiniteStateTransitionSystem {
     max_literal_number: VariableType,
     state_literals: Vec<VariableType>,
     input_literals: Vec<VariableType>,
-    cone_of_safety: HashSet<VariableType>,
-    cone_of_transition: HashSet<VariableType>,
-    // cone_of_safety_only_latches: HashSet<VariableType>,
-    // cone_of_transition_only_latches: HashSet<VariableType>,
+    // cone_of_safety: HashSet<VariableType>,
+    // cone_of_transition: HashSet<VariableType>,
+    cone_of_safety_only_latches: HashSet<VariableType>,
+    cone_of_transition_only_latches: HashSet<VariableType>,
 }
 
 // ************************************************************************************************

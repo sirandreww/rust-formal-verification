@@ -4,6 +4,8 @@
 
 // use std::collections::HashSet;
 
+use std::collections::HashSet;
+
 use crate::algorithms::formula_logic::get_all_variable_numbers_in_cnf;
 use crate::formulas::literal::VariableType;
 use crate::formulas::{Clause, Cube, Literal, CNF};
@@ -236,8 +238,16 @@ impl FiniteStateTransitionSystem {
         let cone_of_safety = get_all_variable_numbers_in_cnf(&state_to_safety_translation);
         let cone_of_transition = get_all_variable_numbers_in_cnf(&transition);
 
-        // let cone_of_safety_only_latches: HashSet<VariableType> = cone_of_safety.iter().filter(|v| input_literals.contains(v)).map(|v| v.to_owned()).collect();
-        // let cone_of_transition_only_latches: HashSet<VariableType> = cone_of_transition.iter().filter(|v| input_literals.contains(v)).map(|v| v.to_owned()).collect();
+        let cone_of_safety_only_latches: HashSet<VariableType> = cone_of_safety
+            .iter()
+            .filter(|v| state_literals.contains(v))
+            .map(|v| v.to_owned())
+            .collect();
+        let cone_of_transition_only_latches: HashSet<VariableType> = cone_of_transition
+            .iter()
+            .filter(|v| state_literals.contains(v))
+            .map(|v| v.to_owned())
+            .collect();
 
         // create object
         Self {
@@ -249,10 +259,10 @@ impl FiniteStateTransitionSystem {
             max_literal_number,
             state_literals,
             input_literals,
-            cone_of_safety,
-            cone_of_transition,
-            // cone_of_safety_only_latches,
-            // cone_of_transition_only_latches
+            // cone_of_safety,
+            // cone_of_transition,
+            cone_of_safety_only_latches,
+            cone_of_transition_only_latches,
         }
     }
 }
