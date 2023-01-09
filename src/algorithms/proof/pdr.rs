@@ -214,6 +214,7 @@ impl<T: StatefulSatSolver> PDR<T> {
                                         .fin_state
                                         .intersect_cube_with_cone_of_transition(&predecessor);
                                     let size_after = predecessor.len();
+                                    debug_assert!(size_after <= size_before);
                                     self.should_intersect_predecessor_with_transition_cone =
                                         size_before != size_after;
                                     println!(
