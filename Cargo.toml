@@ -4,7 +4,7 @@
 
 [package]
 name = "rust-formal-verification"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 authors = ["Andrew Luka"]
 description = "A rust library that makes it easier to develop, prototype and test new algorithms for formal verification like IC3, PDR, AVY and others."
